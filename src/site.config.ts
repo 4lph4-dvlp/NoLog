@@ -6,25 +6,25 @@
 export const CONFIG = {
   /** Blog metadata */
   site: {
-    title: "NoLog",
-    description: "A minimal Notion-powered blog",
-    url: "https://your-domain.vercel.app",
-    locale: "en",
+    title: "4lph4-bl0g",
+    description: "4lph4's NoLog base blog",
+    url: "https://4lph4-bl0g.vercel.app",
+    locale: "ko",
   },
 
   /** Profile sidebar */
   profile: {
-    name: "John Doe",
-    bio: "Developer & Writer. Turning ideas into code.",
+    name: "4lph4",
+    bio: "Life's plus 4lph4",
     avatarUrl: "/avatar.png",
   },
 
   /** Social / contact links — set to "" to hide */
   sns: {
-    github: "https://github.com/yourusername",
-    linkedin: "",
-    email: "",
-    instagram: "",
+    github: "https://github.com/4lph4-dvlp",
+    linkedin: "https://www.linkedin.com/in/hyunwoo-kim-4a2106303",
+    email: "alpha030520@gmail.com",
+    instagram: "https://www.instagram.com/4lph4_alpha",
     twitter: "",
   },
 
