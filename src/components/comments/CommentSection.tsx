@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import type { Comment } from "@/types/comments";
 import { CommentNode, CommentItem } from "./CommentItem";
 import { CommentForm } from "./CommentForm";
+import { CONFIG } from "@/site.config";
 
 interface CommentSectionProps {
   postId: string;
@@ -15,6 +16,8 @@ interface CommentSectionProps {
 export function CommentSection({ postId, initialComments }: CommentSectionProps) {
   const { data: session } = useSession();
   const [pendingComments, setPendingComments] = useState<Comment[]>([]);
+
+  const isKo = CONFIG.site.locale === "ko";
 
   // Load pending comments from localStorage on mount
   useEffect(() => {
@@ -112,13 +115,19 @@ export function CommentSection({ postId, initialComments }: CommentSectionProps)
       const rollback = pendingComments.filter((c) => c.id !== optimisticComment.id);
       setPendingComments(rollback);
       localStorage.setItem(`pending_comments_${postId}`, JSON.stringify(rollback));
-      alert("Failed to post comment. Please try again.");
+      alert(
+        isKo
+          ? "댓글 작성에 실패했습니다. 다시 시도해 주세요."
+          : "Failed to post comment. Please try again."
+      );
     }
   };
 
   return (
     <section className="mt-16 pt-8 border-t border-border">
-      <h3 className="text-2xl font-bold text-text-primary mb-8">Comments</h3>
+      <h3 className="text-2xl font-bold text-text-primary mb-8">
+        {isKo ? "댓글" : "Comments"}
+      </h3>
 
       <div className="mb-10">
         <CommentForm onSubmit={(content) => handlePostComment(null, content)} />
@@ -135,7 +144,9 @@ export function CommentSection({ postId, initialComments }: CommentSectionProps)
           ))
         ) : (
           <p className="text-text-tertiary text-center py-8">
-            No comments yet. Be the first to share your thoughts!
+            {isKo
+              ? "아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!"
+              : "No comments yet. Be the first to share your thoughts!"}
           </p>
         )}
       </div>

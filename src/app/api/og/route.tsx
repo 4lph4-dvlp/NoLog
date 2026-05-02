@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
+import { CONFIG } from "@/site.config";
 
 export const runtime = "edge";
 
@@ -8,8 +9,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     // Dynamic params
-    const title = searchParams.get("title")?.slice(0, 100) || "NoLog Blog";
-    const category = searchParams.get("category") || "Blog Post";
+    const title = searchParams.get("title")?.slice(0, 100) || CONFIG.site.title;
+    const category =
+      searchParams.get("category") ||
+      (CONFIG.site.locale === "ko" ? "블로그 포스트" : "Blog Post");
 
     return new ImageResponse(
       (

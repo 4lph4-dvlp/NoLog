@@ -2,6 +2,7 @@ import { getPosts } from "@/lib/notion";
 import type { Post } from "@/types";
 import Link from "next/link";
 import Image from "next/image";
+import { CONFIG } from "@/site.config";
 
 /**
  * Home page — renders the main post feed.
@@ -23,11 +24,12 @@ export default async function HomePage() {
           <span className="text-2xl">📝</span>
         </div>
         <h2 className="text-lg font-semibold text-text-primary mb-2">
-          No posts yet
+          {CONFIG.site.locale === "ko" ? "포스트가 없습니다" : "No posts yet"}
         </h2>
         <p className="text-sm text-text-secondary max-w-sm">
-          Connect your Notion database and publish your first post by setting
-          its status to &quot;public&quot;.
+          {CONFIG.site.locale === "ko"
+            ? "Notion 데이터베이스를 연결하고 상태를 'public'으로 설정하여 첫 번째 포스트를 발행해 보세요."
+            : 'Connect your Notion database and publish your first post by setting its status to "public".'}
         </p>
       </div>
     );
@@ -79,7 +81,7 @@ export default async function HomePage() {
                   </span>
                 ))}
                 <time dateTime={post.createDate}>
-                  {new Date(post.createDate).toLocaleDateString("en-US", {
+                  {new Date(post.createDate).toLocaleDateString(CONFIG.site.locale, {
                     year: "numeric",
                     month: "short",
                     day: "numeric",

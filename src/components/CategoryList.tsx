@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CONFIG } from "@/site.config";
 
 interface CategoryListProps {
   categories: string[];
@@ -15,8 +16,10 @@ export function CategoryList({
   categories,
   activeCategory,
 }: CategoryListProps) {
+  const isKo = CONFIG.site.locale === "ko";
+
   return (
-    <nav aria-label="Categories">
+    <nav aria-label={isKo ? "카테고리" : "Categories"}>
       {/* ─── Mobile: Horizontal scroll ──────────────────────────── */}
       <div className="md:hidden flex gap-2 overflow-x-auto pb-2 scrollbar-none">
         <Link
@@ -27,7 +30,7 @@ export function CategoryList({
               : "bg-surface text-text-secondary hover:bg-surface-hover"
           }`}
         >
-          All
+          {isKo ? "전체" : "All"}
         </Link>
         {categories.map((cat) => {
           const slug = cat.toLowerCase().replace(/\s+/g, "-");
@@ -51,7 +54,7 @@ export function CategoryList({
       {/* ─── Desktop: Vertical list ─────────────────────────────── */}
       <div className="hidden md:flex flex-col gap-0.5">
         <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2 px-2">
-          Categories
+          {isKo ? "카테고리" : "Categories"}
         </h3>
         <Link
           href="/"
@@ -61,7 +64,7 @@ export function CategoryList({
               : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
           }`}
         >
-          All Posts
+          {isKo ? "전체 포스트" : "All Posts"}
         </Link>
         {categories.map((cat) => {
           const slug = cat.toLowerCase().replace(/\s+/g, "-");

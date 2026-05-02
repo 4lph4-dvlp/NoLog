@@ -3,6 +3,7 @@ import type { Post } from "@/types";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
+import { CONFIG } from "@/site.config";
 
 export default async function SearchPage({
   searchParams,
@@ -36,13 +37,17 @@ export default async function SearchPage({
           className="inline-flex items-center gap-1 text-sm text-text-tertiary hover:text-accent transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to feed
+          {CONFIG.site.locale === "ko" ? "목록으로" : "Back to feed"}
         </Link>
         <h1 className="text-2xl font-bold text-text-primary">
-          Search Results for "{query}"
+          {CONFIG.site.locale === "ko"
+            ? `"${query}"에 대한 검색 결과`
+            : `Search Results for "${query}"`}
         </h1>
         <p className="text-sm text-text-secondary mt-1">
-          Found {posts.length} post{posts.length === 1 ? "" : "s"}
+          {CONFIG.site.locale === "ko"
+            ? `${posts.length}개의 포스트를 찾았습니다.`
+            : `Found ${posts.length} post${posts.length === 1 ? "" : "s"}`}
         </p>
       </header>
 
@@ -52,10 +57,12 @@ export default async function SearchPage({
             <span className="text-2xl">🔍</span>
           </div>
           <h2 className="text-lg font-semibold text-text-primary mb-2">
-            No results found
+            {CONFIG.site.locale === "ko" ? "검색 결과 없음" : "No results found"}
           </h2>
           <p className="text-sm text-text-secondary max-w-sm">
-            Try adjusting your search query or browse categories.
+            {CONFIG.site.locale === "ko"
+              ? "검색어를 조정하거나 카테고리를 찾아보세요."
+              : "Try adjusting your search query or browse categories."}
           </p>
         </div>
       ) : (
@@ -101,7 +108,7 @@ export default async function SearchPage({
                     </span>
                   ))}
                   <time dateTime={post.createDate}>
-                    {new Date(post.createDate).toLocaleDateString("en-US", {
+                    {new Date(post.createDate).toLocaleDateString(CONFIG.site.locale, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",

@@ -86,7 +86,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           className="inline-flex items-center gap-1 text-sm text-text-tertiary hover:text-accent transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to feed
+          {CONFIG.site.locale === "ko" ? "목록으로" : "Back to feed"}
         </Link>
 
         {post.category && (
@@ -102,9 +102,12 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         </h1>
 
         <div className="flex flex-col gap-1 text-sm text-text-secondary mt-2">
-          <span>작성자: {post.author}</span>
+          <span>
+            {CONFIG.site.locale === "ko" ? "작성자:" : "Author:"} {post.author}
+          </span>
           <time dateTime={post.createDate}>
-            작성: {new Date(post.createDate).toLocaleString("ko-KR", {
+            {CONFIG.site.locale === "ko" ? "작성:" : "Published:"}{" "}
+            {new Date(post.createDate).toLocaleString(CONFIG.site.locale, {
               year: "numeric",
               month: "long",
               day: "numeric",
@@ -114,7 +117,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </time>
           {post.editDate && post.editDate !== post.createDate && (
             <time dateTime={post.editDate}>
-              수정: {new Date(post.editDate).toLocaleString("ko-KR", {
+              {CONFIG.site.locale === "ko" ? "수정:" : "Updated:"}{" "}
+              {new Date(post.editDate).toLocaleString(CONFIG.site.locale, {
                 year: "numeric",
                 month: "long",
                 day: "numeric",

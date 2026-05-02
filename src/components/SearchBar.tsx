@@ -3,6 +3,7 @@
 import { Search as SearchIcon } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { CONFIG } from "@/site.config";
 
 /**
  * Search bar component.
@@ -31,7 +32,7 @@ export function SearchBar() {
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search posts..."
+        placeholder={CONFIG.site.locale === "ko" ? "검색..." : "Search posts..."}
         className="w-full pl-9 pr-4 py-2 text-sm rounded-lg
           bg-surface border border-border
           text-text-primary placeholder:text-text-tertiary

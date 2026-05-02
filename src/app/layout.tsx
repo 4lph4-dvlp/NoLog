@@ -60,7 +60,7 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="en"
+      lang={CONFIG.site.locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

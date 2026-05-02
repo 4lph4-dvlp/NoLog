@@ -59,11 +59,14 @@ export default async function CategoryPage({
           className="inline-flex items-center gap-1 text-sm text-text-tertiary hover:text-accent transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to feed
+          {CONFIG.site.locale === "ko" ? "목록으로" : "Back to feed"}
         </Link>
         <h1 className="text-2xl font-bold text-text-primary">{displayName}</h1>
         <p className="text-sm text-text-secondary mt-1">
-          {posts.length} post{posts.length === 1 ? "" : "s"}
+          {posts.length}{" "}
+          {CONFIG.site.locale === "ko"
+            ? "개의 포스트"
+            : `post${posts.length === 1 ? "" : "s"}`}
         </p>
       </header>
 
@@ -124,7 +127,7 @@ export default async function CategoryPage({
                     </span>
                   ))}
                   <time dateTime={post.createDate}>
-                    {new Date(post.createDate).toLocaleDateString("en-US", {
+                    {new Date(post.createDate).toLocaleDateString(CONFIG.site.locale, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
