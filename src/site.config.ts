@@ -41,9 +41,9 @@ export const CONFIG = {
     /** Master switch: allow search engines to index this site? */
     allowIndexing: true,
     /** Google Search Console verification code (content of meta tag) */
-    googleVerification: "",
+    googleVerification: "3B2OJZoVb39ZY-cwVeaiqPTPppzoow5Yd_V9beGzeQU",
     /** Naver Search Advisor verification code (content of meta tag) */
-    naverVerification: "",
+    naverVerification: "391440411ed12faa001dd4bf089c2f2bb90d5915",
   },
 } as const;
 
