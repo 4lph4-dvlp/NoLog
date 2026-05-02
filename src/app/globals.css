@@ -1,0 +1,359 @@
+@import "tailwindcss";
+
+/* ─── Light Mode (default) ─────────────────────────────────────────────── */
+:root {
+  /* Surface & Background */
+  --background: #ffffff;
+  --foreground: #37352f;
+  --surface: #f7f6f3;
+  --surface-hover: #eeede9;
+  --surface-active: #e3e2de;
+
+  /* Borders */
+  --border: #e3e2de;
+  --border-strong: #c4c3bf;
+
+  /* Text Hierarchy */
+  --text-primary: #37352f;
+  --text-secondary: #787774;
+  --text-tertiary: #9b9a97;
+  --text-on-accent: #ffffff;
+
+  /* Accent — Notion's blue */
+  --accent: #2383e2;
+  --accent-hover: #1b6ec2;
+  --accent-light: #e8f0fe;
+
+  /* Semantic Colors */
+  --success: #4daa57;
+  --warning: #cb912f;
+  --error: #e03e3e;
+
+  /* Layout */
+  --sidebar-width: 200px;
+  --profile-width: 240px;
+  --max-content-width: 1400px;
+  --header-height: 44px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+}
+
+/* ─── Dark Mode ────────────────────────────────────────────────────────── */
+.dark {
+  --background: #191919;
+  --foreground: #e6e5e1;
+  --surface: #252525;
+  --surface-hover: #2f2f2f;
+  --surface-active: #373737;
+
+  --border: #373737;
+  --border-strong: #4a4a4a;
+
+  --text-primary: #e6e5e1;
+  --text-secondary: #9b9a97;
+  --text-tertiary: #6b6b6b;
+  --text-on-accent: #ffffff;
+
+  --accent: #529cca;
+  --accent-hover: #6bb0d6;
+  --accent-light: #1e3a4f;
+
+  --success: #4daa57;
+  --warning: #cb912f;
+  --error: #e03e3e;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Tailwind v4 Theme Tokens ─────────────────────────────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-on-accent: var(--text-on-accent);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ─── Base Styles ──────────────────────────────────────────────────────── */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth theme transitions (applied after initial load) */
+html.transition-colors,
+html.transition-colors *,
+html.transition-colors *::before,
+html.transition-colors *::after {
+  transition: background-color var(--transition-base),
+    border-color var(--transition-base), color var(--transition-base) !important;
+}
+
+/* ─── Scrollbar Styling ────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ─── Selection ────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
+
+/* ─── react-notion-x Overrides ─────────────────────────────────────────── */
+/* Integrates react-notion-x styles with our design system tokens. */
+
+.notion-content-wrapper .notion-page-wrapper {
+  padding: 0;
+}
+
+/* Reset react-notion-x page-level padding/sizing */
+.notion-content-wrapper .notion-page {
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Make text inherit our design system */
+.notion-content-wrapper .notion-text {
+  color: var(--text-primary);
+  line-height: 1.7;
+  padding: 3px 0;
+}
+
+/* Headings */
+.notion-content-wrapper .notion-h1,
+.notion-content-wrapper .notion-h2,
+.notion-content-wrapper .notion-h3 {
+  color: var(--text-primary);
+}
+
+.notion-content-wrapper .notion-h1 {
+  font-size: 1.875rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.notion-content-wrapper .notion-h2 {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.notion-content-wrapper .notion-h3 {
+  font-size: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Links */
+.notion-content-wrapper .notion-link {
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent-light);
+  transition: border-color var(--transition-fast);
+}
+
+.notion-content-wrapper .notion-link:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* Quote / Blockquote */
+.notion-content-wrapper .notion-quote {
+  border-left: 3px solid var(--accent);
+  padding: 0.5rem 1rem;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Callout */
+.notion-content-wrapper .notion-callout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+/* To-Do / Checkbox */
+.notion-content-wrapper .notion-to-do {
+  color: var(--text-primary);
+}
+
+.notion-content-wrapper .notion-to-do-checked .notion-to-do-body {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* Toggle */
+.notion-content-wrapper .notion-toggle {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+}
+
+/* Table */
+.notion-content-wrapper .notion-simple-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.notion-content-wrapper .notion-simple-table td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  color: var(--text-primary);
+}
+
+.notion-content-wrapper .notion-simple-table-header td {
+  background: var(--surface);
+  font-weight: 600;
+}
+
+/* Code blocks */
+.notion-content-wrapper .notion-code {
+  background: var(--surface) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.875rem;
+}
+
+/* Inline code */
+.notion-content-wrapper .notion-inline-code {
+  background: var(--surface-active);
+  color: var(--error);
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85em;
+}
+
+/* Bookmark */
+.notion-content-wrapper .notion-bookmark {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.notion-content-wrapper .notion-bookmark:hover {
+  border-color: var(--border-strong);
+}
+
+/* Images */
+.notion-content-wrapper .notion-asset-wrapper {
+  margin: 1.5rem 0;
+}
+
+/* Divider */
+.notion-content-wrapper .notion-hr {
+  border-color: var(--border);
+  margin: 1.5rem 0;
+}
+
+/* Lists */
+.notion-content-wrapper .notion-list {
+  color: var(--text-primary);
+}
+
+.notion-content-wrapper .notion-list-disc {
+  list-style-type: disc;
+}
+
+.notion-content-wrapper .notion-list-numbered {
+  list-style-type: decimal;
+}
+
+/* Video / Embed */
+.notion-content-wrapper .notion-asset-wrapper iframe {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+/* Column layout */
+.notion-content-wrapper .notion-column {
+  padding: 0 0.5rem;
+}
+
+/* Dark mode specifics for react-notion-x */
+.dark .notion-content-wrapper .notion-code {
+  background: var(--surface) !important;
+  border-color: var(--border);
+}
+
+.dark .notion-content-wrapper .notion-quote {
+  background: var(--surface);
+  border-left-color: var(--accent);
+}
+
+.dark .notion-content-wrapper .notion-callout {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.dark .notion-content-wrapper .notion-bookmark {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.dark .notion-content-wrapper .notion-simple-table td {
+  border-color: var(--border);
+}
+
+.dark .notion-content-wrapper .notion-simple-table-header td {
+  background: var(--surface-active);
+}
+
+/* Hide Notion Database Properties block from react-notion-x */
+.notion-collection-page-properties,
+.notion-page-properties {
+  display: none !important;
+}
