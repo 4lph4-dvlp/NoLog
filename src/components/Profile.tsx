@@ -61,9 +61,9 @@ export function Profile() {
   );
 
   return (
-    <aside className="flex flex-col items-center text-center gap-4 p-6 bg-zinc-800 dark:bg-zinc-900 text-white rounded-2xl shadow-sm">
+    <aside className="flex flex-col items-center text-center gap-4 p-6 bg-surface border border-border rounded-2xl shadow-sm transition-colors">
       {/* Avatar */}
-      <div className="relative w-20 h-20 rounded-full overflow-hidden bg-zinc-700 border-2 border-zinc-600">
+      <div className="relative w-20 h-20 rounded-full overflow-hidden bg-surface-active border-2 border-border">
         <Image
           src={profile.avatarUrl}
           alt={profile.name}
@@ -76,18 +76,18 @@ export function Profile() {
 
       {/* Name & Bio */}
       <div>
-        <h2 className="text-lg font-semibold text-white">
+        <h2 className="text-lg font-semibold text-text-primary">
           {profile.name}
         </h2>
-        <p className="text-sm text-zinc-300 mt-1 leading-relaxed">
+        <p className="text-sm text-text-secondary mt-1 leading-relaxed">
           {profile.bio}
         </p>
       </div>
 
       {/* Greeting */}
       {profile.greeting && (
-        <div className="w-full px-2 py-3 mt-1 bg-zinc-700/30 rounded-lg">
-          <p className="text-sm text-zinc-200">
+        <div className="w-full mt-1">
+          <p className="text-sm text-text-secondary leading-relaxed">
             {profile.greeting}
           </p>
         </div>
@@ -106,7 +106,7 @@ export function Profile() {
                 href={href}
                 target={key === "email" ? undefined : "_blank"}
                 rel={key === "email" ? undefined : "noopener noreferrer"}
-                className="p-2 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-700/50 transition-colors"
+                className="p-2 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-hover transition-colors"
                 aria-label={key}
               >
                 <Icon className="w-[18px] h-[18px]" />
