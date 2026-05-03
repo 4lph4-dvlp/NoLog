@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { CONFIG } from "@/site.config";
 import { useTheme } from "next-themes";
+import Script from "next/script";
 
 interface CommentSectionProps {
   postId: string;
@@ -11,23 +12,20 @@ interface CommentSectionProps {
 
 /**
  * Cusdis comment widget.
- * Allows users to comment via email/guest without GitHub login.
+ * Using manual script loading and re-initialization for Next.js compatibility.
  */
 export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   const { theme } = useTheme();
-
-  // Cusdis appId should be stored in site.config.ts or env
   const appId = process.env.NEXT_PUBLIC_CUSDIS_APP_ID;
 
-  // Sync theme with Cusdis
+  // Re-initialize Cusdis whenever postId or theme changes
   useEffect(() => {
-    const targetTheme = theme === "dark" ? "dark" : "light";
     // @ts-ignore
-    if (window.CUSDIS) {
+    if (window.renderCusdis) {
       // @ts-ignore
-      window.CUSDIS.setTheme(targetTheme);
+      window.renderCusdis(document.getElementById("cusdis_thread"));
     }
-  }, [theme]);
+  }, [postId, theme]);
 
   if (!appId) {
     return (
@@ -53,6 +51,18 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
         data-page-url={`${CONFIG.site.url}/post/${postId}`}
         data-page-title={postTitle}
         data-theme={theme === "dark" ? "dark" : "light"}
+      />
+
+      <Script
+        src="https://cusdis.com/js/cusdis.es.js"
+        strategy="afterInteractive"
+        onLoad={() => {
+          // @ts-ignore
+          if (window.renderCusdis) {
+            // @ts-ignore
+            window.renderCusdis(document.getElementById("cusdis_thread"));
+          }
+        }}
       />
     </section>
   );

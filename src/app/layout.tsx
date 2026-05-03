@@ -64,9 +64,6 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script async defer src="https://cusdis.com/js/cusdis.es.js" />
-      </head>
       <body className="min-h-full bg-background text-foreground">
         <NextAuthProvider>
           <Analytics />
