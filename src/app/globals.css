@@ -29,6 +29,14 @@
   --warning: #cb912f;
   --error: #e03e3e;
 
+  /* Terminal Specific Semantic Variables (Light Mode) */
+  --terminal-bg: #ffffff;
+  --terminal-text: #18181b; /* zinc-900 */
+  --terminal-prompt: #059669; /* emerald-600 */
+  --terminal-accent: #2563eb; /* blue-600 */
+  --terminal-dim: #71717a; /* zinc-500 */
+  --terminal-border: #e4e4e7; /* zinc-200 */
+
   /* Layout */
   --sidebar-width: 200px;
   --profile-width: 240px;
@@ -81,17 +89,11 @@
 
   /* Terminal Specific Overrides for Dark Mode (Zinc-950 feel) */
   --terminal-bg: #09090b; /* zinc-950 */
-}
-
-/* Light mode terminal should still look like a terminal but slightly lighter if desired, 
-   or we can force it to stay dark. The user seems to want the toggle to work, 
-   so let's make the background variable. */
-:root {
-  --terminal-bg: #ffffff;
-}
-
-@theme inline {
-  --color-terminal-bg: var(--terminal-bg);
+  --terminal-text: #d4d4d8; /* zinc-300 */
+  --terminal-prompt: #34d399; /* emerald-400 */
+  --terminal-accent: #60a5fa; /* blue-400 */
+  --terminal-dim: #71717a; /* zinc-500 */
+  --terminal-border: #27272a; /* zinc-800 */
 }
 
 /* ─── Tailwind v4 Theme Tokens ─────────────────────────────────────────── */
@@ -113,6 +115,13 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+
+  --color-terminal-bg: var(--terminal-bg);
+  --color-terminal-text: var(--terminal-text);
+  --color-terminal-prompt: var(--terminal-prompt);
+  --color-terminal-accent: var(--terminal-accent);
+  --color-terminal-dim: var(--terminal-dim);
+  --color-terminal-border: var(--terminal-border);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

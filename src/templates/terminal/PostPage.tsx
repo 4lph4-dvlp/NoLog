@@ -14,9 +14,10 @@ interface TerminalPostPageProps {
   post: Post;
   recordMap: any;
   categories: string[];
+  relatedPosts: Post[];
 }
 
-export default function TerminalPostPage({ post, recordMap, categories }: TerminalPostPageProps) {
+export default function TerminalPostPage({ post, recordMap, categories, relatedPosts }: TerminalPostPageProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -39,11 +40,11 @@ export default function TerminalPostPage({ post, recordMap, categories }: Termin
             </div>
           )}
 
-          <h1 className="text-3xl sm:text-4xl font-bold text-emerald-400 leading-tight mb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-terminal-prompt leading-tight mb-4">
             {post.title}
           </h1>
 
-          <div className="flex flex-col gap-1 text-sm font-mono text-zinc-500 mt-2">
+          <div className="flex flex-col gap-1 text-sm font-mono text-terminal-dim mt-2">
             <span>author: {post.author}</span>
             <time dateTime={post.createDate}>
               created: {new Date(post.createDate).toISOString().split('T')[0]}
@@ -56,7 +57,7 @@ export default function TerminalPostPage({ post, recordMap, categories }: Termin
                 <Link
                   key={tag}
                   href={`/search?q=${encodeURIComponent(tag)}`}
-                  className="px-2 py-0.5 text-xs font-mono rounded-full bg-zinc-800 text-zinc-300 hover:text-white"
+                  className="px-2 py-0.5 text-xs font-mono rounded-full bg-terminal-border text-terminal-dim hover:text-terminal-text"
                 >
                   #{tag}
                 </Link>
@@ -66,7 +67,7 @@ export default function TerminalPostPage({ post, recordMap, categories }: Termin
         </header>
 
         {post.thumbnail && (
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-zinc-900 mb-10 border border-zinc-800">
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-terminal-bg mb-10 border border-terminal-border">
             <Image
               src={post.thumbnail}
               alt={post.title}
@@ -91,10 +92,10 @@ export default function TerminalPostPage({ post, recordMap, categories }: Termin
       </article>
 
       {/* Terminal Area (Below the post) */}
-      <div className="w-full h-[50vh] flex border-t border-zinc-800 pt-8">
+      <div className="w-full h-[50vh] flex border-t border-terminal-border pt-8">
         <TerminalConsole 
-          path={`~/${post.category ? post.category.toLowerCase().replace(/\s+/g, "-") : ""}/${post.id.slice(0, 8)}`} 
-          posts={[]} // Pass empty posts to force user to use cd to navigate around
+          path={`~/${post.category ? post.category.toLowerCase().replace(/\s+/g, "-") : ""}`} 
+          posts={relatedPosts}
           categories={categories} 
           initialCommand="" // Start empty so user can type `cd ~`
           onClear={() => {

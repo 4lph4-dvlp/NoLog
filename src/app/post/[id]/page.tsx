@@ -1,8 +1,9 @@
-import { getPost, getCategories } from "@/lib/notion";
+import { getPost, getCategories, getPosts } from "@/lib/notion";
 import { getPageRecordMap } from "@/lib/notion-x";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
+import type { Post } from "@/types";
 import DefaultPostPage from "@/templates/default/PostPage";
 import TerminalPostPage from "@/templates/terminal/PostPage";
 
@@ -61,19 +62,26 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   // Fetch full page recordMap for react-notion-x rendering
   let recordMap;
   let categories: string[] = [];
+  let relatedPosts: Post[] = [];
   try {
     recordMap = await getPageRecordMap(id);
     categories = await getCategories();
+    
+    if (post.category) {
+      const allPosts = await getPosts();
+      relatedPosts = allPosts.filter(p => p.category === post.category);
+    }
   } catch (error) {
     console.error("[PostPage] Failed to fetch page recordMap or categories:", error);
     recordMap = null;
     categories = [];
+    relatedPosts = [];
   }
 
   if (CONFIG.template === "default") {
     return <DefaultPostPage post={post} recordMap={recordMap} />;
   } else if (CONFIG.template === "terminal") {
-    return <TerminalPostPage post={post} recordMap={recordMap} categories={categories} />;
+    return <TerminalPostPage post={post} recordMap={recordMap} categories={categories} relatedPosts={relatedPosts} />;
   }
 
   // Default fallback
