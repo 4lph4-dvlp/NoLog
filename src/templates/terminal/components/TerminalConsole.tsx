@@ -50,6 +50,12 @@ export function TerminalConsole({
   useEffect(() => {
     if (!initialCommand) return;
 
+    // Prevent 'find' recursion on search page
+    if (path === "~/search" && initialCommand.startsWith("find")) {
+      setHistory([{ command: initialCommand, output: printLs() }]);
+      return;
+    }
+
     let currentIndex = 0;
     setIsTyping(true);
 
@@ -101,13 +107,13 @@ export function TerminalConsole({
             sizes="(max-width: 768px) 128px, 160px"
           />
         </div>
-        
+
         {/* Info */}
         <div className="flex flex-col gap-1 w-full">
-          <p className="text-emerald-400 font-bold text-lg mb-1">guest@{profile.name}-os</p>
+          <p className="text-emerald-400 font-bold text-lg mb-1">guest@{profile.name}-bl0g</p>
           <div className="w-full max-w-sm h-px bg-zinc-700 mb-2"></div>
-          <p><span className="text-emerald-400 font-semibold w-20 inline-block">OS:</span> NoLog (Terminal Edition)</p>
-          <p><span className="text-emerald-400 font-semibold w-20 inline-block">Host:</span> Vercel</p>
+          <p><span className="text-emerald-400 font-semibold w-20 inline-block">OS:</span> NoLog (Terminal Theme)</p>
+          <p><span className="text-emerald-400 font-semibold w-20 inline-block">Host:</span> 4lph4</p>
           <p><span className="text-emerald-400 font-semibold w-20 inline-block">Uptime:</span> Always on</p>
           <p><span className="text-emerald-400 font-semibold w-20 inline-block">Packages:</span> {posts.length} (posts)</p>
           <p><span className="text-emerald-400 font-semibold w-20 inline-block">Bio:</span> {profile.bio}</p>
@@ -115,14 +121,14 @@ export function TerminalConsole({
             <p className="mt-2 text-zinc-400 italic">"{profile.greeting}"</p>
           )}
           <div className="flex gap-2 mt-3">
-             <div className="w-4 h-4 bg-zinc-950"></div>
-             <div className="w-4 h-4 bg-red-500"></div>
-             <div className="w-4 h-4 bg-green-500"></div>
-             <div className="w-4 h-4 bg-yellow-500"></div>
-             <div className="w-4 h-4 bg-blue-500"></div>
-             <div className="w-4 h-4 bg-purple-500"></div>
-             <div className="w-4 h-4 bg-cyan-500"></div>
-             <div className="w-4 h-4 bg-zinc-100"></div>
+            <div className="w-4 h-4 bg-zinc-950"></div>
+            <div className="w-4 h-4 bg-red-500"></div>
+            <div className="w-4 h-4 bg-green-500"></div>
+            <div className="w-4 h-4 bg-yellow-500"></div>
+            <div className="w-4 h-4 bg-blue-500"></div>
+            <div className="w-4 h-4 bg-purple-500"></div>
+            <div className="w-4 h-4 bg-cyan-500"></div>
+            <div className="w-4 h-4 bg-zinc-100"></div>
           </div>
           <p className="mt-4 text-zinc-500 text-xs">Type <span className="text-accent">help</span> to see available commands.</p>
         </div>

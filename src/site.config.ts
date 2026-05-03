@@ -22,7 +22,7 @@ export const CONFIG = {
   profile: {
     name: "4lph4",
     bio: "Life's plus 4lph4",
-    greeting: "안녕하세요! 방문해주셔서 감사합니다.",
+    greeting: "Thanks for visiting! This is 4lph4's blog.",
     avatarUrl: "/avatar.png",
   },
 

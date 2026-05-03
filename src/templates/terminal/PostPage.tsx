@@ -8,6 +8,7 @@ import Link from "next/link";
 import { TerminalConsole } from "./components/TerminalConsole";
 import { CONFIG } from "@/site.config";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface TerminalPostPageProps {
   post: Post;
@@ -17,6 +18,11 @@ interface TerminalPostPageProps {
 
 export default function TerminalPostPage({ post, recordMap, categories }: TerminalPostPageProps) {
   const router = useRouter();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [post.id]);
+
   return (
     <div className="flex flex-col gap-8 items-start w-full max-w-6xl mx-auto">
       {/* Post Content Area */}

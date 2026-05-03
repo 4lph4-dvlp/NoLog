@@ -78,6 +78,20 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  /* Terminal Specific Overrides for Dark Mode (Zinc-950 feel) */
+  --terminal-bg: #09090b; /* zinc-950 */
+}
+
+/* Light mode terminal should still look like a terminal but slightly lighter if desired, 
+   or we can force it to stay dark. The user seems to want the toggle to work, 
+   so let's make the background variable. */
+:root {
+  --terminal-bg: #ffffff;
+}
+
+@theme inline {
+  --color-terminal-bg: var(--terminal-bg);
 }
 
 /* ─── Tailwind v4 Theme Tokens ─────────────────────────────────────────── */

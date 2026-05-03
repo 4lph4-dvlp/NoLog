@@ -12,7 +12,7 @@ interface TerminalLayoutProps {
  */
 export default function TerminalLayout({ children }: TerminalLayoutProps) {
   return (
-    <div className="bg-zinc-950 min-h-screen text-zinc-300 font-mono flex flex-col selection:bg-emerald-900 selection:text-emerald-100">
+    <div className="bg-terminal-bg min-h-screen text-zinc-300 font-mono flex flex-col selection:bg-emerald-900 selection:text-emerald-100">
       <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50">
         <ThemeToggle />
       </div>
