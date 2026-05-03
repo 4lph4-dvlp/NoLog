@@ -11,28 +11,30 @@ interface CommentSectionProps {
 }
 
 /**
- * Robust Cusdis integration for Next.js.
- * Uses UMD script and manual re-rendering to handle client-side navigation.
+ * Highly compatible Cusdis integration for Next.js.
+ * Uses delayed rendering to ensure hydration is complete.
  */
 export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   const { theme } = useTheme();
   const appId = "592138c2-445c-4b38-bd54-abfa2bb16f65";
   const currentTheme = theme === "dark" ? "dark" : "light";
 
-  const renderWidget = () => {
-    // @ts-ignore
-    if (window.renderCusdis) {
-      const dom = document.getElementById("cusdis_thread");
-      if (dom) {
-        // @ts-ignore
-        window.renderCusdis(dom);
-      }
-    }
-  };
-
-  // Re-render when postId or theme changes
   useEffect(() => {
-    renderWidget();
+    const renderCusdis = () => {
+      // @ts-ignore
+      if (window.renderCusdis) {
+        const dom = document.getElementById("cusdis_thread");
+        if (dom) {
+          // @ts-ignore
+          window.renderCusdis(dom);
+        }
+      }
+    };
+
+    // Delay rendering slightly to ensure Next.js hydration is finished
+    const timer = setTimeout(renderCusdis, 500);
+    
+    return () => clearTimeout(timer);
   }, [postId, theme]);
 
   return (
@@ -43,20 +45,26 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
       
       <div
         id="cusdis_thread"
-        key={`${postId}-${theme}`} // Force fresh DOM element on change
+        key={`${postId}-${theme}`} // Force clean DOM element
         data-host="https://cusdis.com"
         data-app-id={appId}
         data-page-id={postId}
         data-page-url={`${CONFIG.site.url}/post/${postId}`}
         data-page-title={postTitle}
         data-theme={currentTheme}
-        className="min-h-[200px]"
+        className="min-h-[250px] w-full"
       />
 
       <Script
-        src="https://cusdis.com/js/cusdis.umd.js"
-        strategy="afterInteractive"
-        onLoad={renderWidget}
+        src="https://cusdis.com/js/cusdis.es.js"
+        strategy="lazyOnload"
+        onLoad={() => {
+          // @ts-ignore
+          if (window.renderCusdis) {
+            // @ts-ignore
+            window.renderCusdis(document.getElementById("cusdis_thread"));
+          }
+        }}
       />
     </section>
   );
