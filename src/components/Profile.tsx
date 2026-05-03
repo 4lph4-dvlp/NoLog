@@ -50,7 +50,7 @@ const SNS_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 
 /**
  * Profile sidebar component.
- * Displays avatar, name, bio, theme toggle, and social links.
+ * Displays avatar, name, bio, greeting, and social links.
  */
 export function Profile() {
   const { profile, sns } = CONFIG;
@@ -61,9 +61,9 @@ export function Profile() {
   );
 
   return (
-    <aside className="flex flex-col items-center text-center gap-4 p-5">
+    <aside className="flex flex-col items-center text-center gap-4 p-6 bg-zinc-800 dark:bg-zinc-900 text-white rounded-2xl shadow-sm">
       {/* Avatar */}
-      <div className="relative w-20 h-20 rounded-full overflow-hidden bg-surface border-2 border-border">
+      <div className="relative w-20 h-20 rounded-full overflow-hidden bg-zinc-700 border-2 border-zinc-600">
         <Image
           src={profile.avatarUrl}
           alt={profile.name}
@@ -76,17 +76,26 @@ export function Profile() {
 
       {/* Name & Bio */}
       <div>
-        <h2 className="text-lg font-semibold text-text-primary">
+        <h2 className="text-lg font-semibold text-white">
           {profile.name}
         </h2>
-        <p className="text-sm text-text-secondary mt-1 leading-relaxed">
+        <p className="text-sm text-zinc-300 mt-1 leading-relaxed">
           {profile.bio}
         </p>
       </div>
 
+      {/* Greeting */}
+      {profile.greeting && (
+        <div className="w-full px-2 py-3 mt-1 bg-zinc-700/30 rounded-lg">
+          <p className="text-sm text-zinc-200">
+            {profile.greeting}
+          </p>
+        </div>
+      )}
+
       {/* SNS Links */}
       {activeLinks.length > 0 && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mt-2">
           {activeLinks.map(([key, url]) => {
             const Icon = SNS_ICONS[key] ?? ExternalLink;
             const href = key === "email" ? `mailto:${url}` : url;
@@ -97,7 +106,7 @@ export function Profile() {
                 href={href}
                 target={key === "email" ? undefined : "_blank"}
                 rel={key === "email" ? undefined : "noopener noreferrer"}
-                className="p-2 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-hover transition-colors"
+                className="p-2 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-700/50 transition-colors"
                 aria-label={key}
               >
                 <Icon className="w-[18px] h-[18px]" />
@@ -106,11 +115,6 @@ export function Profile() {
           })}
         </div>
       )}
-
-      {/* Theme Toggle (Desktop only) */}
-      <div className="hidden md:block">
-        <ThemeToggle />
-      </div>
     </aside>
   );
 }

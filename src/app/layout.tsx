@@ -63,17 +63,17 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full bg-background text-foreground">
+      <body className="min-h-full bg-background text-foreground relative">
         <Analytics />
         <ThemeProvider>
+          {/* Global Theme Toggle (Top Right) */}
+          <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50">
+            <ThemeToggle />
+          </div>
+
           <div className="max-w-[var(--max-content-width)] mx-auto px-4 py-6 md:py-8">
             {/* ─── Mobile Layout ──────────────────────────────── */}
             <div className="md:hidden flex flex-col gap-4 relative">
-              {/* Theme Toggle (Mobile Top Right) */}
-              <div className="absolute top-2 right-2 z-10">
-                <ThemeToggle />
-              </div>
-
               {/* 1. Profile */}
               <Profile />
 
