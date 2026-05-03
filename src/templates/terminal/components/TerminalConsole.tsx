@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { CONFIG } from "@/site.config";
 import type { Post } from "@/types";
 
@@ -72,16 +73,60 @@ export function TerminalConsole({
     <div className="text-zinc-400">
       <p>Available commands:</p>
       <ul className="mt-1 ml-4 space-y-1">
-        <li><span className="text-accent">help</span>  : Show this help message</li>
-        <li><span className="text-accent">ls</span>    : List posts in current directory</li>
-        <li><span className="text-accent">tree</span>  : Show category and post structure</li>
-        <li><span className="text-accent">cd</span>    : Change directory (e.g., cd [category], cd ~)</li>
-        <li><span className="text-accent">cat</span>   : Read a post by index (e.g., cat 1)</li>
-        <li><span className="text-accent">find</span>  : Search posts (e.g., find "keyword")</li>
-        <li><span className="text-accent">clear</span> : Clear terminal output</li>
+        <li><span className="text-accent">neofetch</span>: Display system info</li>
+        <li><span className="text-accent">help</span>    : Show this help message</li>
+        <li><span className="text-accent">ls</span>      : List posts in current directory</li>
+        <li><span className="text-accent">tree</span>    : Show category and post structure</li>
+        <li><span className="text-accent">cd</span>      : Change directory (e.g., cd [category], cd ~)</li>
+        <li><span className="text-accent">cat</span>     : Read a post by index (e.g., cat 1)</li>
+        <li><span className="text-accent">find</span>    : Search posts (e.g., find "keyword")</li>
+        <li><span className="text-accent">clear</span>   : Clear terminal output</li>
       </ul>
     </div>
   );
+
+  const printNeofetch = () => {
+    const { profile } = CONFIG;
+    return (
+      <div className="flex flex-col sm:flex-row gap-6 items-start text-zinc-300 my-4">
+        {/* ASCII Art / Image */}
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40 shrink-0 border border-zinc-700 bg-zinc-900 rounded-md overflow-hidden">
+          <Image
+            src={profile.avatarUrl}
+            alt={profile.name}
+            fill
+            className="object-cover opacity-90"
+            sizes="(max-width: 768px) 128px, 160px"
+          />
+        </div>
+        
+        {/* Info */}
+        <div className="flex flex-col gap-1 w-full">
+          <p className="text-emerald-400 font-bold text-lg mb-1">guest@{profile.name}-os</p>
+          <div className="w-full max-w-sm h-px bg-zinc-700 mb-2"></div>
+          <p><span className="text-emerald-400 font-semibold w-20 inline-block">OS:</span> NoLog (Terminal Edition)</p>
+          <p><span className="text-emerald-400 font-semibold w-20 inline-block">Host:</span> Vercel</p>
+          <p><span className="text-emerald-400 font-semibold w-20 inline-block">Uptime:</span> Always on</p>
+          <p><span className="text-emerald-400 font-semibold w-20 inline-block">Packages:</span> {posts.length} (posts)</p>
+          <p><span className="text-emerald-400 font-semibold w-20 inline-block">Bio:</span> {profile.bio}</p>
+          {profile.greeting && (
+            <p className="mt-2 text-zinc-400 italic">"{profile.greeting}"</p>
+          )}
+          <div className="flex gap-2 mt-3">
+             <div className="w-4 h-4 bg-zinc-950"></div>
+             <div className="w-4 h-4 bg-red-500"></div>
+             <div className="w-4 h-4 bg-green-500"></div>
+             <div className="w-4 h-4 bg-yellow-500"></div>
+             <div className="w-4 h-4 bg-blue-500"></div>
+             <div className="w-4 h-4 bg-purple-500"></div>
+             <div className="w-4 h-4 bg-cyan-500"></div>
+             <div className="w-4 h-4 bg-zinc-100"></div>
+          </div>
+          <p className="mt-4 text-zinc-500 text-xs">Type <span className="text-accent">help</span> to see available commands.</p>
+        </div>
+      </div>
+    );
+  };
 
   const printLs = () => {
     if (posts.length === 0) {
@@ -162,6 +207,9 @@ export function TerminalConsole({
       case "help":
         output = printHelp();
         break;
+      case "neofetch":
+        output = printNeofetch();
+        break;
       case "clear":
         setHistory([]);
         return;
@@ -180,7 +228,6 @@ export function TerminalConsole({
           router.push("/");
           output = <div className="text-zinc-400">Navigating to ~ ...</div>;
         } else {
-          // Check if category exists
           const catSlug = target.toLowerCase();
           const exists = categories.some(
             (c) => c.toLowerCase().replace(/\s+/g, "-") === catSlug || c.toLowerCase() === catSlug
@@ -226,21 +273,11 @@ export function TerminalConsole({
 
   return (
     <div
-      className="w-full min-h-[50vh] bg-zinc-950 text-zinc-300 font-mono text-sm sm:text-base p-4 rounded-xl shadow-2xl border border-zinc-800 cursor-text overflow-hidden flex flex-col"
+      className="w-full flex-1 bg-transparent text-zinc-300 font-mono text-sm sm:text-base cursor-text overflow-hidden flex flex-col"
       onClick={handleTerminalClick}
     >
-      {/* Mac-style Window header */}
-      <div className="flex gap-2 mb-4 pb-4 border-b border-zinc-800">
-        <div className="w-3 h-3 rounded-full bg-red-500"></div>
-        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-        <div className="w-3 h-3 rounded-full bg-green-500"></div>
-        <div className="ml-2 text-xs text-zinc-500 select-none">
-          guest@{CONFIG.profile.name}-blog:{path}
-        </div>
-      </div>
-
       {/* Output History */}
-      <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col gap-3">
+      <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col gap-3 pb-8">
         {history.map((h, i) => (
           <div key={i}>
             <div className="flex items-center gap-2 text-zinc-400">
