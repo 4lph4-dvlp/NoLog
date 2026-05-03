@@ -1,7 +1,5 @@
 import { getPost } from "@/lib/notion";
 import { getPageRecordMap } from "@/lib/notion-x";
-import { getComments } from "@/lib/github";
-import type { Comment } from "@/types/comments";
 import { NotionPageRenderer } from "@/components/notion/NotionPageRenderer";
 import { CommentSection } from "@/components/comments/CommentSection";
 import { notFound } from "next/navigation";
@@ -67,14 +65,6 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   } catch (error) {
     console.error("[PostPage] Failed to fetch page recordMap:", error);
     recordMap = null;
-  }
-
-  // Fetch comments safely; if github is unconfigured, it will return [] or throw.
-  let comments: Comment[] = [];
-  try {
-    comments = await getComments(id);
-  } catch (error) {
-    console.error("[PostPage] Failed to fetch comments:", error);
   }
 
   return (
@@ -167,7 +157,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* ─── Comments ──────────────────────────────────────────── */}
-      <CommentSection postId={post.id} initialComments={comments} />
+      <CommentSection postId={post.id} postTitle={post.title} />
     </article>
   );
 }
