@@ -110,10 +110,10 @@ export function TerminalConsole({
 
         {/* Info */}
         <div className="flex flex-col gap-1 w-full">
-          <p className="text-terminal-prompt font-bold text-lg mb-1">guest@{profile.name.toLowerCase()}-blog</p>
+          <p className="text-terminal-prompt font-bold text-lg mb-1">guest@{profile.name.toLowerCase()}-bl0g</p>
           <div className="w-full max-w-sm h-px bg-terminal-border mb-2"></div>
           <p><span className="text-terminal-prompt font-semibold w-24 inline-block">OS:</span> NoLog (Terminal Theme)</p>
-          <p><span className="text-terminal-prompt font-semibold w-24 inline-block">Host:</span> Vercel</p>
+          <p><span className="text-terminal-prompt font-semibold w-24 inline-block">Host:</span> 4lph4</p>
           <p><span className="text-terminal-prompt font-semibold w-24 inline-block">Uptime:</span> Always on</p>
           <p><span className="text-terminal-prompt font-semibold w-24 inline-block">Packages:</span> {posts.length} (posts)</p>
           <p><span className="text-terminal-prompt font-semibold w-24 inline-block">Bio:</span> {profile.bio}</p>
