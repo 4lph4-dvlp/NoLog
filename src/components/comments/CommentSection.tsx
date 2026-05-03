@@ -10,8 +10,8 @@ interface CommentSectionProps {
 }
 
 /**
- * Manual DOM injection for Cusdis.
- * This approach bypasses React's DOM management to prevent hydration conflicts.
+ * Optimized Cusdis integration.
+ * Ensures the script is loaded only once and re-renders correctly on navigation.
  */
 export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   const { theme } = useTheme();
@@ -20,30 +20,32 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   const currentTheme = theme === "dark" ? "dark" : "light";
 
   useEffect(() => {
-    // 1. Clear previous content to avoid duplicates
-    if (containerRef.current) {
-      containerRef.current.innerHTML = "";
-      
-      // 2. Create the Cusdis thread element
-      const thread = document.createElement("div");
-      thread.id = "cusdis_thread";
-      thread.setAttribute("data-host", "https://cusdis.com");
-      thread.setAttribute("data-app-id", appId);
-      thread.setAttribute("data-page-id", postId);
-      thread.setAttribute("data-page-url", `${CONFIG.site.url}/post/${postId}`);
-      thread.setAttribute("data-page-title", postTitle);
-      thread.setAttribute("data-theme", currentTheme);
-      thread.style.minHeight = "200px";
-      
-      containerRef.current.appendChild(thread);
+    const container = containerRef.current;
+    if (!container) return;
 
-      // 3. Manually load the script
-      const script = document.createElement("script");
+    // 1. Clear container and create a fresh thread element
+    container.innerHTML = "";
+    const thread = document.createElement("div");
+    thread.id = "cusdis_thread";
+    thread.setAttribute("data-host", "https://cusdis.com");
+    thread.setAttribute("data-app-id", appId);
+    thread.setAttribute("data-page-id", postId);
+    thread.setAttribute("data-page-url", `${CONFIG.site.url}/post/${postId}`);
+    thread.setAttribute("data-page-title", postTitle);
+    thread.setAttribute("data-theme", currentTheme);
+    thread.style.minHeight = "200px";
+    container.appendChild(thread);
+
+    // 2. Load script only once
+    const scriptId = "cusdis-sdk";
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+
+    if (!script) {
+      script = document.createElement("script");
+      script.id = scriptId;
       script.src = "https://cusdis.com/js/cusdis.es.js";
       script.async = true;
       script.defer = true;
-      
-      // 4. Trigger render after script loads
       script.onload = () => {
         // @ts-ignore
         if (window.renderCusdis) {
@@ -51,8 +53,14 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
           window.renderCusdis(thread);
         }
       };
-
-      containerRef.current.appendChild(script);
+      document.body.appendChild(script);
+    } else {
+      // 3. If script already exists, just trigger render
+      // @ts-ignore
+      if (window.renderCusdis) {
+        // @ts-ignore
+        window.renderCusdis(thread);
+      }
     }
   }, [postId, theme, postTitle, currentTheme]);
 
@@ -62,8 +70,8 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
         {CONFIG.site.locale === "ko" ? "댓글" : "Comments"}
       </h3>
       
-      {/* React doesn't manage this div's children */}
-      <div ref={containerRef} className="w-full" />
+      {/* Target container for manual injection */}
+      <div ref={containerRef} className="w-full min-h-[200px]" />
     </section>
   );
 }
