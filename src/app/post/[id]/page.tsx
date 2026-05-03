@@ -84,9 +84,12 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
         {post.category && (
           <div className="mb-4">
-            <span className="px-2 py-1 text-xs font-medium rounded bg-accent-light text-accent">
+            <Link
+              href={`/category/${post.category.toLowerCase().replace(/\s+/g, "-")}`}
+              className="inline-block px-2 py-1 text-xs font-medium rounded bg-accent-light text-accent hover:opacity-80 transition-opacity"
+            >
               {post.category}
-            </span>
+            </Link>
           </div>
         )}
 

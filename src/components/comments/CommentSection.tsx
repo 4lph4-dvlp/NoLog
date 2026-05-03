@@ -104,10 +104,10 @@ function measureIframeContent(iframe: HTMLIFrameElement): number | null {
  * Uses a polling mechanism to ensure the script is loaded and the widget is rendered properly.
  */
 export function CommentSection({ postId, postTitle }: CommentSectionProps) {
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentTheme: CusdisTheme = theme === "dark" ? "dark" : "light";
+  const currentTheme: CusdisTheme = resolvedTheme === "dark" ? "dark" : "light";
 
   // Use environment variable for the App ID as requested
   const appId =

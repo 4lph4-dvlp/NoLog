@@ -29,7 +29,7 @@ export const CONFIG = {
   },
 
   /** ISR revalidation interval in seconds (30 mins to prevent image expiration) */
-  revalidate: 1800,
+  revalidate: 180,
 
   /**
    * Search engine indexing control.
