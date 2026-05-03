@@ -12,6 +12,7 @@ interface TerminalConsoleProps {
   posts: Post[];
   categories: string[];
   initialCommand?: string;
+  onClear?: () => void;
 }
 
 interface CommandHistory {
@@ -24,6 +25,7 @@ export function TerminalConsole({
   posts,
   categories,
   initialCommand,
+  onClear,
 }: TerminalConsoleProps) {
   const router = useRouter();
   const [history, setHistory] = useState<CommandHistory[]>([]);
@@ -212,6 +214,7 @@ export function TerminalConsole({
         break;
       case "clear":
         setHistory([]);
+        onClear?.();
         return;
       case "ls":
         output = printLs();

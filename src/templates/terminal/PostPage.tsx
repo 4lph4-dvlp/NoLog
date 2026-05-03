@@ -1,3 +1,5 @@
+"use client";
+
 import type { Post } from "@/types";
 import { NotionPageRenderer } from "@/components/notion/NotionPageRenderer";
 import { CommentSection } from "@/components/comments/CommentSection";
@@ -5,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { TerminalConsole } from "./components/TerminalConsole";
 import { CONFIG } from "@/site.config";
+import { useRouter } from "next/navigation";
 
 interface TerminalPostPageProps {
   post: Post;
@@ -13,10 +16,11 @@ interface TerminalPostPageProps {
 }
 
 export default function TerminalPostPage({ post, recordMap, categories }: TerminalPostPageProps) {
+  const router = useRouter();
   return (
-    <div className="flex flex-col xl:flex-row gap-8 items-start w-full max-w-7xl mx-auto">
-      {/* Left Content Area (70% on large screens) */}
-      <article className="w-full xl:w-2/3 bg-background rounded-xl">
+    <div className="flex flex-col gap-8 items-start w-full max-w-6xl mx-auto">
+      {/* Post Content Area */}
+      <article className="w-full bg-transparent rounded-xl">
         <header className="mb-10">
           {post.category && (
             <div className="mb-4">
@@ -29,7 +33,7 @@ export default function TerminalPostPage({ post, recordMap, categories }: Termin
             </div>
           )}
 
-          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary leading-tight mb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-emerald-400 leading-tight mb-4">
             {post.title}
           </h1>
 
@@ -56,7 +60,7 @@ export default function TerminalPostPage({ post, recordMap, categories }: Termin
         </header>
 
         {post.thumbnail && (
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-surface mb-10 border border-border">
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-zinc-900 mb-10 border border-zinc-800">
             <Image
               src={post.thumbnail}
               alt={post.title}
@@ -80,13 +84,17 @@ export default function TerminalPostPage({ post, recordMap, categories }: Termin
         </div>
       </article>
 
-      {/* Right Terminal Area (30% on large screens, bottom on mobile) */}
-      <div className="w-full xl:w-1/3 xl:sticky xl:top-8 h-[50vh] xl:h-[80vh] flex">
+      {/* Terminal Area (Below the post) */}
+      <div className="w-full h-[50vh] flex border-t border-zinc-800 pt-8">
         <TerminalConsole 
           path={`~/${post.category ? post.category.toLowerCase().replace(/\s+/g, "-") : ""}/${post.id.slice(0, 8)}`} 
           posts={[]} // Pass empty posts to force user to use cd to navigate around
           categories={categories} 
           initialCommand="" // Start empty so user can type `cd ~`
+          onClear={() => {
+            const lastPath = sessionStorage.getItem("nolog_last_path");
+            router.push(lastPath || "/");
+          }}
         />
       </div>
     </div>

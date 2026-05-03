@@ -9,7 +9,7 @@ interface TerminalSearchPageProps {
 
 export default function TerminalSearchPage({ posts, query, categories }: TerminalSearchPageProps) {
   return (
-    <div className="flex flex-col items-center justify-center flex-1 w-full max-w-4xl mx-auto h-[70vh]">
+    <div className="flex flex-col items-center justify-center flex-1 w-full max-w-6xl mx-auto h-[70vh]">
       <TerminalConsole 
         path={`~/search`} 
         posts={posts} 
