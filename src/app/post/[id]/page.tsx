@@ -129,12 +129,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         {post.tags && post.tags.length > 0 && (
           <div className="flex items-center gap-2 mt-4 flex-wrap">
             {post.tags.map((tag) => (
-              <span
+              <Link
                 key={tag}
-                className="px-2.5 py-1 text-xs font-medium rounded-full bg-accent-light text-accent"
+                href={`/search?q=${encodeURIComponent(tag)}`}
+                className="px-2.5 py-1 text-xs font-medium rounded-full bg-accent-light text-accent hover:opacity-80 transition-opacity"
               >
                 {tag}
-              </span>
+              </Link>
             ))}
           </div>
         )}
