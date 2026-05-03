@@ -107,7 +107,6 @@ export default async function RootLayout({
             </div>
           </div>
           </ThemeProvider>
-        </NextAuthProvider>
       </body>
     </html>
   );
