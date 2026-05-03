@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { CONFIG } from "@/site.config";
 import { useTheme } from "next-themes";
+import Script from "next/script";
 
 interface CommentSectionProps {
   postId: string;
@@ -9,19 +11,29 @@ interface CommentSectionProps {
 }
 
 /**
- * Cusdis comment widget using Iframe for maximum reliability.
+ * Robust Cusdis integration for Next.js.
+ * Uses UMD script and manual re-rendering to handle client-side navigation.
  */
 export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   const { theme } = useTheme();
   const appId = "592138c2-445c-4b38-bd54-abfa2bb16f65";
-  
-  const pageUrl = `${CONFIG.site.url}/post/${postId}`;
   const currentTheme = theme === "dark" ? "dark" : "light";
 
-  // Construct Cusdis iframe URL
-  const iframeSrc = `https://cusdis.com/api/widget?appId=${appId}&pageId=${postId}&pageUrl=${encodeURIComponent(
-    pageUrl
-  )}&pageTitle=${encodeURIComponent(postTitle)}&theme=${currentTheme}`;
+  const renderWidget = () => {
+    // @ts-ignore
+    if (window.renderCusdis) {
+      const dom = document.getElementById("cusdis_thread");
+      if (dom) {
+        // @ts-ignore
+        window.renderCusdis(dom);
+      }
+    }
+  };
+
+  // Re-render when postId or theme changes
+  useEffect(() => {
+    renderWidget();
+  }, [postId, theme]);
 
   return (
     <section className="mt-16 pt-8 border-t border-border">
@@ -29,13 +41,23 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
         {CONFIG.site.locale === "ko" ? "댓글" : "Comments"}
       </h3>
       
-      <div className="w-full min-h-[500px]">
-        <iframe
-          src={iframeSrc}
-          style={{ width: "100%", border: "none", height: "100%", minHeight: "500px" }}
-          title="Cusdis Comments"
-        />
-      </div>
+      <div
+        id="cusdis_thread"
+        key={`${postId}-${theme}`} // Force fresh DOM element on change
+        data-host="https://cusdis.com"
+        data-app-id={appId}
+        data-page-id={postId}
+        data-page-url={`${CONFIG.site.url}/post/${postId}`}
+        data-page-title={postTitle}
+        data-theme={currentTheme}
+        className="min-h-[200px]"
+      />
+
+      <Script
+        src="https://cusdis.com/js/cusdis.umd.js"
+        strategy="afterInteractive"
+        onLoad={renderWidget}
+      />
     </section>
   );
 }
