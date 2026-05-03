@@ -81,4 +81,20 @@ npm run dev
 
 ## 설정
 
-`src/site.config.ts`에서 프로필, SNS 링크, SEO 설정, 사이트 URL, locale, ISR 재검증 주기를 수정할 수 있습니다.
+`src/site.config.ts`에서 다음 항목들을 수정하여 블로그를 커스터마이징할 수 있습니다:
+- **Profile**: 이름, 소개, 인사말, 아바타 이미지.
+- **Template**: 사용 가능한 템플릿 선택 (예: `default`, `terminal`).
+- **Social Links**: GitHub, Twitter 등 SNS 링크.
+- **SEO Settings**: 사이트 제목, 설명, 키워드.
+- **Site URL**: 실제 배포될 도메인 주소.
+- **Locale**: 언어 설정 (예: `ko`, `en`).
+- **ISR Revalidation**: 콘텐츠 업데이트 주기 설정.
+
+## 템플릿
+
+NoLog는 블로그의 분위기를 바꿀 수 있는 사용자 정의 템플릿을 지원합니다:
+
+- **Default**: 가독성에 최적화된 깔끔하고 미니멀한 피드 기반 레이아웃입니다.
+- **Terminal**: 레트로한 커맨드 라인 인터페이스(CLI) 스타일의 레이아웃입니다.
+
+나만의 템플릿을 만들고 적용하는 방법은 [템플릿 제작 가이드](docs/TEMPLATE_GUIDE_KR.md)를 참고하세요.

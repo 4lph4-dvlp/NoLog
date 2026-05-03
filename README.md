@@ -4,18 +4,7 @@
 
 NoLog turns a Notion database into a Vercel-hosted blog. The project is meant to be forked from GitHub, deployed on Vercel, and operated primarily from Notion: write in Notion, publish to the web.
 
-## Templates
-
-NoLog supports customizable website templates to change your blog's look and feel:
-
-- **Default**: A clean, minimalist feed-based layout optimized for reading.
-- **Terminal**: A retro-style, command-line interface experience.
-
-You can learn how to create your own templates in the [Template Creation Guide](docs/TEMPLATE_GUIDE.md).
-
----
-
-(기존 README 내용 유지...)
+This service is inspired by the [morethan-log](https://github.com/morethanmin/morethan-log) project.
 
 ## How It Works
 
@@ -43,7 +32,7 @@ graph TD
 
 | Service            | Role      | Purpose |
 | :----------------- | :-------- | :------ |
-| **Notion**         | CMS       | Manage posts, metadata, categories, tags, and draft/public status. |
+| **Notion**         | CMS       | Manage posts, metadata, categories, tags, and status. |
 | **Next.js**        | Framework | Render the blog, metadata, sitemap, OpenGraph images, and search pages. |
 | **Vercel**         | Hosting   | Deploy from a GitHub fork without operating a separate server. |
 | **react-notion-x** | Renderer  | Render rich Notion blocks such as callouts, toggles, tables, and code blocks. |
@@ -52,6 +41,7 @@ graph TD
 ## Features
 
 - **Notion CMS:** Manage posts directly in Notion.
+- **Notion pagination:** Database queries follow Notion cursors, so lists keep working beyond the first 100 posts.
 - **ISR-friendly fetching:** Public Notion requests use the configured revalidation interval.
 - **Full block rendering:** Rich Notion pages are rendered with `react-notion-x`.
 - **SEO support:** Metadata, OpenGraph images, sitemap, and robots.txt.
@@ -91,4 +81,20 @@ Open [http://localhost:3000](http://localhost:3000) to view the blog.
 
 ## Configuration
 
-Edit `src/site.config.ts` to customize the profile, social links, SEO settings, site URL, locale, and ISR revalidation interval.
+Edit `src/site.config.ts` to customize the following:
+- **Profile**: Name, bio, greeting, and avatar.
+- **Template**: Choose between available templates (e.g., `default`, `terminal`).
+- **Social Links**: GitHub, Twitter, etc.
+- **SEO Settings**: Title, description, and keywords.
+- **Site URL**: Your production domain.
+- **Locale**: Language code (e.g., `ko`, `en`).
+- **ISR Revalidation**: Interval for updating content.
+
+## Templates
+
+NoLog supports customizable website templates to change your blog's look and feel:
+
+- **Default**: A clean, minimalist feed-based layout optimized for reading.
+- **Terminal**: A retro-style, command-line interface experience.
+
+You can learn how to create and customize your own templates in the [Template Creation Guide](docs/TEMPLATE_GUIDE.md).
