@@ -41,7 +41,6 @@ graph TD
 ## 주요 기능
 
 - **Notion CMS:** 게시글을 Notion에서 직접 작성하고 관리합니다.
-- **초안 보호:** Draft Mode가 아닌 경우 직접 URL로 접근해도 `status = public` 게시글만 노출됩니다.
 - **Notion 페이지네이션:** Notion 쿼리 커서를 따라가므로 게시글이 100개를 넘어도 목록이 누락되지 않습니다.
 - **ISR 친화적 데이터 로딩:** 공개 Notion 요청은 설정된 재검증 주기를 사용합니다.
 - **Notion 블록 렌더링:** `react-notion-x`로 Notion 페이지를 풍부하게 렌더링합니다.
@@ -66,7 +65,6 @@ graph TD
 ```bash
 NOTION_TOKEN="ntn_your_notion_integration_token"
 NOTION_DATABASE_ID="your_notion_database_id"
-DRAFT_SECRET="any-random-preview-token"
 NEXT_PUBLIC_CUSDIS_APP_ID="your_cusdis_app_id"
 ```
 
@@ -84,17 +82,3 @@ npm run dev
 ## 설정
 
 `src/site.config.ts`에서 프로필, SNS 링크, SEO 설정, 사이트 URL, locale, ISR 재검증 주기를 수정할 수 있습니다.
-
-## 초안 미리보기
-
-Draft Mode를 사용하면 비공개 Notion 게시글을 공개하지 않고 미리볼 수 있습니다. `DRAFT_SECRET`을 설정한 뒤 아래 주소를 엽니다.
-
-```text
-/api/draft?secret=YOUR_SECRET&id=NOTION_PAGE_ID
-```
-
-Draft Mode를 끄려면 아래 주소를 엽니다.
-
-```text
-/api/draft/disable
-```

@@ -3,17 +3,15 @@ import type { Post } from "@/types";
 import Link from "next/link";
 import Image from "next/image";
 import { CONFIG } from "@/site.config";
-import { draftMode } from "next/headers";
 
 /**
  * Home page — renders the main post feed.
  * Uses ISR to stay fresh without rebuilding.
  */
 export default async function HomePage() {
-  const { isEnabled: includeDrafts } = await draftMode();
   let posts: Post[];
   try {
-    posts = await getPosts(includeDrafts);
+    posts = await getPosts();
   } catch {
     // Gracefully handle missing Notion config
     posts = [];

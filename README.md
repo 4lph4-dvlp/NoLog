@@ -66,7 +66,6 @@ graph TD
 ```bash
 NOTION_TOKEN="ntn_your_notion_integration_token"
 NOTION_DATABASE_ID="your_notion_database_id"
-DRAFT_SECRET="any-random-preview-token"
 NEXT_PUBLIC_CUSDIS_APP_ID="your_cusdis_app_id"
 ```
 
@@ -97,4 +96,6 @@ Disable Draft Mode with:
 
 ```text
 /api/draft/disable
+```
+i/draft/disable
 ```

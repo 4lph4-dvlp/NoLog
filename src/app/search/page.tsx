@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { CONFIG } from "@/site.config";
-import { draftMode } from "next/headers";
 
 export default async function SearchPage({
   searchParams,
@@ -13,11 +12,10 @@ export default async function SearchPage({
 }) {
   const rawQuery = (await searchParams).q;
   const query = (Array.isArray(rawQuery) ? rawQuery[0] : rawQuery)?.trim() ?? "";
-  const { isEnabled: includeDrafts } = await draftMode();
 
   let allPosts: Post[] = [];
   try {
-    allPosts = await getPosts(includeDrafts);
+    allPosts = await getPosts();
   } catch {
     allPosts = [];
   }

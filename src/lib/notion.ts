@@ -208,18 +208,15 @@ async function queryDatabase(
  * @param includeDrafts - When true, returns ALL posts regardless of status.
  *                        When false (default), returns only `status == "public"` posts.
  */
-export const getPosts = cache(async (includeDrafts = false): Promise<Post[]> => {
+export const getPosts = cache(async (): Promise<Post[]> => {
   const body: Record<string, unknown> = {
     page_size: 100,
     sorts: [{ timestamp: "created_time", direction: "descending" }],
-  };
-
-  if (!includeDrafts) {
-    body.filter = {
+    filter: {
       property: "status",
       select: { equals: "public" },
-    };
-  }
+    },
+  };
 
   const pages: PageObjectResponse[] = [];
   let cursor: string | null = null;
@@ -229,8 +226,7 @@ export const getPosts = cache(async (includeDrafts = false): Promise<Post[]> => 
       {
         ...body,
         ...(cursor ? { start_cursor: cursor } : {}),
-      },
-      includeDrafts
+      }
     );
 
     pages.push(...response.results.filter(isPageObjectResponse));
@@ -304,3 +300,8 @@ export async function getBlocks(blockId: string) {
 }
 
 export { notion, DATABASE_ID };
+
+}
+
+export { notion, DATABASE_ID };
+_ID };

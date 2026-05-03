@@ -8,7 +8,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { getCategories } from "@/lib/notion";
 import { CONFIG } from "@/site.config";
 import { Analytics } from "@vercel/analytics/react";
-import { draftMode } from "next/headers";
 import "./globals.css";
 
 const geistSans = Geist({

@@ -5,7 +5,6 @@ import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
-import { draftMode } from "next/headers";
 
 /**
  * Dynamic metadata for each category page.
