@@ -1,14 +1,14 @@
 /**
- * Site configuration — the single source of truth for profile,
+ * Site configuration ??the single source of truth for profile,
  * SNS links, and blog metadata. Edit this file to personalise your blog.
  */
 
 export const CONFIG = {
   /** 
    * Active template name.
-   * Currently available: "default"
+   * Currently available: "default", "terminal"
    */
-  template: "default",
+  template: "terminal",
 
   /** Blog metadata */
   site: {
@@ -22,11 +22,11 @@ export const CONFIG = {
   profile: {
     name: "4lph4",
     bio: "Life's plus 4lph4",
-    greeting: "안녕하세요! 방문해주셔서 감사합니다.",
+    greeting: "?�녕?�세?? 방문?�주?�서 감사?�니??",
     avatarUrl: "/avatar.png",
   },
 
-  /** Social / contact links — set to "" to hide */
+  /** Social / contact links ??set to "" to hide */
   sns: {
     github: "https://github.com/4lph4-dvlp",
     linkedin: "https://www.linkedin.com/in/hyunwoo-kim-4a2106303",

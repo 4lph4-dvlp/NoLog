@@ -5,6 +5,7 @@ import { getCategories } from "@/lib/notion";
 import { CONFIG } from "@/site.config";
 import { Analytics } from "@vercel/analytics/react";
 import DefaultLayout from "@/templates/default/Layout";
+import TerminalLayout from "@/templates/terminal/Layout";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -55,11 +56,9 @@ export default async function RootLayout({
   let TemplateLayout = DefaultLayout;
   if (CONFIG.template === "default") {
     TemplateLayout = DefaultLayout;
+  } else if (CONFIG.template === "terminal") {
+    TemplateLayout = TerminalLayout;
   }
-  // Add other templates here in the future
-  // else if (CONFIG.template === "minimal") {
-  //   TemplateLayout = MinimalLayout;
-  // }
 
   return (
     <html

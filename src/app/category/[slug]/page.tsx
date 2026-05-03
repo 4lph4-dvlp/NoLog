@@ -1,8 +1,9 @@
-import { getPosts } from "@/lib/notion";
+import { getPosts, getCategories } from "@/lib/notion";
 import type { Post } from "@/types";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
 import DefaultCategoryPage from "@/templates/default/CategoryPage";
+import TerminalCategoryPage from "@/templates/terminal/CategoryPage";
 
 /**
  * Dynamic metadata for each category page.
@@ -32,10 +33,13 @@ export default async function CategoryPage({
   const { slug } = await params;
 
   let allPosts: Post[] = [];
+  let categories: string[] = [];
   try {
     allPosts = await getPosts();
+    categories = await getCategories();
   } catch {
     allPosts = [];
+    categories = [];
   }
 
   // Match posts whose category slug matches the URL slug
@@ -51,6 +55,8 @@ export default async function CategoryPage({
 
   if (CONFIG.template === "default") {
     return <DefaultCategoryPage posts={posts} displayName={displayName} />;
+  } else if (CONFIG.template === "terminal") {
+    return <TerminalCategoryPage posts={posts} displayName={displayName} categories={categories} />;
   }
 
   // Default fallback

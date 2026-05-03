@@ -1,9 +1,10 @@
-import { getPost } from "@/lib/notion";
+import { getPost, getCategories } from "@/lib/notion";
 import { getPageRecordMap } from "@/lib/notion-x";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
 import DefaultPostPage from "@/templates/default/PostPage";
+import TerminalPostPage from "@/templates/terminal/PostPage";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -59,15 +60,20 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   // Fetch full page recordMap for react-notion-x rendering
   let recordMap;
+  let categories: string[] = [];
   try {
     recordMap = await getPageRecordMap(id);
+    categories = await getCategories();
   } catch (error) {
-    console.error("[PostPage] Failed to fetch page recordMap:", error);
+    console.error("[PostPage] Failed to fetch page recordMap or categories:", error);
     recordMap = null;
+    categories = [];
   }
 
   if (CONFIG.template === "default") {
     return <DefaultPostPage post={post} recordMap={recordMap} />;
+  } else if (CONFIG.template === "terminal") {
+    return <TerminalPostPage post={post} recordMap={recordMap} categories={categories} />;
   }
 
   // Default fallback

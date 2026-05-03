@@ -1,7 +1,8 @@
-import { getPosts } from "@/lib/notion";
+import { getPosts, getCategories } from "@/lib/notion";
 import type { Post } from "@/types";
 import { CONFIG } from "@/site.config";
 import DefaultSearchPage from "@/templates/default/SearchPage";
+import TerminalSearchPage from "@/templates/terminal/SearchPage";
 
 export default async function SearchPage({
   searchParams,
@@ -12,10 +13,13 @@ export default async function SearchPage({
   const query = (Array.isArray(rawQuery) ? rawQuery[0] : rawQuery)?.trim() ?? "";
 
   let allPosts: Post[] = [];
+  let categories: string[] = [];
   try {
     allPosts = await getPosts();
+    categories = await getCategories();
   } catch {
     allPosts = [];
+    categories = [];
   }
 
   const q = query ? query.toLowerCase() : "";
@@ -30,6 +34,8 @@ export default async function SearchPage({
 
   if (CONFIG.template === "default") {
     return <DefaultSearchPage posts={posts} query={query} />;
+  } else if (CONFIG.template === "terminal") {
+    return <TerminalSearchPage posts={posts} query={query} categories={categories} />;
   }
 
   // Default fallback
