@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { Profile } from "@/components/Profile";
-import { SearchBar } from "@/components/SearchBar";
-import { CategoryList } from "@/components/CategoryList";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { getCategories } from "@/lib/notion";
 import { CONFIG } from "@/site.config";
 import { Analytics } from "@vercel/analytics/react";
+import DefaultLayout from "@/templates/default/Layout";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,10 +35,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root layout implementing the responsive 3-column grid.
- *
- * Desktop:  Category Sidebar | Main Feed | Profile Sidebar
- * Mobile:   Profile → Search → Category (horizontal) → Feed
+ * Root layout connecting Next.js App Router to the selected Template Layout.
  */
 export default async function RootLayout({
   children,
@@ -57,6 +51,16 @@ export default async function RootLayout({
     categories = [];
   }
 
+  // Template routing
+  let TemplateLayout = DefaultLayout;
+  if (CONFIG.template === "default") {
+    TemplateLayout = DefaultLayout;
+  }
+  // Add other templates here in the future
+  // else if (CONFIG.template === "minimal") {
+  //   TemplateLayout = MinimalLayout;
+  // }
+
   return (
     <html
       lang={CONFIG.site.locale}
@@ -66,45 +70,10 @@ export default async function RootLayout({
       <body className="min-h-full bg-background text-foreground relative">
         <Analytics />
         <ThemeProvider>
-          {/* Global Theme Toggle (Top Right) */}
-          <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50">
-            <ThemeToggle />
-          </div>
-
-          <div className="max-w-[var(--max-content-width)] mx-auto px-4 py-6 md:py-8">
-            {/* ─── Mobile Layout ──────────────────────────────── */}
-            <div className="md:hidden flex flex-col gap-4 relative">
-              {/* 1. Profile */}
-              <Profile />
-
-              {/* 2. Search */}
-              <SearchBar />
-
-              {/* 3. Categories (horizontal scroll) */}
-              <CategoryList categories={categories} />
-
-            </div>
-
-            {/* ─── Desktop Layout (3-column grid) ────────────── */}
-            <div className="flex flex-col gap-4 md:grid md:grid-cols-[var(--sidebar-width)_1fr_var(--profile-width)] md:gap-8">
-              {/* Left: Category Sidebar */}
-              <aside className="hidden md:block sticky top-8 self-start">
-                <SearchBar />
-                <div className="mt-4">
-                  <CategoryList categories={categories} />
-                </div>
-              </aside>
-
-              {/* Center: Main Feed */}
-              <main className="min-w-0">{children}</main>
-
-              {/* Right: Profile Sidebar */}
-              <aside className="hidden md:block sticky top-8 self-start">
-                <Profile />
-              </aside>
-            </div>
-          </div>
-          </ThemeProvider>
+          <TemplateLayout categories={categories}>
+            {children}
+          </TemplateLayout>
+        </ThemeProvider>
       </body>
     </html>
   );

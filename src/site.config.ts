@@ -4,6 +4,12 @@
  */
 
 export const CONFIG = {
+  /** 
+   * Active template name.
+   * Currently available: "default"
+   */
+  template: "default",
+
   /** Blog metadata */
   site: {
     title: "4lph4-bl0g",
