@@ -11,8 +11,7 @@ import { CONFIG } from "@/site.config";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const { isEnabled: includeDrafts } = await draftMode();
-  const post = await getPost(id, includeDrafts);
+  const post = await getPost(id);
 
   if (!post) {
     return { title: "Post Not Found" };

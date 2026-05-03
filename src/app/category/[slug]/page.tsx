@@ -32,11 +32,10 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { isEnabled: includeDrafts } = await draftMode();
 
   let allPosts: Post[] = [];
   try {
-    allPosts = await getPosts(includeDrafts);
+    allPosts = await getPosts();
   } catch {
     allPosts = [];
   }

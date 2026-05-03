@@ -48,12 +48,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { isEnabled: includeDrafts } = await draftMode();
-
   // Fetch categories from Notion at build/revalidation time
   let categories: string[] = [];
   try {
-    categories = await getCategories(includeDrafts);
+    categories = await getCategories();
   } catch {
     // Gracefully degrade if Notion API is not configured yet
     categories = [];

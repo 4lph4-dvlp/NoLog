@@ -274,8 +274,8 @@ export const getPost = cache(
 /**
  * Fetch all unique categories from the database.
  */
-export const getCategories = cache(async (includeDrafts = false): Promise<string[]> => {
-  const posts = await getPosts(includeDrafts);
+export const getCategories = cache(async (): Promise<string[]> => {
+  const posts = await getPosts();
   const categories = new Set(posts.map((p) => p.category).filter(Boolean));
   return Array.from(categories).sort();
 });
@@ -300,8 +300,3 @@ export async function getBlocks(blockId: string) {
 }
 
 export { notion, DATABASE_ID };
-
-}
-
-export { notion, DATABASE_ID };
-_ID };
