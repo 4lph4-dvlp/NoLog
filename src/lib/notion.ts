@@ -242,13 +242,14 @@ export const getPosts = cache(async (includeDrafts = false): Promise<Post[]> => 
 
 /**
  * Fetch a single post by its Notion page ID.
+ * ALWAYS fetches fresh data to ensure runtime privacy checks are enforced.
  */
 export const getPost = cache(
   async (pageId: string, includeDrafts = false): Promise<Post | null> => {
     try {
       const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
         headers: getNotionHeaders(),
-        ...getNotionFetchOptions(includeDrafts),
+        cache: "no-store", // Force runtime check
       });
 
       if (res.status === 404) {
