@@ -30,6 +30,6 @@ export interface Post {
   /** ISO date string from the `EditDate` (last_edited_time) property */
   editDate: string;
 
-  /** Publication status from the `Status` (select) property — "public" | "draft" | etc. */
+  /** Publication status from the `Status` (select) property — "public" etc. */
   status: string;
 }

@@ -52,8 +52,6 @@ graph TD
 ## Features
 
 - **Notion CMS:** Manage posts directly in Notion.
-- **Draft protection:** Direct post URLs only expose `status = public` posts unless Draft Mode is enabled.
-- **Notion pagination:** Database queries follow Notion cursors, so lists keep working beyond the first 100 posts.
 - **ISR-friendly fetching:** Public Notion requests use the configured revalidation interval.
 - **Full block rendering:** Rich Notion pages are rendered with `react-notion-x`.
 - **SEO support:** Metadata, OpenGraph images, sitemap, and robots.txt.
@@ -94,17 +92,3 @@ Open [http://localhost:3000](http://localhost:3000) to view the blog.
 ## Configuration
 
 Edit `src/site.config.ts` to customize the profile, social links, SEO settings, site URL, locale, and ISR revalidation interval.
-
-## Draft Preview
-
-Draft Mode allows previewing non-public Notion posts without making direct draft URLs public. Configure `DRAFT_SECRET`, then open:
-
-```text
-/api/draft?secret=YOUR_SECRET&id=NOTION_PAGE_ID
-```
-
-Disable Draft Mode with:
-
-```text
-/api/draft/disable
-```

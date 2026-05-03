@@ -40,11 +40,7 @@ function getDatabaseId(): string {
   return DATABASE_ID;
 }
 
-function getNotionFetchOptions(includeDrafts: boolean) {
-  if (includeDrafts) {
-    return { cache: "no-store" as const };
-  }
-
+function getNotionFetchOptions() {
   return {
     next: {
       revalidate: CONFIG.revalidate,
@@ -177,8 +173,7 @@ function mapPageToPost(page: PageObjectResponse): Post {
  * inline (child) databases. The REST endpoint works correctly.
  */
 async function queryDatabase(
-  body: Record<string, unknown>,
-  includeDrafts = false
+  body: Record<string, unknown>
 ): Promise<NotionQueryResponse> {
   const res = await fetch(
     `https://api.notion.com/v1/databases/${getDatabaseId()}/query`,
@@ -186,7 +181,7 @@ async function queryDatabase(
       method: "POST",
       headers: getNotionHeaders(),
       body: JSON.stringify(body),
-      ...getNotionFetchOptions(includeDrafts),
+      ...getNotionFetchOptions(),
     }
   );
 
@@ -204,9 +199,6 @@ async function queryDatabase(
 
 /**
  * Fetch posts from the configured Notion database.
- *
- * @param includeDrafts - When true, returns ALL posts regardless of status.
- *                        When false (default), returns only `status == "public"` posts.
  */
 export const getPosts = cache(async (): Promise<Post[]> => {
   const body: Record<string, unknown> = {
@@ -238,14 +230,13 @@ export const getPosts = cache(async (): Promise<Post[]> => {
 
 /**
  * Fetch a single post by its Notion page ID.
- * ALWAYS fetches fresh data to ensure runtime privacy checks are enforced.
  */
 export const getPost = cache(
-  async (pageId: string, includeDrafts = false): Promise<Post | null> => {
+  async (pageId: string): Promise<Post | null> => {
     try {
       const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
         headers: getNotionHeaders(),
-        cache: "no-store", // Force runtime check
+        ...getNotionFetchOptions(),
       });
 
       if (res.status === 404) {
@@ -260,7 +251,7 @@ export const getPost = cache(
       if (!isPageObjectResponse(page)) return null;
 
       const post = mapPageToPost(page);
-      if (!includeDrafts && post.status !== "public") {
+      if (post.status !== "public") {
         return null;
       }
 
