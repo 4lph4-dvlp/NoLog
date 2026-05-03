@@ -1,10 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CONFIG } from "@/site.config";
 
 interface CategoryListProps {
   categories: string[];
-  /** Currently active category slug (optional) */
-  activeCategory?: string;
 }
 
 /**
@@ -12,11 +13,14 @@ interface CategoryListProps {
  * - Desktop: Vertical list in the left sidebar.
  * - Mobile: Horizontal scrollable row under the search bar.
  */
-export function CategoryList({
-  categories,
-  activeCategory,
-}: CategoryListProps) {
+export function CategoryList({ categories }: CategoryListProps) {
   const isKo = CONFIG.site.locale === "ko";
+  const pathname = usePathname();
+
+  // Automatically determine active category from the URL
+  const activeCategory = pathname?.startsWith("/category/")
+    ? pathname.split("/category/")[1]
+    : undefined;
 
   return (
     <nav aria-label={isKo ? "카테고리" : "Categories"}>
