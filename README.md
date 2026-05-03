@@ -1,101 +1,100 @@
 # NoLog
 
-[🇰🇷 한국어 버전](./README_kr.md)
+[Korean Version](./README_KR.md)
 
-NoLog is a blog hosting service that turns a Notion database into a static website. It allows you to manage all your content directly in Notion and deploy it automatically via Vercel, providing a Digital Ergonomic "write in Notion, publish to web" experience.
+NoLog turns a Notion database into a Vercel-hosted blog. The project is meant to be forked from GitHub, deployed on Vercel, and operated primarily from Notion: write in Notion, publish to the web.
 
-| This service is inspired by the [morethan-log](https://github.com/morethanmin/morethan-log) project.
+This service is inspired by the [morethan-log](https://github.com/morethanmin/morethan-log) project.
 
-## 🛠 How it Works
+## How It Works
 
-NoLog operates on a "Headless CMS" architecture, using Notion as the content source (CMS) and Next.js as the presentation layer.
-
-### 🏗 Architecture Diagram
+NoLog uses Notion as the content source and Next.js as the presentation layer. GitHub is only needed as the source repository for Vercel deployment; post data is fetched from Notion.
 
 ```mermaid
 graph TD
-    subgraph "Content Management (Notion)"
-        N[Notion Database] -->|API Query| NB[Notion Blocks/Properties]
+    subgraph "Content Management"
+        N[Notion Database] -->|Properties and blocks| V[Next.js App Router]
     end
 
-    subgraph "Application Layer (Vercel)"
-        V[Next.js App Router] -->|Fetch Data| N
-        V -->|Render| RX[react-notion-x]
-        V -->|API Route| GH_API[GitHub API]
+    subgraph "Application Layer"
+        V -->|Render posts| RX[react-notion-x]
+        V -->|Deploy| VC[Vercel]
+        V -->|Optional comments| C[Cusdis]
     end
 
-    subgraph "Data Storage (GitHub)"
-        GH[GitHub Repository] -->|Storage| CM[JSON Comment Files]
-        GH_API -->|Commit| CM
-    end
-
-    subgraph "User Interaction"
-        U[Visitor] -->|View Posts| V
-        U -->|Login/Write Comments| V
+    subgraph "Visitors"
+        U[Visitor] -->|Read posts| VC
+        U -->|Write comments| C
     end
 ```
 
-### 🔋 Core Services & Reasons for Selection
+## Core Services
 
-| Service            | Role       | Reason for Selection                                                                                        |
-| :----------------- | :--------- | :---------------------------------------------------------------------------------------------------------- |
-| **Notion**         | CMS        | A powerful document creation tool. Anyone can easily manage content without technical knowledge.            |
-| **Vercel**         | Hosting    | A hosting platform optimized for Next.js. You can deploy blog web pages without a separate server.          |
-| **Next.js**        | Framework  | A React-based framework that provides SEO optimization, server-side rendering, and API routes.              |
-| **GitHub API**     | Comment DB | Provides a "database-less" storage solution. Comments are version-controlled and hosted securely for free.  |
-| **react-notion-x** | Renderer   | A renderer that accurately reproduces Notion's complex block layouts such as toggles, callouts, and tables. |
+| Service            | Role      | Purpose |
+| :----------------- | :-------- | :------ |
+| **Notion**         | CMS       | Manage posts, metadata, categories, tags, and draft/public status. |
+| **Next.js**        | Framework | Render the blog, metadata, sitemap, OpenGraph images, and search pages. |
+| **Vercel**         | Hosting   | Deploy from a GitHub fork without operating a separate server. |
+| **react-notion-x** | Renderer  | Render rich Notion blocks such as callouts, toggles, tables, and code blocks. |
+| **Cusdis**         | Comments  | Optional embedded comment widget. |
 
-## ✨ Features
+## Features
 
-- **Notion as CMS:** Write and manage all your posts in Notion.
-- **Full Block Support:** Renders Callouts, Quotes, Toggles, Bookmarks, Code blocks (with syntax highlighting), Tables, and more using `react-notion-x`.
-- **SEO Optimized:** Auto-generated OpenGraph images, meta tags, sitemaps, and robots.txt.
-- **Dark Mode Support:** Built-in seamless dark/light mode transition.
-- **GitHub Comments:** Serverless comments stored as JSON in a GitHub repository.
-- **Responsive Design:** 3-column desktop layout that gracefully falls back to a clean mobile view.
+- **Notion CMS:** Manage posts directly in Notion.
+- **Draft protection:** Direct post URLs only expose `status = public` posts unless Draft Mode is enabled.
+- **Notion pagination:** Database queries follow Notion cursors, so lists keep working beyond the first 100 posts.
+- **ISR-friendly fetching:** Public Notion requests use the configured revalidation interval.
+- **Full block rendering:** Rich Notion pages are rendered with `react-notion-x`.
+- **SEO support:** Metadata, OpenGraph images, sitemap, and robots.txt.
+- **Dark mode:** Built-in light/dark theme support.
+- **Responsive layout:** Desktop sidebars with a compact mobile layout.
+- **Optional comments:** Cusdis comments expand with the page instead of adding a nested scroll area.
 
-## 🚀 Getting Started (Vercel Deployment)
+## Vercel Deployment
 
-You can easily fork this repository to your personal GitHub account and deploy it to Vercel without writing any code locally.
+1. Fork this repository to your GitHub account.
+2. Duplicate the [DataDashboard page](https://4lph4.notion.site/DataDashboard-35d5328064be8215ab3d81f4dbe89c08) to your Notion workspace.
+3. Create a Notion integration at [notion.so/my-integrations](https://www.notion.so/my-integrations), then save the integration secret as `NOTION_TOKEN`.
+4. On your duplicated database page, open `...` -> **Connections** and add the integration.
+5. Turn on **Share to web** for the database page so `react-notion-x` can render page blocks.
+6. Copy the database ID from the Notion database URL and save it as `NOTION_DATABASE_ID`.
+7. Import your forked repository in Vercel.
+8. Add the required environment variables in Vercel, then deploy.
 
-### 1. Set up Notion
-1. Duplicate the [DataDashboard page](https://4lph4.notion.site/DataDashboard-35d5328064be8215ab3d81f4dbe89c08) to your workspace.
-2. Go to [Notion Integrations](https://www.notion.so/my-integrations) and create a new integration. Save the **Internal Integration Secret** (`NOTION_TOKEN`).
-3. On your duplicated DataDashboard page, click the `...` menu -> **Connections**, and add your newly created integration.
-4. Click **Share** on the top right of your Database page and turn on **Share to web** (This is required for `react-notion-x` to fetch the page blocks).
-5. Extract the **Database ID** from the URL of your Notion database (the string of characters before `?v=`).
+## Environment Variables
 
-### 2. Deploy
-1. **Fork** this repository to your GitHub account.
-2. Go to [Vercel](https://vercel.com/) and create a new project.
-3. Import your forked `nolog` repository from the "Import Git Repository" section.
-4. In the **Environment Variables** section, add `NOTION_TOKEN` and `NOTION_DATABASE_ID` with their respective values.
-5. Click **Deploy**!
-
-## 💻 Local Hosting
-
-1. Install dependencies:
-```bash
-npm install
-```
-2. Configure the `.env.local` file with the required variables, then run the development server:
 ```bash
 NOTION_TOKEN="ntn_your_notion_integration_token"
 NOTION_DATABASE_ID="your_notion_database_id"
+DRAFT_SECRET="any-random-preview-token"
+NEXT_PUBLIC_CUSDIS_APP_ID="your_cusdis_app_id"
 ```
+
+`NEXT_PUBLIC_CUSDIS_APP_ID` is only needed if you want to use your own Cusdis comment project.
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
 ```
-3. Open [http://localhost:3000](http://localhost:3000) in your browser to view the result.
 
-## ⚙️ Configuration
-You can customize the site's profile, SEO settings, and social links by editing the `src/site.config.ts` file.
+Open [http://localhost:3000](http://localhost:3000) to view the blog.
 
-## 💬 Setting up GitHub Comments (Optional)
-If you want to enable the comment system:
-1. Generate a GitHub Personal Access Token (classic) with `repo` scope.
-2. Add the following to your environment variables (in Vercel or `.env.local`):
-   - `GITHUB_TOKEN`
-   - `GITHUB_OWNER` (your GitHub username)
-   - `GITHUB_REPO` (the repository where comments will be saved in the `data/comments/` path)
+## Configuration
+
+Edit `src/site.config.ts` to customize the profile, social links, SEO settings, site URL, locale, and ISR revalidation interval.
+
+## Draft Preview
+
+Draft Mode allows previewing non-public Notion posts without making direct draft URLs public. Configure `DRAFT_SECRET`, then open:
+
+```text
+/api/draft?secret=YOUR_SECRET&id=NOTION_PAGE_ID
+```
+
+Disable Draft Mode with:
+
+```text
+/api/draft/disable
+```

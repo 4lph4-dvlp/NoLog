@@ -58,7 +58,9 @@ export function NotionPageRenderer({ recordMap }: NotionPageRendererProps) {
 
   // Avoid hydration mismatch — only render after mount
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (!mounted) {

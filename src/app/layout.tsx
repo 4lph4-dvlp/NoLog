@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { getCategories } from "@/lib/notion";
 import { CONFIG } from "@/site.config";
 import { Analytics } from "@vercel/analytics/react";
+import { draftMode } from "next/headers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -48,10 +49,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { isEnabled: includeDrafts } = await draftMode();
+
   // Fetch categories from Notion at build/revalidation time
   let categories: string[] = [];
   try {
-    categories = await getCategories();
+    categories = await getCategories(includeDrafts);
   } catch {
     // Gracefully degrade if Notion API is not configured yet
     categories = [];
@@ -83,14 +86,12 @@ export default async function RootLayout({
               {/* 3. Categories (horizontal scroll) */}
               <CategoryList categories={categories} />
 
-              {/* 4. Feed */}
-              <main className="min-w-0">{children}</main>
             </div>
 
             {/* ─── Desktop Layout (3-column grid) ────────────── */}
-            <div className="hidden md:grid md:grid-cols-[var(--sidebar-width)_1fr_var(--profile-width)] gap-8">
+            <div className="flex flex-col gap-4 md:grid md:grid-cols-[var(--sidebar-width)_1fr_var(--profile-width)] md:gap-8">
               {/* Left: Category Sidebar */}
-              <aside className="sticky top-8 self-start">
+              <aside className="hidden md:block sticky top-8 self-start">
                 <SearchBar />
                 <div className="mt-4">
                   <CategoryList categories={categories} />
@@ -101,7 +102,7 @@ export default async function RootLayout({
               <main className="min-w-0">{children}</main>
 
               {/* Right: Profile Sidebar */}
-              <aside className="sticky top-8 self-start">
+              <aside className="hidden md:block sticky top-8 self-start">
                 <Profile />
               </aside>
             </div>

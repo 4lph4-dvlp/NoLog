@@ -10,10 +10,14 @@ import { useEffect, useState } from "react";
  * Uses useEffect + mounted guard to avoid hydration mismatches.
  */
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   if (!mounted) {
     // Prevent hydration mismatch — render a placeholder with matching dimensions

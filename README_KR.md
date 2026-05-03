@@ -1,100 +1,100 @@
 # NoLog
 
-[🇺🇸 English Version](./README.md)
+[English Version](./README.md)
 
-NoLog는 노션(Notion) 데이터베이스를 정적 웹사이트로 변환해주는 블로그 호스팅 서비스입니다. 모든 콘텐츠를 노션에서 직접 관리하고 Vercel을 통해 자동으로 배포하여, "노션에 쓰고, 웹에 바로 게시하는" Digital Ergonomic한 경험을 제공합니다.
+NoLog는 Notion 데이터베이스를 Vercel에서 호스팅되는 블로그로 변환하는 프로젝트입니다. GitHub 저장소를 fork해서 Vercel에 배포하고, 실제 게시글 운영은 Notion 데이터베이스만으로 할 수 있도록 설계되어 있습니다.
 
-| 본 서비스는 [morethan-log](https://github.com/morethanmin/morethan-log)의 프로젝트을 참고하여 제작되었습니다. 
+이 프로젝트는 [morethan-log](https://github.com/morethanmin/morethan-log)를 참고해 제작되었습니다.
 
-## 🛠 작동 원리
+## 작동 방식
 
-NoLog는 노션을 콘텐츠 소스(CMS)로 사용하고 Next.js를 프리젠테이션 레이어로 사용하는 "헤드리스 CMS" 아키텍처로 동작합니다.
-
-### 🏗 아키텍처 다이어그램
+NoLog는 Notion을 콘텐츠 원천으로, Next.js를 화면 렌더링 계층으로 사용합니다. GitHub는 Vercel 배포를 위한 소스 저장소 역할만 하며, 게시글 데이터는 Notion에서 가져옵니다.
 
 ```mermaid
 graph TD
-    subgraph "콘텐츠 관리 (Notion)"
-        N[노션 데이터베이스] -->|API 쿼리| NB[노션 블록/속성]
+    subgraph "콘텐츠 관리"
+        N[Notion 데이터베이스] -->|속성과 블록| V[Next.js App Router]
     end
 
-    subgraph "애플리케이션 레이어 (Vercel)"
-        V[Next.js App Router] -->|데이터 페치| N
-        V -->|렌더링| RX[react-notion-x]
-        V -->|API 라우트| GH_API[GitHub API]
+    subgraph "애플리케이션 계층"
+        V -->|게시글 렌더링| RX[react-notion-x]
+        V -->|배포| VC[Vercel]
+        V -->|선택 댓글| C[Cusdis]
     end
 
-    subgraph "데이터 저장소 (GitHub)"
-        GH[GitHub 저장소] -->|스토리지| CM[JSON 댓글 파일]
-        GH_API -->|커밋| CM
-    end
-
-    subgraph "사용자 인터랙션"
-        U[방문자] -->|포스트 조회| V
-        U -->|로그인/댓글 작성| V
+    subgraph "방문자"
+        U[방문자] -->|게시글 읽기| VC
+        U -->|댓글 작성| C
     end
 ```
 
-### 🔋 주요 서비스 및 선정 이유
+## 주요 서비스
 
-| 서비스             | 역할       | 선정 이유                                                                                                |
-| :----------------- | :--------- | :------------------------------------------------------------------------------------------------------- |
-| **Notion**         | CMS        | 강력한 문서 작성 도구 입니다. 기술적인 지식 없이도 누구나 쉽게 콘텐츠를 관리할 수 있습니다.              |
-| **Vercel**         | 호스팅     | Next.js에 최적화된 호스팅 플랫폼입니다. 별도의 서버 없이 블로그 웹 페이지를 배포 할 수 있습니다.         |
-| **Next.js**        | 프레임워크 | SEO 최적화, 서버 사이드 렌더링, API 라우트를 제공하는 React 기반 프레임워크입니다.                       |
-| **GitHub API**     | 댓글 DB    | "데이터베이스가 필요 없는" 저장 솔루션을 제공합니다. 댓글은 버전 관리되며, 무료로 안전하게 호스팅됩니다. |
-| **react-notion-x** | 렌더러     | 토글, 콜아웃, 테이블 등 노션의 복잡한 블록 레이아웃을 재현하는 렌더러입니다.                             |
+| 서비스             | 역할      | 목적 |
+| :----------------- | :-------- | :--- |
+| **Notion**         | CMS       | 게시글, 메타데이터, 카테고리, 태그, 공개 상태를 관리합니다. |
+| **Next.js**        | 프레임워크 | 블로그 화면, 메타데이터, 사이트맵, OpenGraph 이미지, 검색 페이지를 렌더링합니다. |
+| **Vercel**         | 호스팅    | 별도 서버 운영 없이 GitHub fork 기반으로 배포합니다. |
+| **react-notion-x** | 렌더러    | 콜아웃, 토글, 테이블, 코드 블록 등 Notion의 풍부한 블록을 렌더링합니다. |
+| **Cusdis**         | 댓글      | 선택적으로 사용할 수 있는 임베드 댓글 위젯입니다. |
 
-## ✨ 주요 기능
+## 주요 기능
 
-- **노션 CMS:** 모든 포스트를 노션에서 작성하고 관리합니다.
-- **모든 블록 지원:** `react-notion-x`를 사용하여 콜아웃, 인용구, 토글, 북마크, 코드 블록(구문 강조 포함), 테이블 등을 렌더링합니다.
-- **SEO 최적화:** OpenGraph 이미지, 메타 태그, 사이트맵, robots.txt를 자동으로 생성합니다.
-- **다크 모드 지원:** 심리스한 다크/라이트 모드 전환 기능을 내장하고 있습니다.
-- **GitHub 댓글 시스템:** GitHub 저장소에 JSON 형태로 저장되는 서버리스 댓글 시스템을 사용합니다.
-- **반응형 디자인:** 데스크톱용 3단 레이아웃이 모바일 뷰에서도 깔끔하게 유지됩니다.
+- **Notion CMS:** 게시글을 Notion에서 직접 작성하고 관리합니다.
+- **초안 보호:** Draft Mode가 아닌 경우 직접 URL로 접근해도 `status = public` 게시글만 노출됩니다.
+- **Notion 페이지네이션:** Notion 쿼리 커서를 따라가므로 게시글이 100개를 넘어도 목록이 누락되지 않습니다.
+- **ISR 친화적 데이터 로딩:** 공개 Notion 요청은 설정된 재검증 주기를 사용합니다.
+- **Notion 블록 렌더링:** `react-notion-x`로 Notion 페이지를 풍부하게 렌더링합니다.
+- **SEO 지원:** 메타데이터, OpenGraph 이미지, 사이트맵, robots.txt를 제공합니다.
+- **다크 모드:** 라이트/다크 테마 전환을 지원합니다.
+- **반응형 레이아웃:** 데스크톱 사이드바와 모바일 레이아웃을 제공합니다.
+- **선택 댓글:** Cusdis 댓글은 별도 중첩 스크롤 없이 페이지 높이에 맞춰 확장됩니다.
 
-## 🚀 시작하기 (Vercel 배포)
+## Vercel 배포
 
-본 저장소를 개인 깃허브 계정에 포크하고 Vercel에 배포할 수 있습니다.
+1. 이 저장소를 본인의 GitHub 계정으로 fork합니다.
+2. [DataDashboard 페이지](https://4lph4.notion.site/DataDashboard-35d5328064be8215ab3d81f4dbe89c08)를 Notion 워크스페이스로 복제합니다.
+3. [Notion Integrations](https://www.notion.so/my-integrations)에서 새 integration을 만들고 secret 값을 `NOTION_TOKEN`으로 저장합니다.
+4. 복제한 데이터베이스 페이지에서 `...` -> **Connections**를 열고 integration을 연결합니다.
+5. `react-notion-x`가 페이지 블록을 렌더링할 수 있도록 데이터베이스 페이지의 **Share to web**을 켭니다.
+6. Notion 데이터베이스 URL에서 데이터베이스 ID를 복사해 `NOTION_DATABASE_ID`로 저장합니다.
+7. Vercel에서 fork한 저장소를 import합니다.
+8. Vercel 환경 변수에 필요한 값을 추가한 뒤 배포합니다.
 
-### 1. 노션 설정
-1. [DataDashboard 페이지](https://4lph4.notion.site/DataDashboard-35d5328064be8215ab3d81f4dbe89c08)를 워크스페이스로 복제합니다.
-2. [노션 인티그레이션](https://www.notion.so/my-integrations)에서 새 인티그레이션을 생성하고 **Internal Integration Secret** (`NOTION_TOKEN`)을 저장합니다.
-3. DatDashboard 페이지에서 `...` 메뉴 -> **연결(Connections)**을 클릭하고 새로 만든 인티그레이션을 추가합니다.
-4. DATABASE 페이지 우측 상단의 **공유(Share)**를 클릭하고 **웹에 게시(Share to web)**를 활성화합니다. (`react-notion-x`가 페이지 블록을 가져오기 위해 필요합니다).
-5. DATABASE의 URL에서 **데이터베이스 ID**를 추출합니다 (`?v=` 앞의 문자열).
+## 환경 변수
 
-### 2. 배포
-1. 코드를 GitHub 저장소에 푸시합니다.
-2. [Vercel](https://vercel.com/)로 이동하여 새로운 프로젝트 생성을 시작합니다.
-3. Import Git Repository 항목에서 본인의 Repository 중 포크한 nolog 저장소를 선택합니다.
-4. Environment Variables에서 NOTION_TOKEN, NOTION_DATABASE_ID을 설정합니다.   
-5. 배포(Deploy) 버튼을 누릅니다!
-
-## 💻 로컬 호스팅
-1. 종속성을 설치합니다:
-```bash
-npm install
-```
-2. 필요한 변수들로 `.env.local` 파일을 설정한 후, 개발 서버를 실행합니다:
 ```bash
 NOTION_TOKEN="ntn_your_notion_integration_token"
 NOTION_DATABASE_ID="your_notion_database_id"
+DRAFT_SECRET="any-random-preview-token"
+NEXT_PUBLIC_CUSDIS_APP_ID="your_cusdis_app_id"
 ```
+
+`NEXT_PUBLIC_CUSDIS_APP_ID`는 본인의 Cusdis 댓글 프로젝트를 사용할 때만 필요합니다.
+
+## 로컬 개발
 
 ```bash
+npm install
 npm run dev
 ```
-3. 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인합니다.
 
-## ⚙️ 설정 커스터마이징
-`src/site.config.ts` 파일을 수정하여 사이트 프로필, SEO 설정, SNS 링크 등을 변경할 수 있습니다.
+[http://localhost:3000](http://localhost:3000)을 열어 결과를 확인합니다.
 
-## 💬 GitHub 댓글 설정 (선택 사항)
-댓글 시스템을 활성화하려면:
-1. `repo` 스코프를 가진 GitHub Personal Access Token (classic)을 생성합니다.
-2. 다음 환경 변수를 추가합니다:
-   - `GITHUB_TOKEN`
-   - `GITHUB_OWNER` (본인의 GitHub 사용자명)
-   - `GITHUB_REPO` (댓글이 `data/comments/` 경로에 저장될 저장소 이름)
+## 설정
+
+`src/site.config.ts`에서 프로필, SNS 링크, SEO 설정, 사이트 URL, locale, ISR 재검증 주기를 수정할 수 있습니다.
+
+## 초안 미리보기
+
+Draft Mode를 사용하면 비공개 Notion 게시글을 공개하지 않고 미리볼 수 있습니다. `DRAFT_SECRET`을 설정한 뒤 아래 주소를 엽니다.
+
+```text
+/api/draft?secret=YOUR_SECRET&id=NOTION_PAGE_ID
+```
+
+Draft Mode를 끄려면 아래 주소를 엽니다.
+
+```text
+/api/draft/disable
+```

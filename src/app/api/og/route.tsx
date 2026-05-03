@@ -85,8 +85,9 @@ export async function GET(req: NextRequest) {
         height: 630,
       }
     );
-  } catch (e: any) {
-    console.error(`[OG Route Error] ${e.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[OG Route Error] ${message}`);
     return new Response("Failed to generate image", { status: 500 });
   }
 }

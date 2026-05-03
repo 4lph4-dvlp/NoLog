@@ -1,5 +1,7 @@
 import { Client } from "@notionhq/client";
 import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { cache } from "react";
+import { CONFIG } from "@/site.config";
 import type { Post } from "@/types";
 
 // ─── Notion client singleton ────────────────────────────────────────────────
@@ -8,7 +10,61 @@ const notion = new Client({
   auth: process.env.NOTION_TOKEN,
 });
 
-const DATABASE_ID = process.env.NOTION_DATABASE_ID!;
+const DATABASE_ID = process.env.NOTION_DATABASE_ID ?? "";
+const NOTION_VERSION = "2022-06-28";
+const NOTION_CACHE_TAG = "notion-posts";
+
+interface NotionQueryResponse {
+  results: unknown[];
+  next_cursor: string | null;
+  has_more: boolean;
+}
+
+function getNotionHeaders(): HeadersInit {
+  if (!process.env.NOTION_TOKEN) {
+    throw new Error("Missing NOTION_TOKEN environment variable.");
+  }
+
+  return {
+    Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
+    "Notion-Version": NOTION_VERSION,
+    "Content-Type": "application/json",
+  };
+}
+
+function getDatabaseId(): string {
+  if (!DATABASE_ID) {
+    throw new Error("Missing NOTION_DATABASE_ID environment variable.");
+  }
+
+  return DATABASE_ID;
+}
+
+function getNotionFetchOptions(includeDrafts: boolean) {
+  if (includeDrafts) {
+    return { cache: "no-store" as const };
+  }
+
+  return {
+    next: {
+      revalidate: CONFIG.revalidate,
+      tags: [NOTION_CACHE_TAG],
+    },
+  };
+}
+
+function isPageObjectResponse(value: unknown): value is PageObjectResponse {
+  return typeof value === "object" && value !== null && "properties" in value;
+}
+
+function isNotionQueryResponse(value: unknown): value is NotionQueryResponse {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "results" in value &&
+    Array.isArray((value as NotionQueryResponse).results)
+  );
+}
 
 // ─── Property extractors ────────────────────────────────────────────────────
 
@@ -108,7 +164,7 @@ function mapPageToPost(page: PageObjectResponse): Post {
     author: getPeople(page, "Author", "author") || getRichText(page, "Author", "author"),
     createDate: page.created_time,
     editDate: page.last_edited_time,
-    status: getSelect(page, "Status"),
+    status: getSelect(page, "Status", "status"),
   };
 }
 
@@ -120,24 +176,30 @@ function mapPageToPost(page: PageObjectResponse): Post {
  * We bypass the SDK's `dataSources.query` because in v5.20 it fails on
  * inline (child) databases. The REST endpoint works correctly.
  */
-async function queryDatabase(body: Record<string, unknown>) {
+async function queryDatabase(
+  body: Record<string, unknown>,
+  includeDrafts = false
+): Promise<NotionQueryResponse> {
   const res = await fetch(
-    `https://api.notion.com/v1/databases/${DATABASE_ID}/query`,
+    `https://api.notion.com/v1/databases/${getDatabaseId()}/query`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-      },
+      headers: getNotionHeaders(),
       body: JSON.stringify(body),
-      cache: "no-store",
+      ...getNotionFetchOptions(includeDrafts),
     }
   );
+
   if (!res.ok) {
     throw new Error(`Notion query failed: ${res.status} ${await res.text()}`);
   }
-  return res.json();
+
+  const data: unknown = await res.json();
+  if (!isNotionQueryResponse(data)) {
+    throw new Error("Notion query returned an unexpected response shape.");
+  }
+
+  return data;
 }
 
 /**
@@ -146,8 +208,9 @@ async function queryDatabase(body: Record<string, unknown>) {
  * @param includeDrafts - When true, returns ALL posts regardless of status.
  *                        When false (default), returns only `status == "public"` posts.
  */
-export async function getPosts(includeDrafts = false): Promise<Post[]> {
+export const getPosts = cache(async (includeDrafts = false): Promise<Post[]> => {
   const body: Record<string, unknown> = {
+    page_size: 100,
     sorts: [{ timestamp: "created_time", direction: "descending" }],
   };
 
@@ -158,38 +221,67 @@ export async function getPosts(includeDrafts = false): Promise<Post[]> {
     };
   }
 
-  const response = await queryDatabase(body);
+  const pages: PageObjectResponse[] = [];
+  let cursor: string | null = null;
 
-  // Only process full page objects (filter out partial responses)
-  const pages = (response.results as unknown[]).filter(
-    (r): r is PageObjectResponse =>
-      typeof r === "object" && r !== null && "properties" in r
-  );
+  do {
+    const response = await queryDatabase(
+      {
+        ...body,
+        ...(cursor ? { start_cursor: cursor } : {}),
+      },
+      includeDrafts
+    );
+
+    pages.push(...response.results.filter(isPageObjectResponse));
+    cursor = response.next_cursor;
+  } while (cursor);
 
   return pages.map(mapPageToPost);
-}
+});
 
 /**
  * Fetch a single post by its Notion page ID.
  */
-export async function getPost(pageId: string): Promise<Post | null> {
-  try {
-    const page = await notion.pages.retrieve({ page_id: pageId });
-    if (!("properties" in page)) return null;
-    return mapPageToPost(page as PageObjectResponse);
-  } catch {
-    return null;
+export const getPost = cache(
+  async (pageId: string, includeDrafts = false): Promise<Post | null> => {
+    try {
+      const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+        headers: getNotionHeaders(),
+        ...getNotionFetchOptions(includeDrafts),
+      });
+
+      if (res.status === 404) {
+        return null;
+      }
+
+      if (!res.ok) {
+        throw new Error(`Notion page failed: ${res.status} ${await res.text()}`);
+      }
+
+      const page: unknown = await res.json();
+      if (!isPageObjectResponse(page)) return null;
+
+      const post = mapPageToPost(page);
+      if (!includeDrafts && post.status !== "public") {
+        return null;
+      }
+
+      return post;
+    } catch {
+      return null;
+    }
   }
-}
+);
 
 /**
  * Fetch all unique categories from the database.
  */
-export async function getCategories(): Promise<string[]> {
-  const posts = await getPosts();
+export const getCategories = cache(async (includeDrafts = false): Promise<string[]> => {
+  const posts = await getPosts(includeDrafts);
   const categories = new Set(posts.map((p) => p.category).filter(Boolean));
   return Array.from(categories).sort();
-}
+});
 
 /**
  * Fetch block children for a given page (for rendering post content).

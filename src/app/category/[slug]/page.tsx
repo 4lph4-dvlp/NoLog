@@ -1,10 +1,11 @@
-import { getPosts, getCategories } from "@/lib/notion";
+import { getPosts } from "@/lib/notion";
 import type { Post } from "@/types";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
+import { draftMode } from "next/headers";
 
 /**
  * Dynamic metadata for each category page.
@@ -32,10 +33,11 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { isEnabled: includeDrafts } = await draftMode();
 
   let allPosts: Post[] = [];
   try {
-    allPosts = await getPosts();
+    allPosts = await getPosts(includeDrafts);
   } catch {
     allPosts = [];
   }

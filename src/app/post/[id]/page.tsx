@@ -8,10 +8,12 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
+import { draftMode } from "next/headers";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const post = await getPost(id);
+  const { isEnabled: includeDrafts } = await draftMode();
+  const post = await getPost(id, includeDrafts);
 
   if (!post) {
     return { title: "Post Not Found" };
@@ -47,12 +49,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       description: post.summary || post.title,
       images: [ogUrl.toString()],
     },
+    ...(post.status === "public"
+      ? {}
+      : { robots: { index: false, follow: false } }),
   };
 }
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const post = await getPost(id);
+  const { isEnabled: includeDrafts } = await draftMode();
+  const post = await getPost(id, includeDrafts);
 
   if (!post) {
     notFound();
