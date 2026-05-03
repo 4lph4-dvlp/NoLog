@@ -12,11 +12,11 @@ interface CommentSectionProps {
 
 /**
  * Cusdis comment widget.
- * Using manual script loading and re-initialization for Next.js compatibility.
+ * Hardcoded App ID and standard integration for maximum reliability.
  */
 export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   const { theme } = useTheme();
-  const appId = process.env.NEXT_PUBLIC_CUSDIS_APP_ID;
+  const appId = "592138c2-445c-4b38-bd54-abfa2bb16f65";
 
   // Re-initialize Cusdis whenever postId or theme changes
   useEffect(() => {
@@ -27,18 +27,8 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
     }
   }, [postId, theme]);
 
-  if (!appId) {
-    return (
-      <div className="mt-16 py-8 border-t border-border text-center">
-        <p className="text-sm text-text-tertiary">
-          Comment system (Cusdis) is not configured yet.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <section className="mt-16 pt-8 border-t border-border">
+    <section className="mt-16 pt-8 border-t border-border min-h-[200px]">
       <h3 className="text-2xl font-bold text-text-primary mb-8">
         {CONFIG.site.locale === "ko" ? "댓글" : "Comments"}
       </h3>
@@ -55,7 +45,7 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
 
       <Script
         src="https://cusdis.com/js/cusdis.es.js"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         onLoad={() => {
           // @ts-ignore
           if (window.renderCusdis) {
