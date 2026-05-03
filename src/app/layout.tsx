@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { Profile } from "@/components/Profile";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryList } from "@/components/CategoryList";
@@ -65,10 +64,9 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-foreground">
-        <NextAuthProvider>
-          <Analytics />
-          <ThemeProvider>
-            <div className="max-w-[var(--max-content-width)] mx-auto px-4 py-6 md:py-8">
+        <Analytics />
+        <ThemeProvider>
+          <div className="max-w-[var(--max-content-width)] mx-auto px-4 py-6 md:py-8">
             {/* ─── Mobile Layout ──────────────────────────────── */}
             <div className="md:hidden flex flex-col gap-4 relative">
               {/* Theme Toggle (Mobile Top Right) */}
