@@ -17,7 +17,7 @@ export default function TerminalLayout({ children }: TerminalLayoutProps) {
         <ThemeToggle />
       </div>
 
-      <div className="flex-1 flex flex-col w-full h-full">
+      <div className="flex-1 flex flex-col w-full h-full px-4 md:px-8">
         {children}
       </div>
     </div>
