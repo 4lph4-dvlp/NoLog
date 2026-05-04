@@ -110,4 +110,4 @@ NoLog supports customizable website templates to change your blog's look and fee
 - **Default**: A clean, minimalist feed-based layout optimized for reading.
 - **Terminal**: A retro-style, command-line interface experience.
 
-You can learn how to create and customize your own templates in the [Template Creation Guide](docs/TEMPLATE_GUIDE.md).
+You can learn how to create and customize your own templates in the [Template Creation Guide](apps/web/docs/TEMPLATE_GUIDE.md).
