@@ -124,7 +124,12 @@ export class NologClient {
     this.databaseId = options.databaseId;
     this.fetchOptions = options.fetchOptions;
     
-    this.notion = new Client({ auth: this.token });
+    this.notion = new Client({
+      auth: this.token,
+      fetch: this.fetchOptions ? (url, init) => {
+        return fetch(url, { ...init, ...this.fetchOptions });
+      } : undefined
+    });
   }
 
   private getNotionHeaders(): HeadersInit {
