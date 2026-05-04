@@ -16,14 +16,13 @@ interface DefaultLayoutProps {
  */
 export default function DefaultLayout({ children, categories }: DefaultLayoutProps) {
   return (
-    <>
+    <div className="relative max-w-[var(--max-content-width)] mx-auto px-4 pt-16 pb-6 md:pt-16 md:pb-8">
       {/* Global Theme Toggle (Top Right) */}
-      <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50">
+      <div className="absolute top-4 right-4 md:top-6 md:right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="max-w-[var(--max-content-width)] mx-auto px-4 pt-16 pb-6 md:pt-16 md:pb-8">
-        {/* ─── Mobile Layout ──────────────────────────────── */}
+      {/* ─── Mobile Layout ──────────────────────────────── */}
         <div className="md:hidden flex flex-col gap-4 relative">
           {/* 1. Profile */}
           <Profile />
@@ -54,6 +53,5 @@ export default function DefaultLayout({ children, categories }: DefaultLayoutPro
           </aside>
         </div>
       </div>
-    </>
   );
 }
