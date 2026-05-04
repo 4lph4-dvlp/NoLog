@@ -22,7 +22,7 @@ export default function DefaultLayout({ children, categories }: DefaultLayoutPro
         <ThemeToggle />
       </div>
 
-      <div className="max-w-[var(--max-content-width)] mx-auto px-4 py-6 md:py-8">
+      <div className="max-w-[var(--max-content-width)] mx-auto px-4 pt-16 pb-6 md:pt-16 md:pb-8">
         {/* ─── Mobile Layout ──────────────────────────────── */}
         <div className="md:hidden flex flex-col gap-4 relative">
           {/* 1. Profile */}
