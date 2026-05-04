@@ -1,10 +1,23 @@
 # NoLog
 
+[![npm version](https://img.shields.io/npm/v/@4lph4/nolog-core.svg?style=flat-square)](https://www.npmjs.com/package/@4lph4/nolog-core)
+
 [English Version](./README.md)
 
 NoLog는 Notion 데이터베이스를 Vercel에서 호스팅되는 블로그로 변환하는 프로젝트입니다. GitHub 저장소를 fork해서 Vercel에 배포하고, 실제 게시글 운영은 Notion 데이터베이스만으로 할 수 있도록 설계되어 있습니다.
 
 이 프로젝트는 [morethan-log](https://github.com/morethanmin/morethan-log)를 참고해 제작되었습니다.
+
+## 코어 라이브러리 (SDK)
+
+NoLog의 핵심적인 Notion 연동 로직은 독립된 NPM 라이브러리인 `@4lph4/nolog-core`로 분리되어 있습니다. 이를 통해 개발자는 NestJS, Express, React Native 등 다른 프레임워크에서도 NoLog 엔진을 활용할 수 있습니다.
+
+**설치 방법:**
+```bash
+npm install @4lph4/nolog-core
+```
+
+상세한 사용법은 [@4lph4/nolog-core 공식 문서](./packages/core/README_KR.md)를 참고해 주세요.
 
 ## 작동 방식
 
