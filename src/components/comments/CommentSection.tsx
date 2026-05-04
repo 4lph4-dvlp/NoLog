@@ -289,9 +289,14 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   if (!mounted) {
     return (
       <section className="mt-16 pt-8 border-t border-border">
-        <h3 className="text-2xl font-bold text-text-primary mb-8">
+        <h3 className="text-2xl font-bold text-text-primary mb-2">
           {CONFIG.site.locale === "ko" ? "댓글" : "Comments"}
         </h3>
+        <p className="text-sm text-text-secondary mb-6">
+          {CONFIG.site.locale === "ko"
+            ? "댓글은 관리자의 검토 후 등록이 되니 잠시 기다려 주세요."
+            : "Comments will be published after administrator review. Please wait."}
+        </p>
         <div className="w-full min-h-[200px]" />
       </section>
     );
@@ -299,9 +304,14 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
 
   return (
     <section className="mt-16 pt-8 border-t border-border">
-      <h3 className="text-2xl font-bold text-text-primary mb-8">
+      <h3 className="text-2xl font-bold text-text-primary mb-2">
         {CONFIG.site.locale === "ko" ? "댓글" : "Comments"}
       </h3>
+      <p className="text-sm text-text-secondary mb-6">
+        {CONFIG.site.locale === "ko"
+          ? "댓글은 관리자의 검토 후 등록이 되니 잠시 기다려 주세요."
+          : "Comments will be published after administrator review. Please wait."}
+      </p>
 
       <div
         ref={containerRef}
