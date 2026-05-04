@@ -45,23 +45,19 @@ export default function DefaultPostPage({ post, recordMap }: DefaultPostPageProp
           </span>
           <time dateTime={post.createDate}>
             {CONFIG.site.locale === "ko" ? "작성:" : "Published:"}{" "}
-            {new Date(post.createDate).toLocaleString(CONFIG.site.locale, {
+            {new Date(post.createDate).toLocaleDateString(CONFIG.site.locale, {
               year: "numeric",
               month: "long",
               day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
             })}
           </time>
           {post.editDate && post.editDate !== post.createDate && (
             <time dateTime={post.editDate}>
               {CONFIG.site.locale === "ko" ? "수정:" : "Updated:"}{" "}
-              {new Date(post.editDate).toLocaleString(CONFIG.site.locale, {
+              {new Date(post.editDate).toLocaleDateString(CONFIG.site.locale, {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
               })}
             </time>
           )}
