@@ -8,7 +8,7 @@ export const CONFIG = {
    * Active template name.
    * Currently available: "default", "terminal"
    */
-  template: "terminal",
+  template: "default",
 
   /** Blog metadata */
   site: {
