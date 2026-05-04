@@ -1,10 +1,23 @@
 # NoLog
 
+[![npm version](https://img.shields.io/npm/v/@4lph4/nolog-core.svg?style=flat-square)](https://www.npmjs.com/package/@4lph4/nolog-core)
+
 [Korean Version](./README_KR.md)
 
 NoLog turns a Notion database into a Vercel-hosted blog. The project is meant to be forked from GitHub, deployed on Vercel, and operated primarily from Notion: write in Notion, publish to the web.
 
 This service is inspired by the [morethan-log](https://github.com/morethanmin/morethan-log) project.
+
+## Core Library (SDK)
+
+NoLog's core Notion integration logic is separated into an independent npm library: `@4lph4/nolog-core`. This allows developers to use the NoLog engine in other frameworks like NestJS, Express, or React Native.
+
+**Installation:**
+```bash
+npm install @4lph4/nolog-core
+```
+
+For detailed usage instructions, please refer to the [@4lph4/nolog-core Documentation](./packages/core/README.md).
 
 ## How It Works
 
