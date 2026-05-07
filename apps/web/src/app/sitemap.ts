@@ -1,6 +1,7 @@
 import { CONFIG } from "@/site.config";
-import { getPosts } from "@/lib/notion";
+import { getPosts, getCategories } from "@/lib/notion";
 import type { MetadataRoute } from "next";
+import type { Post } from "@4lph4/nolog-core";
 
 /**
  * Dynamic sitemap.xml — lists all public posts for search engine discovery.
@@ -14,11 +15,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [];
   }
 
-  let posts: { id: string; editDate: string }[] = [];
+  let posts: Post[] = [];
+  let categories: string[] = [];
   try {
-    posts = await getPosts();
+    const results = await Promise.all([getPosts(), getCategories()]);
+    posts = results[0];
+    categories = results[1];
   } catch {
     posts = [];
+    categories = [];
   }
 
   const postEntries: MetadataRoute.Sitemap = posts.map((post) => ({
@@ -28,6 +33,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
+    url: `${siteUrl}/category/${category.toLowerCase().replace(/\s+/g, "-")}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.6,
+  }));
+
   return [
     {
       url: siteUrl,
@@ -35,6 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 1.0,
     },
+    ...categoryEntries,
     ...postEntries,
   ];
 }
