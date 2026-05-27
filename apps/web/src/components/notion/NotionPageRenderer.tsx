@@ -9,8 +9,10 @@ import type { ExtendedRecordMap } from "notion-types";
 import "react-notion-x/src/styles.css";
 
 // Dynamically import heavy third-party components (code, collection, equation, modal)
+// Uses custom NotionCode wrapper that renders Mermaid blocks as diagrams
+// and falls back to react-notion-x's Code for all other languages.
 const Code = dynamic(
-  () => import("react-notion-x/third-party/code").then((m) => m.Code),
+  () => import("./NotionCode").then((m) => m.NotionCode),
   { ssr: false }
 );
 
