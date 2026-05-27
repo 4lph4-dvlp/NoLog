@@ -7,6 +7,8 @@ import type { ExtendedRecordMap } from "notion-types";
 
 // Core styles from react-notion-x
 import "react-notion-x/src/styles.css";
+// PrismJS theme for code highlighting
+import "prismjs/themes/prism-tomorrow.css";
 
 // Dynamically import heavy third-party components (code, collection, equation, modal)
 // Uses custom NotionCode wrapper that renders Mermaid blocks as diagrams

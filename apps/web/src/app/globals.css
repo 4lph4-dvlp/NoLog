@@ -287,6 +287,8 @@ html.transition-colors *::after {
   border-radius: var(--radius-md);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.875rem;
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 
 /* Inline code */
@@ -297,6 +299,8 @@ html.transition-colors *::after {
   border-radius: var(--radius-sm);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.85em;
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 
 /* Bookmark */
@@ -466,30 +470,18 @@ html.transition-colors *::after {
   overflow: auto;
   min-width: 0;
   width: 100%;
+  position: relative;
+}
+
+.mermaid-block__code-pane .notion-code {
+  position: relative !important;
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 
 .mermaid-block__content--split .mermaid-block__code-pane {
   border-right: 1px solid var(--border);
   max-width: 50%;
-}
-
-.mermaid-block__pre {
-  margin: 0;
-  padding: 16px;
-  background: transparent;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: var(--text-primary);
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-x: auto;
-}
-
-.mermaid-block__pre code {
-  font-family: inherit;
-  background: none;
-  padding: 0;
 }
 
 /* Preview pane */
