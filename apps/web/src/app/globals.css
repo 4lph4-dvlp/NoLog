@@ -389,6 +389,7 @@ html.transition-colors *::after {
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--surface);
+  width: 100%;
 }
 
 /* Toolbar — matches Notion: language label left, mode switcher right */
@@ -464,6 +465,7 @@ html.transition-colors *::after {
   flex: 1;
   overflow: auto;
   min-width: 0;
+  width: 100%;
 }
 
 .mermaid-block__content--split .mermaid-block__code-pane {
@@ -498,6 +500,7 @@ html.transition-colors *::after {
   justify-content: center;
   padding: 24px 16px;
   min-width: 0;
+  width: 100%;
   overflow-x: auto;
 }
 
@@ -509,8 +512,9 @@ html.transition-colors *::after {
 }
 
 .mermaid-block__svg-wrapper svg {
-  max-width: 100%;
+  width: 100%;
   height: auto;
+  max-height: 80vh;
 }
 
 /* Loading state */
