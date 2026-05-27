@@ -291,23 +291,23 @@ html.transition-colors *::after {
   font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 
-/* Light mode specific syntax highlighting overrides for readability */
+/* Light mode specific syntax highlighting overrides for readability (Tomorrow Light scheme) */
 html:not(.dark) .notion-code,
 html:not(.dark) .notion-code code,
 html:not(.dark) .notion-code span {
-  color: var(--text-primary);
+  color: #4d4d4c; /* Tomorrow Light Foreground */
 }
 
 html:not(.dark) .notion-code .token.comment,
 html:not(.dark) .notion-code .token.prolog,
 html:not(.dark) .notion-code .token.doctype,
 html:not(.dark) .notion-code .token.cdata {
-  color: var(--text-secondary);
+  color: #8e908c; /* Tomorrow Light Comment */
   font-style: italic;
 }
 
 html:not(.dark) .notion-code .token.punctuation {
-  color: #5c6e74;
+  color: #4d4d4c; /* Tomorrow Light Foreground */
 }
 
 html:not(.dark) .notion-code .token.namespace {
@@ -321,8 +321,7 @@ html:not(.dark) .notion-code .token.number,
 html:not(.dark) .notion-code .token.constant,
 html:not(.dark) .notion-code .token.symbol,
 html:not(.dark) .notion-code .token.deleted {
-  color: #9c27b0;
-  font-weight: 500;
+  color: #f5871f; /* Tomorrow Light Orange */
 }
 
 html:not(.dark) .notion-code .token.selector,
@@ -331,7 +330,7 @@ html:not(.dark) .notion-code .token.string,
 html:not(.dark) .notion-code .token.char,
 html:not(.dark) .notion-code .token.builtin,
 html:not(.dark) .notion-code .token.inserted {
-  color: #2e7d32;
+  color: #718c00; /* Tomorrow Light Green */
 }
 
 html:not(.dark) .notion-code .token.operator,
@@ -339,25 +338,25 @@ html:not(.dark) .notion-code .token.entity,
 html:not(.dark) .notion-code .token.url,
 html:not(.dark) .notion-code .language-css .token.string,
 html:not(.dark) .notion-code .style .token.string {
-  color: #a71d5d;
+  color: #3e999f; /* Tomorrow Light Aqua */
 }
 
 html:not(.dark) .notion-code .token.atrule,
 html:not(.dark) .notion-code .token.attr-value,
 html:not(.dark) .notion-code .token.keyword,
 html:not(.dark) .notion-code .token.class-name {
-  color: #d32f2f;
+  color: #8959a8; /* Tomorrow Light Purple */
   font-weight: 600;
 }
 
 html:not(.dark) .notion-code .token.function {
-  color: #1976d2;
+  color: #4271ae; /* Tomorrow Light Blue */
 }
 
 html:not(.dark) .notion-code .token.regex,
 html:not(.dark) .notion-code .token.important,
 html:not(.dark) .notion-code .token.variable {
-  color: #e65100;
+  color: #eab700; /* Tomorrow Light Yellow */
 }
 
 /* Inline code */
