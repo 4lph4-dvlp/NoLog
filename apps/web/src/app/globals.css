@@ -291,6 +291,75 @@ html.transition-colors *::after {
   font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 
+/* Light mode specific syntax highlighting overrides for readability */
+html:not(.dark) .notion-code,
+html:not(.dark) .notion-code code,
+html:not(.dark) .notion-code span {
+  color: var(--text-primary);
+}
+
+html:not(.dark) .notion-code .token.comment,
+html:not(.dark) .notion-code .token.prolog,
+html:not(.dark) .notion-code .token.doctype,
+html:not(.dark) .notion-code .token.cdata {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+html:not(.dark) .notion-code .token.punctuation {
+  color: #5c6e74;
+}
+
+html:not(.dark) .notion-code .token.namespace {
+  opacity: .7;
+}
+
+html:not(.dark) .notion-code .token.property,
+html:not(.dark) .notion-code .token.tag,
+html:not(.dark) .notion-code .token.boolean,
+html:not(.dark) .notion-code .token.number,
+html:not(.dark) .notion-code .token.constant,
+html:not(.dark) .notion-code .token.symbol,
+html:not(.dark) .notion-code .token.deleted {
+  color: #9c27b0;
+  font-weight: 500;
+}
+
+html:not(.dark) .notion-code .token.selector,
+html:not(.dark) .notion-code .token.attr-name,
+html:not(.dark) .notion-code .token.string,
+html:not(.dark) .notion-code .token.char,
+html:not(.dark) .notion-code .token.builtin,
+html:not(.dark) .notion-code .token.inserted {
+  color: #2e7d32;
+}
+
+html:not(.dark) .notion-code .token.operator,
+html:not(.dark) .notion-code .token.entity,
+html:not(.dark) .notion-code .token.url,
+html:not(.dark) .notion-code .language-css .token.string,
+html:not(.dark) .notion-code .style .token.string {
+  color: #a71d5d;
+}
+
+html:not(.dark) .notion-code .token.atrule,
+html:not(.dark) .notion-code .token.attr-value,
+html:not(.dark) .notion-code .token.keyword,
+html:not(.dark) .notion-code .token.class-name {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+html:not(.dark) .notion-code .token.function {
+  color: #1976d2;
+}
+
+html:not(.dark) .notion-code .token.regex,
+html:not(.dark) .notion-code .token.important,
+html:not(.dark) .notion-code .token.variable {
+  color: #e65100;
+}
+
 /* Inline code */
 .notion-content-wrapper .notion-inline-code {
   background: var(--surface-active);
