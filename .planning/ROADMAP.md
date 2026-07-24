@@ -35,9 +35,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `markEmailed(pageId)` issues the correct Notion `checkbox` PATCH body shape (verified directly against Notion's current API reference, not assumed) and the change is visible on a subsequent read.
   4. When the Notion integration lacks "Update content" capability, `markEmailed` logs a distinguishable 403-specific message rather than a generic error, confirmed by temporarily revoking that capability and observing the log output.
 
-**Plans**: 1/1 plans executed
+**Plans**: 2 plans (1 executed, 1 gap-closure pending)
 
 - [x] 01-01-PLAN.md — Extend NologClient: getUnemailedPublicPosts() + markEmailed() (tracer happy path) and typed fail-loud errors NotionCapabilityError/MissingEmailedPropertyError (D-01/D-03)
+- [ ] 01-02-PLAN.md — Gap closure (CR-01): correct both getPosts() and getUnemailedPublicPosts() query filters from lowercase "status" to canonical "Status"
 
 ### Phase 2: Backfill Script
 
