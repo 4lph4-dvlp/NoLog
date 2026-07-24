@@ -31,7 +31,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `getUnemailedPublicPosts()` returns only posts where `status === "public"` and `Emailed` is unchecked, verified against a Notion database containing a mix of emailed, unemailed, and private posts.
   3. `markEmailed(pageId)` issues the correct Notion `checkbox` PATCH body shape (verified directly against Notion's current API reference, not assumed) and the change is visible on a subsequent read.
   4. When the Notion integration lacks "Update content" capability, `markEmailed` logs a distinguishable 403-specific message rather than a generic error, confirmed by temporarily revoking that capability and observing the log output.
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 01-01-PLAN.md — Extend NologClient: getUnemailedPublicPosts() + markEmailed() (tracer happy path) and typed fail-loud errors NotionCapabilityError/MissingEmailedPropertyError (D-01/D-03)
 
 ### Phase 2: Backfill Script
 **Goal**: Every pre-existing public post can be marked `Emailed` in one throttled, resumable run, so enabling the notify path never blasts a fork's entire back catalog on its first cron tick.
@@ -101,7 +102,7 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Notion Data Layer | 0/TBD | Not started | - |
+| 1. Notion Data Layer | 0/1 | Not started | - |
 | 2. Backfill Script | 0/TBD | Not started | - |
 | 3. Subscribe Path | 0/TBD | Not started | - |
 | 4. Notify Route | 0/TBD | Not started | - |
