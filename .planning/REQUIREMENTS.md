@@ -23,10 +23,11 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Notification (NOTIFY)
 
-- [ ] **NOTIFY-01**: When a Notion post's `Status` flips to `public`, all current subscribers receive an email with title, summary, link, and OG-image thumbnail within ~24h via the daily cron
+- [ ] **NOTIFY-01**: When one or more Notion posts flip `Status` to `public`, current subscribers receive **a single digest email per cron run** listing every newly-public post found in that run (title, summary, link, OG-image thumbnail per post), within ~24h via the daily cron
 - [ ] **NOTIFY-02**: Every notification email includes a one-click unsubscribe link, a forker-configurable physical mailing address, and a "why you're receiving this" line
-- [ ] **NOTIFY-03**: The notify route sends via Resend's Broadcast API (not a per-subscriber send loop), so unsubscribe handling and RFC 8058 compliance are automatic
-- [ ] **NOTIFY-04**: A failure sending or marking one post never blocks notification of other posts in the same run (per-post isolation)
+- [ ] **NOTIFY-03**: The notify route sends via Resend's Broadcast API (one broadcast per cron run, not a per-subscriber send loop), so unsubscribe handling and RFC 8058 compliance are automatic
+- [ ] **NOTIFY-04**: A problem building one post's section of the digest doesn't prevent the other posts from that run being included and sent (per-post isolation moves to the content-assembly stage, since there's now one email per run rather than one per post)
+- [ ] **NOTIFY-05**: Only posts successfully included in a sent digest are marked `Emailed`; if the whole send fails, no posts in that run are marked, so they're picked up again by the next run
 
 ### Access Control (SEC)
 
@@ -52,8 +53,9 @@ Deferred to future release. Tracked in `TODOS.md`, not in the current roadmap.
 
 - **NOTF-01**: RSS feed (`/feed.xml`) as a second, zero-infra notification channel
 - **NOTF-02**: On-site "new post" indicator/badge for return visitors
-- **NOTF-03**: Batch same-day multiple publishes into one digest email
-- **NOTF-04**: Lightweight non-blocking "you were just subscribed" notice — a cheap backstop for the no-confirmation-signup risk, conditional on real abuse reports actually appearing
+- **NOTF-03**: Lightweight non-blocking "you were just subscribed" notice — a cheap backstop for the no-confirmation-signup risk, conditional on real abuse reports actually appearing
+
+> Note: same-day digest batching previously occupied the NOTF-03 slot (now reused above for the signup-notice item) but was pulled into v1 scope during roadmap review (2026-07-24) — see NOTIFY-01/04/05 above.
 
 ## Out of Scope
 
@@ -67,7 +69,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | Double opt-in / confirmation-click gate before signup | Already decided against as part of "keep it minimal." The abuse risk is real but bounded at this project's actual scale (≤1 email/day, one-click unsubscribe from message one); mitigated instead via honeypot + rate limiting + enumeration-safe responses. |
 | CAPTCHA on the subscribe form | Disproportionate friction (accessibility, mobile UX, third-party script overhead) for a low-traffic personal/small-team blog's actual bot-abuse volume. |
 | Preference center (topics, frequency, digest vs. per-post) | Only one email type exists — nothing to preference between. Pure premature complexity. |
-| Rich HTML digest / multi-post roundup template | Conflicts with "minimal" core value and presupposes a batching model (see NOTF-03) that hasn't been built. |
+| Rich HTML/richly-designed digest template (theming, multi-column layout, etc.) | Conflicts with "minimal" core value — NOTIFY-01's plain per-post-section digest format is the ceiling for v1, not a stepping stone to a fancier layout. |
 | Hardening pre-existing fail-open patterns found during codebase mapping (`NOTION_TOKEN`/`NOTION_DATABASE_ID` empty-string defaults, silent catch-alls, pagination gap) | Pre-existing and unrelated to this feature. Tracked in `TODOS.md` for a future, separate pass. |
 | Adding a test framework to the repo | Zero test infrastructure exists today; a separate, larger undertaking than this feature. Tracked in `TODOS.md`. |
 
@@ -89,8 +91,9 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | NOTIFY-02 | Phase 4: Notify Route | Pending |
 | NOTIFY-03 | Phase 4: Notify Route | Pending |
 | NOTIFY-04 | Phase 4: Notify Route | Pending |
+| NOTIFY-05 | Phase 4: Notify Route | Pending |
 | SEC-01 | Phase 4: Notify Route | Pending |
-| SEC-02 | Phase 3: Subscribe Path / Phase 4: Notify Route | Pending |
+| SEC-02 | Phase 4: Notify Route | Pending |
 | SEC-03 | Phase 3: Subscribe Path | Pending |
 | OPS-01 | Phase 5: Production Cutover | Pending |
 | DOCS-01 | Phase 6: Documentation | Pending |
@@ -98,10 +101,10 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | DOCS-03 | Phase 6: Documentation | Pending |
 
 **Coverage:**
-- v1 requirements: 19 total
-- Mapped to phases: 19
+- v1 requirements: 20 total
+- Mapped to phases: 20
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-24*
-*Last updated: 2026-07-24 after initial definition*
+*Last updated: 2026-07-24 after pulling same-day digest batching into v1 scope (roadmap review)*
