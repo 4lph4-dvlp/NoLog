@@ -108,11 +108,7 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const currentTheme: CusdisTheme = resolvedTheme === "dark" ? "dark" : "light";
-
-  // Use environment variable for the App ID as requested
-  const appId =
-    process.env.NEXT_PUBLIC_CUSDIS_APP_ID ||
-    "592138c2-445c-4b38-bd54-abfa2bb16f65";
+  const appId = process.env.NEXT_PUBLIC_CUSDIS_APP_ID;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
@@ -284,6 +280,12 @@ export function CommentSection({ postId, postTitle }: CommentSectionProps) {
 
     window.CUSDIS?.setTheme?.(currentTheme);
   }, [currentTheme, mounted]);
+
+  // No app ID configured for this fork — stay invisible rather than fall back
+  // to a shared default (that would leak comments into someone else's Cusdis project).
+  if (!appId) {
+    return null;
+  }
 
   // Avoid hydration mismatch by not rendering the theme-dependent DOM on the server
   if (!mounted) {

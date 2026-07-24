@@ -81,7 +81,7 @@ NOTION_DATABASE_ID="your_notion_database_id"
 NEXT_PUBLIC_CUSDIS_APP_ID="your_cusdis_app_id"
 ```
 
-`NEXT_PUBLIC_CUSDIS_APP_ID` is only needed if you want to use your own Cusdis comment project.
+`NEXT_PUBLIC_CUSDIS_APP_ID` is optional. Leave it unset to disable the comment section entirely; set it to enable comments with your own Cusdis project.
 
 ## Local Development
 

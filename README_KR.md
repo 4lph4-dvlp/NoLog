@@ -81,7 +81,7 @@ NOTION_DATABASE_ID="your_notion_database_id"
 NEXT_PUBLIC_CUSDIS_APP_ID="your_cusdis_app_id"
 ```
 
-`NEXT_PUBLIC_CUSDIS_APP_ID`는 본인의 Cusdis 댓글 프로젝트를 사용할 때만 필요합니다.
+`NEXT_PUBLIC_CUSDIS_APP_ID`는 선택 사항입니다. 설정하지 않으면 댓글 섹션이 표시되지 않으며, 본인의 Cusdis 프로젝트를 사용하려면 값을 설정하세요.
 
 ## 로컬 개발
 
