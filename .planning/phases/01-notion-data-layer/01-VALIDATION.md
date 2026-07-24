@@ -3,10 +3,11 @@ phase: 1
 slug: notion-data-layer
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
+status: validated
 nyquist_compliant: false
 wave_0_complete: false
 created: 2026-07-24
+validated: 2026-07-25
 ---
 
 # Phase 1 — Validation Strategy
@@ -40,11 +41,14 @@ created: 2026-07-24
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD (set by planner) | TBD | TBD | DATA-01 | — | `getUnemailedPublicPosts()` returns only `status=public AND Emailed=false` posts | manual | none — mark-then-requery script (RESEARCH.md Code Examples) | ❌ W0 | ⬜ pending |
-| TBD (set by planner) | TBD | TBD | DATA-02 | — | `markEmailed(pageId)` issues correct checkbox PATCH body; change visible on subsequent read | manual | same mark-then-requery script as DATA-01 | ❌ W0 | ⬜ pending |
-| TBD (set by planner) | TBD | TBD | DATA-04 | T-1-01 | `markEmailed` throws `NotionCapabilityError` (instanceof-distinguishable) on 403 | manual | manual 403 test script (RESEARCH.md Code Examples) | ❌ W0 | ⬜ pending |
+| Task 1 | 01 | 1 | DATA-01 | — | `getUnemailedPublicPosts()` returns only `status=public AND Emailed=false` posts | manual | none — `npx tsx packages/core/scripts/verify-phase-1.ts` (mark-then-requery) | ✅ | ⬜ pending (human) |
+| Task 1 | 01 | 1 | DATA-02 | — | `markEmailed(pageId)` issues correct checkbox PATCH body; change visible on subsequent read | manual | same mark-then-requery script as DATA-01 | ✅ | ⬜ pending (human) |
+| Task 2 | 01 | 1 | DATA-04 | T-1-01 | `markEmailed` throws `NotionCapabilityError` (instanceof-distinguishable) on 403 | manual | none — `npx tsx packages/core/scripts/verify-403.ts` | ✅ | ⬜ pending (human) |
+| Task 2 | 01 | 1 | D-01 | — | Missing `Emailed` schema property throws distinguishable `MissingEmailedPropertyError` | manual | same 403 script + manual schema-removal test (detection regex itself unvalidated — see 01-VERIFICATION.md) | ✅ | ⬜ pending (human) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+**Why these stay manual (not a coverage gap):** REQUIREMENTS.md's Out of Scope table explicitly excludes "Adding a test framework to the repo" (no test infra exists; a separate, larger undertaking, tracked in TODOS.md). All three scripts above exist, are correctly targeted at the requirement's behavior, and are ready to run — they are gated on a human supplying `NOTION_TOKEN`/`NOTION_DATABASE_ID` and live Developer Portal access, not on missing implementation or missing test code.
 
 ---
 
@@ -66,11 +70,21 @@ created: 2026-07-24
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies — N/A here; all tasks route to the manual verifications above instead
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify — N/A (phase is manual-only by design, justified above)
-- [ ] Wave 0 covers all MISSING references — N/A, no Wave 0 needed
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies — N/A here; all tasks route to the manual verifications above instead
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify — N/A (phase is manual-only by design, justified above)
+- [x] Wave 0 covers all MISSING references — N/A, no Wave 0 needed
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
+- [ ] `nyquist_compliant: true` set in frontmatter — left `false` intentionally; coverage is manual-only by explicit project decision (REQUIREMENTS.md Out of Scope), not an unfilled gap
 
-**Approval:** pending
+**Approval:** Validated as manual-only (validate-phase audit, 2026-07-25). See Validation Audit below.
+
+## Validation Audit 2026-07-25
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 4 (DATA-01, DATA-02, DATA-04, D-01) |
+| Resolved | 0 |
+| Escalated | 0 |
+
+No automated tests were generated. All 4 gaps were classified manual-only-by-design (test framework installation is explicit Out of Scope in REQUIREMENTS.md) and left to the pre-existing manual scripts (`verify-phase-1.ts`, `verify-403.ts`). Per-Task Verification Map above updated with real Task IDs (previously `TBD`) and confirmed both script files exist on disk.
