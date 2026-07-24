@@ -2,18 +2,14 @@
 phase: 01-notion-data-layer
 reviewed: 2026-07-25T00:00:00Z
 depth: standard
-files_reviewed: 5
+files_reviewed: 1
 files_reviewed_list:
-  - apps/web/src/types/index.ts
-  - packages/core/scripts/verify-403.ts
-  - packages/core/scripts/verify-phase-1.ts
   - packages/core/src/client.ts
-  - packages/core/src/types.ts
 findings:
   critical: 1
-  warning: 4
-  info: 4
-  total: 9
+  warning: 6
+  info: 3
+  total: 10
 status: issues_found
 ---
 
@@ -21,116 +17,91 @@ status: issues_found
 
 **Reviewed:** 2026-07-25T00:00:00Z
 **Depth:** standard
-**Files Reviewed:** 5
+**Files Reviewed:** 1
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the Notion data-layer core client (`packages/core/src/client.ts`, `types.ts`), the app-side `Post` type re-declaration, and the two manual verification scripts. The core mapper (`mapPageToPost`) and error classes (`NotionCapabilityError`, `MissingEmailedPropertyError`) are well documented and internally consistent. However, `client.ts` contains one internal contradiction between the property-name convention used everywhere else in the file and the property name actually sent in the two Notion database query filters — this breaks the primary read path (`getPosts()`) and the notify-pipeline read path (`getUnemailedPublicPosts()`) for any workspace that follows the documented/canonical schema. There are also several robustness and maintainability gaps: inconsistent error-handling style across the three public read methods, fragile string-matching used to detect a specific Notion error condition, and a byte-for-byte duplicated `Post` interface across two packages with no re-export.
+This is a fresh review of `packages/core/src/client.ts` after the gap-closure commit `71f81a5` ("fix(01-02): correct Notion status filter property key casing (CR-01)"), which changed exactly two string literals (`"status"` → `"Status"` in the `getPosts()` and `getUnemailedPublicPosts()` filter bodies). This review supersedes the prior `01-REVIEW.md` and is scoped to `client.ts` only, per the file list provided for this pass.
+
+**CR-01 (property-key casing defect) is CONFIRMED RESOLVED.** Verified via `git diff 6277535^..HEAD -- packages/core/src/client.ts`: both `getPosts()` (line 226) and `getUnemailedPublicPosts()` (line 259) now filter on `property: "Status"` (matching the actual Notion schema property name used everywhere else in the file, e.g. `getSelect(page, "Status", "status")`), rather than the previously-broken lowercase `"status"`, which would have caused the Notion API to 400 (property not found in schema) on the primary read path.
+
+Because this pass only touched two string literals, the four previously-flagged warnings (WR-01 through WR-04) were out of scope for the fix and are **all still present** in the current state of the file — re-verified below rather than silently dropped. This pass also surfaced one new Critical finding (unvalidated user input flowing directly into a Notion API request URL) and two additional warnings not previously called out.
 
 ## Critical Issues
 
-### CR-01: Query filters use the wrong property-name casing ("status" vs "Status"), breaking `getPosts()` and `getUnemailedPublicPosts()`
+### CR-01: Unvalidated, unencoded `pageId` interpolated directly into Notion API URLs (path traversal / endpoint redirection)
 
-**File:** `packages/core/src/client.ts:226` and `packages/core/src/client.ts:259`
+**File:** `packages/core/src/client.ts:292`, `packages/core/src/client.ts:344`
 
-**Issue:** Everywhere the codebase extracts the publication-status property, the *primary* (canonical) key checked is capitalized `"Status"`, with lowercase `"status"` used only as a legacy/typo fallback:
-
-```ts
-// client.ts:114 — mapPageToPost
-status: getSelect(page, "Status", "status"),
-```
-
-This mirrors the same primary/fallback pattern used for every other property (`"Summary"`/`"summery"`, `"Thumbnail"`/`"thumbnail"`, `"Category"`/`"category"`, `"Tag"`/`"tag"`, `"Author"`/`"author"`), and the doc comment on `Post.status` in `types.ts:34` explicitly calls it the `` `Status` `` property.
-
-However, the two Notion database **query filters** — which cannot fall back the way the client-side extractors can — hardcode only the lowercase variant:
+**Issue:** `getPost()` and `patchPage()` (invoked by `markEmailed()`) build request URLs by direct string interpolation of a caller-supplied ID, with no validation (e.g. UUID-shape check) and no `encodeURIComponent`:
 
 ```ts
-// client.ts:225-228 — getPosts()
-filter: {
-  property: "status",
-  select: { equals: "public" },
-},
+const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, { ... });   // line 292, getPost
+const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, { ... });   // line 344, patchPage
 ```
+
+`pageId` is not a trusted, internally-generated value on at least one live call path: `apps/web/src/app/post/[id]/page.tsx` reads the raw dynamic route segment `id` directly from the request URL and passes it straight through `getPost(id)` (`apps/web/src/lib/notion.ts:23-25`) into `nologClient.getPost(pageId)` with zero sanitization anywhere in between. A crafted value (e.g. containing `..` segments or an encoded slash) can, depending on how the URL constructor / upstream router normalizes the string, cause the resulting `fetch()` call to hit a different path on `api.notion.com` than intended, or inject unexpected query parameters — all while still carrying the site's real `Authorization` bearer token in the headers. This is a request-forgery-adjacent vulnerability: attacker-controlled input directly shapes the path of a privileged, token-bearing outbound API call, with no defense-in-depth validation at the client-library boundary.
+
+**Fix:** Validate the ID against Notion's expected shape before use, and/or encode every interpolated path segment:
 
 ```ts
-// client.ts:258-261 — getUnemailedPublicPosts()
-and: [
-  { property: "status", select: { equals: "public" } },
-  { property: "Emailed", checkbox: { equals: false } },
-],
+function assertNotionId(id: string): void {
+  if (!/^[0-9a-f-]{32,36}$/i.test(id)) {
+    throw new Error(`Invalid Notion ID: ${id}`);
+  }
+}
+
+public async getPost(pageId: string): Promise<Post | null> {
+  try {
+    assertNotionId(pageId);
+    const res = await fetch(`https://api.notion.com/v1/pages/${encodeURIComponent(pageId)}`, { ... });
+    ...
 ```
 
-Notion's `/v1/databases/{id}/query` filter `property` field must match the schema's property name **exactly** (case-sensitive) — there is no client-side fallback possible for a server-side filter. For any workspace that uses the canonical, documented property name `"Status"` (capital S — the name implied by every other part of this same file and by `types.ts`'s doc comment), both `getPosts()` and `getUnemailedPublicPosts()` will receive a 400 from Notion (`"Could not find property with name or id: status"`), which propagates as an uncaught `Error` out of `getPosts()` (no try/catch there at all — see WR-01) and, in `getUnemailedPublicPosts()`, gets swallowed by the `MissingEmailedPropertyError` regex check (which only tests for `/Emailed/i`, so it will *not* match and will rethrow the raw error — but still surfaces as the wrong condition entirely).
-
-This is the primary data-fetch path for the entire site (home page, category page, search page, notify pipeline). It is completely broken for any forker who names the property `Status` per the documented convention, while silently *appearing* to work for the mapper (since the mapper's fallback logic never gets exercised because the query itself throws before results ever reach `mapPageToPost`).
-
-**Fix:** Use the same primary key as the rest of the file (and add a fallback query if you want to support both casings, since Notion filters can't fallback in one request — but at minimum fix the primary case to match documented schema):
-
-```ts
-filter: {
-  property: "Status",
-  select: { equals: "public" },
-},
-```
-
-```ts
-and: [
-  { property: "Status", select: { equals: "public" } },
-  { property: "Emailed", checkbox: { equals: false } },
-],
-```
-
-If both `"Status"` and `"status"` need to be supported for legacy databases, this requires either a schema-detection step first (fetch the database schema and pick the actual key) or documenting that the property name must be exactly `"Status"` and removing the misleading fallback-implying pattern from `mapPageToPost`.
+Apply the same treatment in `patchPage()` (line 344), and consider it for `queryDatabase()`'s `databaseId` interpolation (line 200) too, even though that value currently originates from trusted server-side env config.
 
 ## Warnings
 
-### WR-01: Inconsistent error-handling style across the three public read methods
+### WR-01: Inconsistent error handling across methods — still present (carried over)
 
-**File:** `packages/core/src/client.ts:221-245` (`getPosts`), `packages/core/src/client.ts:253-288` (`getUnemailedPublicPosts`), `packages/core/src/client.ts:290-317` (`getPost`)
+**File:** `packages/core/src/client.ts:290-317` (`getPost`)
 
-**Issue:** The three public read methods handle failures three different ways:
-- `getPosts()` has no try/catch at all — any Notion/network error propagates as an unhandled exception to the caller.
-- `getUnemailedPublicPosts()` wraps the loop in try/catch, but only to special-case one error shape (`MissingEmailedPropertyError`), rethrowing everything else.
-- `getPost()` catches **all** errors (network failures, malformed JSON, 500s, timeouts) and uniformly returns `null`, which is indistinguishable from a genuine "page not found" — a caller cannot tell a transient Notion outage from a missing/unpublished page.
+**Issue:** `getPost()` wraps its entire body in a bare `try { ... } catch { return null; }` (line 314-316), collapsing every failure mode — network error, non-2xx status other than 404, malformed JSON, auth failure (401/403 from a bad `NOTION_TOKEN`) — into the same `null` result as a legitimate "page not found." Nothing is logged, which contradicts this repo's own documented logging convention (`console.error("[Context] message:", error)`). Meanwhile `getPosts()`/`getCategories()` let `queryDatabase()` errors propagate uncaught, and `patchPage()` throws typed errors (`NotionCapabilityError`, `MissingEmailedPropertyError`). Three different error-handling strategies coexist in the same class with no documented rationale. In practice, a misconfigured `NOTION_TOKEN` silently renders every post page as a 404 instead of surfacing a debuggable error.
 
-This makes the class's failure contract unpredictable for consumers (e.g. Next.js pages or the notify route) that need to decide whether to retry, log, or render an empty state.
-
-**Fix:** Pick one consistent contract, e.g.: all read methods return `[]`/`null` on any failure and log via a shared internal helper, or all read methods throw and let the caller (`apps/web/src/lib/notion.ts`) own the catch/fallback logic uniformly. Document the contract on the class.
-
-### WR-02: Fragile substring-matching used to detect `MissingEmailedPropertyError`
-
-**File:** `packages/core/src/client.ts:281-283` and `packages/core/src/client.ts:368`
-
-**Issue:** Both call sites detect "the `Emailed` property doesn't exist on this database" by regex-testing the raw Notion error body/message for `/Emailed/i` and `/propert/i`:
-
+**Fix:** Distinguish "not found" from other failures, and log unexpected failures before returning `null`:
 ```ts
-if (err instanceof Error && /Emailed/i.test(err.message) && /propert/i.test(err.message)) {
-  throw new MissingEmailedPropertyError(err.message);
+} catch (err) {
+  console.error(`[NologClient] getPost(${pageId}) failed:`, err);
+  return null;
 }
 ```
+Consider letting non-404 HTTP errors propagate (as `getPosts()` does) instead of collapsing them into `null`, so callers can distinguish "content missing" from "backend broken."
+
+### WR-02: Fragile substring-regex detection of "missing property" Notion errors — still present (carried over)
+
+**File:** `packages/core/src/client.ts:281-282`, `packages/core/src/client.ts:368`
+
+**Issue:** Both `getUnemailedPublicPosts()` and `patchPage()` classify a Notion error as "the `Emailed` property doesn't exist on the schema" purely via free-text matching:
 ```ts
-if (res.status === 400 && /Emailed/i.test(bodyText) && /propert/i.test(bodyText)) {
-  throw new MissingEmailedPropertyError(bodyText);
-}
+if (err instanceof Error && /Emailed/i.test(err.message) && /propert/i.test(err.message)) {   // line 281
 ```
-
-The code's own comments acknowledge this is "UNVERIFIED against live Notion behaviour" and must be validated before D-01 is "done." Shipping this without validation means: (1) if Notion's actual error wording differs even slightly, the specific, actionable `MissingEmailedPropertyError` never fires and callers get a generic, less-helpful `Error` instead; (2) conversely, an unrelated 400 error whose body happens to mention "Emailed" and "propert(y)" for a different reason would be mis-classified. There is no unit test enforcing this contract — only a manual script (`verify-403.ts`) that requires temporarily breaking a live Notion integration's capabilities, which is unlikely to be run routinely or in CI.
-
-**Fix:** Validate against a real Notion 400 response body for a missing-property PATCH, and either tighten the match to the exact documented error code/structure (Notion errors include a `code` field, e.g. `"validation_error"`, which is more stable than free-text matching) or add this as a permanent regression check that runs whenever `packages/core` changes.
-
-### WR-03: `Post` interface is duplicated byte-for-byte across two files with no re-export
-
-**File:** `apps/web/src/types/index.ts:1-38` and `packages/core/src/types.ts:1-38`
-
-**Issue:** `apps/web/src/types/index.ts` is an exact copy of `packages/core/src/types.ts` (confirmed via diff — zero differences). Since `apps/web` already depends on `@4lph4/nolog-core` (which exports `Post` via `packages/core/src/index.ts`), maintaining two independently-editable copies of the same interface means any future field addition/rename to `Post` (e.g. adding a new Notion property) must be manually mirrored in both files. If a developer updates one and forgets the other, both files will still compile (they're structurally independent interfaces with the same name), but the two `Post` types will silently drift, and the app's compile-time guarantees against the core package's actual return type disappear.
-
-**Fix:** Re-export instead of duplicating:
 ```ts
-export type { Post } from "@4lph4/nolog-core";
+if (res.status === 400 && /Emailed/i.test(bodyText) && /propert/i.test(bodyText)) {           // line 368
 ```
+The code's own comments (lines 279-280, 361-367) still acknowledge this is an **unverified** heuristic against real Notion API error text. This risks both false positives (e.g. "Could not set Emailed property: invalid checkbox value" would be misclassified as a missing-schema-property error) and false negatives if Notion's actual wording differs from what's assumed.
 
-### WR-04: `isPageObjectResponse` type guard doesn't check the Notion `object` discriminant
+**Fix:** As the code's own comments state, this needs verification against a live Notion workspace's actual 400 error shape (Notion errors typically carry a structured `code` field, e.g. `"validation_error"` — prefer matching that over free-text substrings).
+
+### WR-03: `Post` type still duplicated across packages — still present (cross-file, carried over)
+
+**File:** `packages/core/src/client.ts:3` (imports the canonical `Post` from `./types`)
+
+**Issue:** `client.ts`'s `Post` import depends on `packages/core/src/types.ts`, which remains byte-for-byte duplicated (not re-exported) in `apps/web/src/types/index.ts`. `apps/web/src/lib/notion.ts:3` already imports `Post` directly from `@4lph4/nolog-core`, making the parallel local copy in `apps/web/src/types/index.ts` redundant and free to silently drift from the type `client.ts` actually produces. Not a defect in `client.ts` itself, but the type this file exports has no single source of truth downstream.
+
+**Fix:** Replace the duplicate with a re-export: `export type { Post } from "@4lph4/nolog-core";` in `apps/web/src/types/index.ts`.
+
+### WR-04: `isPageObjectResponse()` type guard lacks the `object` discriminant — still present (carried over)
 
 **File:** `packages/core/src/client.ts:13-15`
 
@@ -140,7 +111,7 @@ function isPageObjectResponse(value: unknown): value is PageObjectResponse {
   return typeof value === "object" && value !== null && "properties" in value;
 }
 ```
-This only checks for a `properties` key, not Notion's actual page discriminant (`value.object === "page"`). Any object shape with a `properties` key (e.g. a database object, which also has a top-level `properties` field describing its schema) would pass this guard and be cast to `PageObjectResponse`, then flow into `mapPageToPost()`, which accesses `page.id`, `page.created_time`, `page.last_edited_time` — fields that wouldn't exist on a database object, producing `undefined` values silently rather than a clear type error.
+This only checks for a `properties` key, not Notion's actual page discriminant `object === "page"`. Any response shape carrying a `properties` key (e.g. a malformed/partial API response, or a different Notion object type that happens to expose `properties`) would pass this guard and flow into `mapPageToPost()`, which assumes a full `PageObjectResponse` (`page.id`, `page.created_time`, `page.last_edited_time`, etc.), risking `undefined` fields or a crash rather than a clean type-level rejection.
 
 **Fix:**
 ```ts
@@ -154,62 +125,65 @@ function isPageObjectResponse(value: unknown): value is PageObjectResponse {
 }
 ```
 
-## Info
+### WR-05: `fetchOptions` spread order can silently clobber auth headers
 
-### IN-01: Magic string `"public"` repeated across three call sites
+**File:** `packages/core/src/client.ts:179-182`, `packages/core/src/client.ts:205`, `packages/core/src/client.ts:294`, `packages/core/src/client.ts:348`
 
-**File:** `packages/core/src/client.ts:227`, `packages/core/src/client.ts:259`, `packages/core/src/client.ts:309`
-
-**Issue:** The literal `"public"` status value is repeated in `getPosts()`'s filter, `getUnemailedPublicPosts()`'s filter, and `getPost()`'s post-fetch guard (`if (post.status !== "public")`). If this value ever needs to change, three sites must be updated in lockstep.
-
-**Fix:** Extract a shared constant, e.g. `const PUBLIC_STATUS = "public";`, and reference it from all three sites.
-
-### IN-02: Verification scripts use non-null assertions on required env vars instead of a guard
-
-**File:** `packages/core/scripts/verify-403.ts:19-20`, `packages/core/scripts/verify-phase-1.ts:19-20`
-
-**Issue:** Both scripts do:
+**Issue:** In all four places `fetchOptions` is applied to a `fetch()` call, it is spread *last*:
 ```ts
-const client = new NologClient({
-  token: process.env.NOTION_TOKEN!,
-  databaseId: process.env.NOTION_DATABASE_ID!,
+const res = await fetch(url, {
+  method: "POST",
+  headers: this.getNotionHeaders(),
+  body: JSON.stringify(body),
+  ...this.fetchOptions,     // line 205 — shallow spread, no deep merge
 });
 ```
-If either env var is unset, the non-null assertion silences the type system, and the script proceeds with `token: undefined`, producing a confusing `Authorization: Bearer undefined` 401 deep inside the Notion client rather than a clear, immediate "missing env var" message for the developer running the script.
+Object spread does a shallow, top-level merge — if `this.fetchOptions` (typed as `RequestInit`, so `headers` is a legal key) ever included a `headers` field, it would fully replace `getNotionHeaders()`'s `Authorization`/`Notion-Version` headers rather than merge with them, silently breaking authentication on every request. The `NologClientOptions.fetchOptions` JSDoc ("Optional custom fetch options") does not warn callers away from passing `headers`, so this is a latent foot-gun in the public API contract — not currently triggered only because `apps/web/src/lib/notion.ts` happens to pass just `{ next: {...} }`.
 
-**Fix:**
+**Fix:** Merge headers explicitly instead of relying on spread order:
 ```ts
-const token = process.env.NOTION_TOKEN;
-const databaseId = process.env.NOTION_DATABASE_ID;
-if (!token || !databaseId) {
-  console.error("NOTION_TOKEN and NOTION_DATABASE_ID must be set.");
-  process.exit(1);
-}
+const res = await fetch(url, {
+  method: "POST",
+  ...this.fetchOptions,
+  headers: { ...this.getNotionHeaders(), ...(this.fetchOptions?.headers ?? {}) },
+  body: JSON.stringify(body),
+});
 ```
+Apply the same pattern to the SDK `fetch` override in the constructor (lines 179-182).
 
-### IN-03: `getTitle()` uses a different fallback pattern (3 keys, inline `||`) than every other extractor (2 keys, `key`/`fallbackKey` param)
+### WR-06: Duplicated pagination loop between `getPosts()` and `getUnemailedPublicPosts()`
+
+**File:** `packages/core/src/client.ts:234-242`, `packages/core/src/client.ts:269-277`
+
+**Issue:** Both methods implement the identical `do { queryDatabase(...); push(...results); cursor = next_cursor } while (cursor)` pagination pattern, differing only in the filter body and the presence of a try/catch in one. This duplication means any future pagination fix (e.g. a max-page safety cap, or a shared retry policy) must be applied twice, and the two copies have already begun to diverge (only one has the error-classification try/catch).
+
+**Fix:** Extract a shared private helper, e.g. `private async paginateQuery(filterBody): Promise<PageObjectResponse[]>`, and have both public methods call it.
+
+## Info
+
+### IN-01: `getTitle()` breaks from the extractor pattern used by every other property reader
 
 **File:** `packages/core/src/client.ts:28-34`
 
-**Issue:** `getTitle()` checks three property-name variants inline (`page.properties["Name"] || page.properties["title"] || page.properties["Title"]`), while every other extractor (`getRichText`, `getSelect`, `getMultiSelect`, `getFileUrl`, `getPeople`) uses a consistent `(page, key, fallbackKey?)` two-key pattern. This inconsistency makes the file harder to scan and reason about — a reader has to remember `getTitle` is the one exception.
+**Issue:** Every other extractor (`getRichText`, `getSelect`, `getMultiSelect`, `getFileUrl`, `getPeople`) takes a `(page, key, fallbackKey?)` signature, letting the caller decide the fallback key. `getTitle()` instead hardcodes three keys inline (`"Name" || "title" || "Title"`), inconsistent with the rest of the file and harder to reason about at a glance.
 
-**Fix:** Either extend the shared helper pattern to accept a second fallback key, or add a short comment explaining why `getTitle` needs three variants when nothing else does.
+**Fix:** Conform to the shared signature, e.g. call a helper with `("Name", "title")`, or add a short comment explaining why title alone needs a 3-way fallback.
 
-### IN-04: Custom error classes don't preserve the original Notion error as `cause`
+### IN-02: Duplicated magic number `page_size: 100`
 
-**File:** `packages/core/src/client.ts:128-155`
+**File:** `packages/core/src/client.ts:223`, `packages/core/src/client.ts:255`
 
-**Issue:** `NotionCapabilityError` and `MissingEmailedPropertyError` both construct a new message from the raw Notion response text but don't pass the original error/response text through as `cause` (e.g. `super(message, { cause: originalErr })`), which loses stack-trace/context linkage useful for debugging in production logs.
+**Issue:** The Notion max page size (100) is repeated as a bare literal in two query bodies.
 
-**Fix:**
-```ts
-export class NotionCapabilityError extends Error {
-  constructor(pageId: string, notionMessage: string) {
-    super(`...`, { cause: notionMessage });
-    this.name = "NotionCapabilityError";
-  }
-}
-```
+**Fix:** `const NOTION_MAX_PAGE_SIZE = 100;` near the existing `NOTION_VERSION` constant, referenced from both call sites.
+
+### IN-03: Trailing whitespace on blank lines
+
+**File:** `packages/core/src/client.ts:39`, `packages/core/src/client.ts:49`, `packages/core/src/client.ts:59`, `packages/core/src/client.ts:69`, `packages/core/src/client.ts:176`
+
+**Issue:** Blank lines after each fallback-key check (`getRichText`, `getSelect`, `getMultiSelect`, `getFileUrl`) and inside the constructor carry trailing spaces — cosmetic only, but may trip strict lint/formatter configs in CI.
+
+**Fix:** Strip trailing whitespace; consider an ESLint/Prettier rule to catch this automatically going forward.
 
 ---
 
