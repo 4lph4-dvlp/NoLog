@@ -9,10 +9,10 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Data Layer (DATA)
 
-- [x] **DATA-01**: `NologClient` can query all public posts not yet marked `Emailed`
-- [x] **DATA-02**: `NologClient` can mark a post as `Emailed` after a successful send
+- [ ] **DATA-01**: `NologClient` can query all public posts not yet marked `Emailed`
+- [ ] **DATA-02**: `NologClient` can mark a post as `Emailed` after a successful send
 - [ ] **DATA-03**: A one-time backfill script marks all pre-existing public posts as `Emailed` before the first production cron run — throttled to Notion's ~3 req/s rate limit and safely re-runnable if interrupted
-- [x] **DATA-04**: `markEmailed` distinguishes a 403 (missing Notion "Update content" capability) from other failures in its logs, rather than treating it as a generic error
+- [ ] **DATA-04**: `markEmailed` distinguishes a 403 (missing Notion "Update content" capability) from other failures in its logs, rather than treating it as a generic error
 
 ### Subscribe (SUB)
 
@@ -79,10 +79,10 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1: Notion Data Layer | Complete |
-| DATA-02 | Phase 1: Notion Data Layer | Complete |
+| DATA-01 | Phase 1: Notion Data Layer | Gaps Found |
+| DATA-02 | Phase 1: Notion Data Layer | Gaps Found |
 | DATA-03 | Phase 2: Backfill Script | Pending |
-| DATA-04 | Phase 1: Notion Data Layer | Complete |
+| DATA-04 | Phase 1: Notion Data Layer | Gaps Found |
 | SUB-01 | Phase 3: Subscribe Path | Pending |
 | SUB-02 | Phase 3: Subscribe Path | Pending |
 | SUB-03 | Phase 3: Subscribe Path | Pending |
