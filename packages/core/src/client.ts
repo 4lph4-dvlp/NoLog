@@ -116,6 +116,44 @@ export function mapPageToPost(page: PageObjectResponse): Post {
   };
 }
 
+// ─── Errors ─────────────────────────────────────────────────────────────────
+
+/**
+ * Thrown when the Notion integration lacks the "Update content" capability
+ * (Notion returns 403 for a write). Distinguishable via `instanceof` so a
+ * caller (e.g. Phase 4's notify route) can log this distinctly and avoid a
+ * duplicate-email storm on retry, rather than treating it like any other
+ * failure (D-03).
+ */
+export class NotionCapabilityError extends Error {
+  constructor(pageId: string, notionMessage: string) {
+    super(
+      `Notion write failed for page ${pageId}: integration lacks "Update content" ` +
+      `capability. Grant it in your Notion integration's Developer Portal settings. ` +
+      `(Notion said: ${notionMessage})`
+    );
+    this.name = "NotionCapabilityError";
+  }
+}
+
+/**
+ * Thrown when the `Emailed` checkbox property does not exist on the
+ * database's schema at all (as opposed to existing but unset on a given
+ * page — that per-page case is handled by `getCheckbox()`, never throws).
+ * Fails loud and clear instead of letting Notion's raw API error propagate
+ * unexplained (D-01).
+ */
+export class MissingEmailedPropertyError extends Error {
+  constructor(notionMessage: string) {
+    super(
+      `Emailed property not found on this database — add it in Notion first ` +
+      `(Settings → add a Checkbox property named "Emailed"). See README. ` +
+      `(Notion said: ${notionMessage})`
+    );
+    this.name = "MissingEmailedPropertyError";
+  }
+}
+
 export interface NologClientOptions {
   /** Notion integration token */
   token: string;
@@ -227,15 +265,24 @@ export class NologClient {
     const pages: PageObjectResponse[] = [];
     let cursor: string | null = null;
 
-    do {
-      const response = await this.queryDatabase({
-        ...body,
-        ...(cursor ? { start_cursor: cursor } : {}),
-      });
+    try {
+      do {
+        const response = await this.queryDatabase({
+          ...body,
+          ...(cursor ? { start_cursor: cursor } : {}),
+        });
 
-      pages.push(...response.results.filter(isPageObjectResponse));
-      cursor = response.next_cursor;
-    } while (cursor);
+        pages.push(...response.results.filter(isPageObjectResponse));
+        cursor = response.next_cursor;
+      } while (cursor);
+    } catch (err) {
+      // Same unverified-detection caveat as patchPage() (RESEARCH.md Open
+      // Question 1 / Pitfall 3) — adjust to match real Notion behaviour.
+      if (err instanceof Error && /Emailed/i.test(err.message) && /propert/i.test(err.message)) {
+        throw new MissingEmailedPropertyError(err.message);
+      }
+      throw err;
+    }
 
     return pages.map(mapPageToPost);
   }
@@ -302,7 +349,27 @@ export class NologClient {
     });
 
     if (!res.ok) {
-      throw new Error(`Notion patch failed: ${res.status} ${await res.text()}`);
+      const bodyText = await res.text();
+
+      // Status-code-first (Pitfall 1): 403 is the reliable, documented signal
+      // for a missing "Update content" capability — never gate on message
+      // substring-matching alone.
+      if (res.status === 403) {
+        throw new NotionCapabilityError(pageId, bodyText);
+      }
+
+      // NOTE: this condition is a best-guess pattern-match, UNVERIFIED against
+      // live Notion behaviour (RESEARCH.md Open Question 1 / Assumption A1 /
+      // Pitfall 3). Notion's public docs do not specify the exact error shape
+      // for a PATCH properties body referencing a property absent from the
+      // schema entirely. Before D-01 is considered done, this must be
+      // validated against a real workspace (temporarily remove the Emailed
+      // property, observe the actual error, adjust this condition to match).
+      if (res.status === 400 && /Emailed/i.test(bodyText) && /propert/i.test(bodyText)) {
+        throw new MissingEmailedPropertyError(bodyText);
+      }
+
+      throw new Error(`Notion patch failed: ${res.status} ${bodyText}`);
     }
   }
 
