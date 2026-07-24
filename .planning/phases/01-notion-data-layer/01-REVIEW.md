@@ -20,6 +20,10 @@ status: issues_found
 **Files Reviewed:** 1
 **Status:** issues_found
 
+## ⚠ CORRECTION (2026-07-25, post-hoc — read this first)
+
+This review's "CR-01 (property-key casing defect) is CONFIRMED RESOLVED" verdict below is **retracted**. The user shared a screenshot of the live production Notion database showing the actual property is lowercase `status` (matching `thumbnail`/`summary`/`category`/`tag`/`author`, all lowercase-first camelCase), not `Status`. The original lowercase filters were correct; the `71f81a5` "fix" this review verified would have broken the live query. It was reverted in commit `588496d`, and `mapPageToPost()`'s extractor order + `types.ts`'s JSDoc were corrected to match reality. See `01-VERIFICATION.md`'s own `## CORRECTION` section for the full account. This retraction does not affect the (unrelated) new **CR-01: pageId path-traversal** finding below, nor the re-confirmed WR-01–WR-04/WR-05/WR-06/IN-01–03 findings, which all still stand as described.
+
 ## Summary
 
 This is a fresh review of `packages/core/src/client.ts` after the gap-closure commit `71f81a5` ("fix(01-02): correct Notion status filter property key casing (CR-01)"), which changed exactly two string literals (`"status"` → `"Status"` in the `getPosts()` and `getUnemailedPublicPosts()` filter bodies). This review supersedes the prior `01-REVIEW.md` and is scoped to `client.ts` only, per the file list provided for this pass.

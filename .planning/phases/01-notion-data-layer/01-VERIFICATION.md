@@ -9,9 +9,10 @@ re_verification:
   previous_status: gaps_found
   previous_score: 5/10
   gaps_closed:
-    - "getUnemailedPublicPosts() (and getPosts()) query filter now uses the canonical property key \"Status\" (capital S), matching mapPageToPost()'s getSelect(page, \"Status\", \"status\") primary key and types.ts's documented convention (CR-01 closed)"
+    - "RETRACTED (2026-07-25) — see '## CORRECTION' section below. CR-01 was a misdiagnosis: the property-casing 'fix' was reverted in 588496d after the user confirmed the live production Notion database's actual property is lowercase \"status\", not \"Status\". The original code was correct all along."
   gaps_remaining: []
-  regressions: []
+  regressions:
+    - "The 71f81a5 'fix' itself was a real regression against the live database (introduced capital \"Status\" filters that would have 400'd), reverted in 588496d before any live test ran."
 deferred: []
 behavior_unverified_items:
   - truth: "markEmailed(pageId) issues the Notion PATCH body { properties: { Emailed: { checkbox: true } } } and the change is visible on a subsequent read (DATA-02, ROADMAP SC#3)"
@@ -43,6 +44,18 @@ human_verification:
 ---
 
 # Phase 1: Notion Data Layer Verification Report
+
+## ⚠ CORRECTION (2026-07-25, post-hoc — read this first)
+
+**CR-01 was a misdiagnosis. The "fix" described below has been reverted.** The user shared a screenshot of the actual live production Notion database showing every property name is lowercase-first camelCase (`title`, `thumbnail`, `summary`, `status`, `category`, `tag`, `author`, `createDate`, `editDate`) — confirming the property is literally named `status`, not `Status`.
+
+The entire CR-01 chain (01-REVIEW.md's original finding → this VERIFICATION.md's `gaps_found` → the 01-02-PLAN.md gap-closure plan → commit `71f81a5`) was built on an unverified inference: `mapPageToPost()`'s `getSelect(page, "Status", "status")` primary/fallback key order and `types.ts`'s JSDoc were read as "documenting" `Status` as canonical, without ever checking a real workspace. That inference was backwards. The **original code (lowercase `"status"` filters) was correct all along** — it was never a gap.
+
+Commit `71f81a5` (the CR-01 "fix") changed both query filters to `"Status"`, which would have actually **broken** them against the real database (Notion's server-side filter has no fallback). This was caught and reverted in commit `588496d` before any live-Notion test ran, and `mapPageToPost()`'s extractor order + both `Post.status` JSDoc copies were also corrected to stop pointing future readers at the same wrong inference.
+
+**Net effect on this report's findings below:** everywhere "CR-01" or the `"Status"` (capital) fix is described as resolving a real defect, read it as: *there was no defect — the original lowercase `"status"` filters were correct, confirmed against the live schema.* The `re_verification` frontmatter above has been amended accordingly. The rest of this document (the 4 `behavior_unverified` items, human_verification list, requirement coverage) is unaffected and still accurate.
+
+---
 
 **Phase Goal:** `NologClient` can identify which public posts haven't been emailed yet and durably mark a post as emailed once a send succeeds, with 403s from missing write capability distinguishable from other failures.
 **Verified:** 2026-07-25T00:00:00Z

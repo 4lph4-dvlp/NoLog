@@ -38,7 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2/2 plans executed
 
 - [x] 01-01-PLAN.md — Extend NologClient: getUnemailedPublicPosts() + markEmailed() (tracer happy path) and typed fail-loud errors NotionCapabilityError/MissingEmailedPropertyError (D-01/D-03)
-- [x] 01-02-PLAN.md — Gap closure (CR-01): correct both getPosts() and getUnemailedPublicPosts() query filters from lowercase "status" to canonical "Status"
+- [x] 01-02-PLAN.md — Gap closure (CR-01): correct both getPosts() and getUnemailedPublicPosts() query filters from lowercase "status" to canonical "Status" — **RETRACTED 2026-07-25: CR-01 was a misdiagnosis (live DB confirmed lowercase "status" is correct); reverted in 588496d. See 01-VERIFICATION.md ## CORRECTION.**
 
 ### Phase 2: Backfill Script
 
