@@ -223,7 +223,7 @@ export class NologClient {
       page_size: 100,
       sorts: [{ timestamp: "created_time", direction: "descending" }],
       filter: {
-        property: "status",
+        property: "Status",
         select: { equals: "public" },
       },
     };
@@ -256,7 +256,7 @@ export class NologClient {
       sorts: [{ timestamp: "created_time", direction: "ascending" }],
       filter: {
         and: [
-          { property: "status", select: { equals: "public" } },
+          { property: "Status", select: { equals: "public" } },
           { property: "Emailed", checkbox: { equals: false } },
         ],
       },
