@@ -111,7 +111,7 @@ export function mapPageToPost(page: PageObjectResponse): Post {
     author: getPeople(page, "Author", "author") || getRichText(page, "Author", "author"),
     createDate: page.created_time,
     editDate: page.last_edited_time,
-    status: getSelect(page, "Status", "status"),
+    status: getSelect(page, "status", "Status"),
     emailed: getCheckbox(page, "Emailed"),
   };
 }
@@ -223,7 +223,7 @@ export class NologClient {
       page_size: 100,
       sorts: [{ timestamp: "created_time", direction: "descending" }],
       filter: {
-        property: "Status",
+        property: "status",
         select: { equals: "public" },
       },
     };
@@ -256,7 +256,7 @@ export class NologClient {
       sorts: [{ timestamp: "created_time", direction: "ascending" }],
       filter: {
         and: [
-          { property: "Status", select: { equals: "public" } },
+          { property: "status", select: { equals: "public" } },
           { property: "Emailed", checkbox: { equals: false } },
         ],
       },

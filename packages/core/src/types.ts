@@ -30,7 +30,7 @@ export interface Post {
   /** ISO date string from the `EditDate` (last_edited_time) property */
   editDate: string;
 
-  /** Publication status from the `Status` (select) property — "public" etc. */
+  /** Publication status from the `status` (select) property — "public" etc. */
   status: string;
 
   /** Whether a "public" post has already had its one-time subscriber notification sent — from the `Emailed` (checkbox) property. Once true, stays true permanently (see Phase 1 D-02). */
