@@ -1,5 +1,5 @@
 ---
-status: resolved
+status: complete
 phase: 01-notion-data-layer
 source: [01-VERIFICATION.md]
 started: 2026-07-25T00:00:00Z
@@ -8,14 +8,7 @@ updated: 2026-07-25T02:52:00Z
 
 ## Current Test
 
-number: 3
-name: Missing-property detection reconciliation (D-01)
-expected: |
-  Temporarily remove the `emailed` checkbox property from the live database, then call
-  getUnemailedPublicPosts()/markEmailed() and observe Notion's actual error status/body.
-  MissingEmailedPropertyError should fire (instanceof-checkable). Restore the property
-  afterward.
-awaiting: none — all tests complete
+[testing complete]
 
 ## Tests
 
