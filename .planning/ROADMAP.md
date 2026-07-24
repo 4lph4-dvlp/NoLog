@@ -14,7 +14,7 @@ This milestone takes NoLog from "blog with no notification channel" to "forkers 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Notion Data Layer** - `NologClient` can query unemailed public posts and durably mark a post as emailed, with clear diagnostics when write access is missing
-- [ ] **Phase 2: Backfill Script** - A one-time, throttled, resumable script marks every pre-existing public post as `Emailed` before the cron path ever runs
+- [ ] **Phase 2: Backfill Script** - A one-time, throttled, resumable script marks every pre-existing public post as `emailed` before the cron path ever runs
 - [ ] **Phase 3: Subscribe Path** - A visitor can subscribe via a form that's fully gated, abuse-resistant, and enumeration-safe
 - [ ] **Phase 4: Notify Route** - The cron-only notify route sends one digest email per run listing every newly-public post, isolated per-post-section and compliant
 - [ ] **Phase 5: Production Cutover** - The cron entry goes live only after the backfill is confirmed complete in production, as its own deliberate deploy step
@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Success Criteria** (what must be TRUE):
 
   1. A manual mark-then-requery test confirms a post is excluded from `getUnemailedPublicPosts()` immediately after `markEmailed(pageId)` succeeds against it.
-  2. `getUnemailedPublicPosts()` returns only posts where `status === "public"` and `Emailed` is unchecked, verified against a Notion database containing a mix of emailed, unemailed, and private posts.
+  2. `getUnemailedPublicPosts()` returns only posts where `status === "public"` and `emailed` is unchecked, verified against a Notion database containing a mix of emailed, unemailed, and private posts.
   3. `markEmailed(pageId)` issues the correct Notion `checkbox` PATCH body shape (verified directly against Notion's current API reference, not assumed) and the change is visible on a subsequent read.
   4. When the Notion integration lacks "Update content" capability, `markEmailed` logs a distinguishable 403-specific message rather than a generic error, confirmed by temporarily revoking that capability and observing the log output.
 
@@ -42,13 +42,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### Phase 2: Backfill Script
 
-**Goal**: Every pre-existing public post can be marked `Emailed` in one throttled, resumable run, so enabling the notify path never blasts a fork's entire back catalog on its first cron tick.
+**Goal**: Every pre-existing public post can be marked `emailed` in one throttled, resumable run, so enabling the notify path never blasts a fork's entire back catalog on its first cron tick.
 **Mode:** mvp
 **Depends on**: Phase 1
 **Requirements**: DATA-03
 **Success Criteria** (what must be TRUE):
 
-  1. Running the backfill script against a database with N pre-existing public posts marks all N as `Emailed` and logs a final "N marked / M failed" count.
+  1. Running the backfill script against a database with N pre-existing public posts marks all N as `emailed` and logs a final "N marked / M failed" count.
   2. Interrupting the script partway through and re-running it processes only posts still unmarked (check-before-write) and completes cleanly without re-marking or erroring on already-emailed posts.
   3. The script's request rate during a run stays within Notion's ~3 req/s limit, confirmed by inspecting timing/log output against a nontrivial post count.
 
@@ -79,11 +79,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Requirements**: NOTIFY-01, NOTIFY-02, NOTIFY-03, NOTIFY-04, NOTIFY-05, SEC-01, SEC-02
 **Success Criteria** (what must be TRUE):
 
-  1. Manually invoking `/api/notify-subscribers` with a valid `CRON_SECRET`-authenticated request when 3 posts have `Status=public` and `Emailed` unchecked results in current subscribers receiving **one** digest email listing all 3 posts (title, summary, link, OG-image thumbnail per post), sent via a single `resend.broadcasts.create()`/`.send()` call against an Audience (not a looped `emails.send()` and not 3 separate broadcasts) — confirmed against a live Resend send log.
+  1. Manually invoking `/api/notify-subscribers` with a valid `CRON_SECRET`-authenticated request when 3 posts have `Status=public` and `emailed` unchecked results in current subscribers receiving **one** digest email listing all 3 posts (title, summary, link, OG-image thumbnail per post), sent via a single `resend.broadcasts.create()`/`.send()` call against an Audience (not a looped `emails.send()` and not 3 separate broadcasts) — confirmed against a live Resend send log.
   2. The digest email includes a working one-click unsubscribe link, the configured physical mailing address, and a "why you're receiving this" line.
   3. A request to `/api/notify-subscribers` with a missing or invalid `CRON_SECRET` is rejected via a timing-safe comparison before any Notion or Resend call executes, confirmed by testing both a wrong-secret and a no-secret request.
-  4. With one post's content deliberately malformed (e.g., missing title), the digest still sends with the other eligible posts' sections included, and only those successfully-included posts are marked `Emailed`.
-  5. If the digest send itself fails outright (not a per-post content issue), no posts from that run are marked `Emailed`, so all of them are picked up again by the next cron run.
+  4. With one post's content deliberately malformed (e.g., missing title), the digest still sends with the other eligible posts' sections included, and only those successfully-included posts are marked `emailed`.
+  5. If the digest send itself fails outright (not a per-post content issue), no posts from that run are marked `emailed`, so all of them are picked up again by the next cron run.
   6. With `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` unset, `/api/notify-subscribers` no-ops immediately with no Notion query or send attempted — and `/api/subscribe` (Phase 3) is reconfirmed to exhibit the same no-op contract for its own required env vars.
 
 **Plans**: TBD
@@ -110,7 +110,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Requirements**: DOCS-01, DOCS-02, DOCS-03
 **Success Criteria** (what must be TRUE):
 
-  1. README.md and README_KR.md list `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `CRON_SECRET`, the `Emailed` Notion property, and the Notion "Update content" capability grant as its own explicit, separately-labeled setup step (not folded into "set env vars").
+  1. README.md and README_KR.md list `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `CRON_SECRET`, the `emailed` Notion property, and the Notion "Update content" capability grant as its own explicit, separately-labeled setup step (not folded into "set env vars").
   2. README.md and README_KR.md instruct forkers to complete Resend domain/SPF/DKIM verification as a mandatory step, and state the correct quota (up to 1,000 contacts/month via Broadcast/Audience, not the 100/day transactional figure).
   3. README.md and README_KR.md state that the cron only fires on Production deployments and is evaluated in UTC.
 

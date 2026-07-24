@@ -9,9 +9,9 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Data Layer (DATA)
 
-- [ ] **DATA-01**: `NologClient` can query all public posts not yet marked `Emailed`
-- [ ] **DATA-02**: `NologClient` can mark a post as `Emailed` after a successful send
-- [ ] **DATA-03**: A one-time backfill script marks all pre-existing public posts as `Emailed` before the first production cron run — throttled to Notion's ~3 req/s rate limit and safely re-runnable if interrupted
+- [ ] **DATA-01**: `NologClient` can query all public posts not yet marked `emailed`
+- [ ] **DATA-02**: `NologClient` can mark a post as `emailed` after a successful send
+- [ ] **DATA-03**: A one-time backfill script marks all pre-existing public posts as `emailed` before the first production cron run — throttled to Notion's ~3 req/s rate limit and safely re-runnable if interrupted
 - [ ] **DATA-04**: `markEmailed` distinguishes a 403 (missing Notion "Update content" capability) from other failures in its logs, rather than treating it as a generic error
 
 ### Subscribe (SUB)
@@ -27,7 +27,7 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 - [ ] **NOTIFY-02**: Every notification email includes a one-click unsubscribe link, a forker-configurable physical mailing address, and a "why you're receiving this" line
 - [ ] **NOTIFY-03**: The notify route sends via Resend's Broadcast API (one broadcast per cron run, not a per-subscriber send loop), so unsubscribe handling and RFC 8058 compliance are automatic
 - [ ] **NOTIFY-04**: A problem building one post's section of the digest doesn't prevent the other posts from that run being included and sent (per-post isolation moves to the content-assembly stage, since there's now one email per run rather than one per post)
-- [ ] **NOTIFY-05**: Only posts successfully included in a sent digest are marked `Emailed`; if the whole send fails, no posts in that run are marked, so they're picked up again by the next run
+- [ ] **NOTIFY-05**: Only posts successfully included in a sent digest are marked `emailed`; if the whole send fails, no posts in that run are marked, so they're picked up again by the next run
 
 ### Access Control (SEC)
 
@@ -41,7 +41,7 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Documentation (DOCS)
 
-- [ ] **DOCS-01**: README.md and README_KR.md document the new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`), the `Emailed` Notion property, and the Notion "Update content" capability grant as its own explicit setup step, separate from setting env vars
+- [ ] **DOCS-01**: README.md and README_KR.md document the new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`), the `emailed` Notion property, and the Notion "Update content" capability grant as its own explicit setup step, separate from setting env vars
 - [ ] **DOCS-02**: README.md and README_KR.md document Resend domain/SPF/DKIM verification as a mandatory setup step (not optional), and state the *correct* Broadcast/Audience quota (up to 1,000 contacts/month on the free tier) rather than the transactional Send API cap
 - [ ] **DOCS-03**: README.md and README_KR.md state that the cron only fires on Production deployments, evaluated in UTC
 

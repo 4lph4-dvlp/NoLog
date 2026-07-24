@@ -3,6 +3,8 @@
 **Gathered:** 2026-07-24
 **Status:** Ready for planning
 
+> ⚠ **CORRECTION (2026-07-25):** Everywhere below this line writes `Emailed` (capital E), read it as `emailed` (lowercase) — standardized to match the live database's confirmed lowercase-camelCase property convention (`title`, `summary`, `status`, `category`, `tag`, `author`). This doc's body is left as originally gathered; see `packages/core/src/client.ts` for the corrected code and `01-VERIFICATION.md`'s `## CORRECTION` section for the full account.
+
 <domain>
 ## Phase Boundary
 

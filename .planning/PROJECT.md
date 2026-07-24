@@ -23,14 +23,14 @@ A forker can go from "empty Notion database" to "live, working blog" using only 
 **Email subscription for new posts** — fully designed and approved via `/autoplan` on 2026-07-24 (see `.gstack/projects/4lph4-dvlp-NoLog/alpha-pi-main-design-20260724-161749.md` for the full design doc, status APPROVED). Summary:
 
 - [ ] `packages/core`: add `getUnemailedPublicPosts()` and `markEmailed(pageId)` to `NologClient`
-- [ ] One-time backfill script/step: mark all pre-existing public posts as `Emailed` before first cron run, so enabling the feature never blasts the back catalog
+- [ ] One-time backfill script/step: mark all pre-existing public posts as `emailed` before first cron run, so enabling the feature never blasts the back catalog
 - [ ] `/api/notify-subscribers` route: fail-closed on missing `CRON_SECRET`, checks the secret before doing anything else, no-ops immediately if Resend env vars are unset
 - [ ] **Same-day digest**: one cron run finds *all* unemailed public posts and sends **one email listing every post from that run** (title/summary/link/thumbnail per post), not one email per post — pulled forward into v1 scope during roadmap review on 2026-07-24 (was originally deferred to `TODOS.md`, relevant once Resend's 100/day cap became a real concern, but the user wants it now rather than waiting). A problem building one post's section of the digest must not prevent the other posts from being included and sent (isolation moves from per-post-email to per-post-section-within-the-digest).
 - [ ] `vercel.json`: once/day cron entry targeting the notify route (Hobby-tier compatible)
 - [ ] `/api/subscribe` route: adds a contact to a Resend Audience, honeypot + validation, fail-closed if env vars unset, idempotent on duplicate submission
 - [ ] Subscribe form component: gated server-side (not via `NEXT_PUBLIC_*`, since `RESEND_API_KEY` is a secret) so it renders only when configured — same user-facing behavior as the Cusdis pattern, different mechanism
 - [ ] Email template: title, summary, link, OG-image thumbnail as header (reusing `/api/og` via `<img src>`, since that route is edge runtime and can't be server-fetched) — now a per-post section repeated within a single digest email, not a standalone template
-- [ ] Document new Notion property (`Emailed`, checkbox) and new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`) in `README.md` and `README_KR.md`, including the *correct* Resend free-tier send ceiling (Broadcast/Audience: up to 1,000 contacts/month, not the 100/day transactional figure — corrected during research) and the "update content" Notion integration capability now required
+- [ ] Document new Notion property (`emailed`, checkbox) and new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`) in `README.md` and `README_KR.md`, including the *correct* Resend free-tier send ceiling (Broadcast/Audience: up to 1,000 contacts/month, not the 100/day transactional figure — corrected during research) and the "update content" Notion integration capability now required
 
 These are hypotheses until shipped and validated.
 

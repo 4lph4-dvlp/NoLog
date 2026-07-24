@@ -41,10 +41,10 @@ validated: 2026-07-25
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| Task 1 | 01 | 1 | DATA-01 | — | `getUnemailedPublicPosts()` returns only `status=public AND Emailed=false` posts | manual | none — `npx tsx packages/core/scripts/verify-phase-1.ts` (mark-then-requery) | ✅ | ⬜ pending (human) |
+| Task 1 | 01 | 1 | DATA-01 | — | `getUnemailedPublicPosts()` returns only `status=public AND emailed=false` posts | manual | none — `npx tsx packages/core/scripts/verify-phase-1.ts` (mark-then-requery) | ✅ | ⬜ pending (human) |
 | Task 1 | 01 | 1 | DATA-02 | — | `markEmailed(pageId)` issues correct checkbox PATCH body; change visible on subsequent read | manual | same mark-then-requery script as DATA-01 | ✅ | ⬜ pending (human) |
 | Task 2 | 01 | 1 | DATA-04 | T-1-01 | `markEmailed` throws `NotionCapabilityError` (instanceof-distinguishable) on 403 | manual | none — `npx tsx packages/core/scripts/verify-403.ts` | ✅ | ⬜ pending (human) |
-| Task 2 | 01 | 1 | D-01 | — | Missing `Emailed` schema property throws distinguishable `MissingEmailedPropertyError` | manual | same 403 script + manual schema-removal test (detection regex itself unvalidated — see 01-VERIFICATION.md) | ✅ | ⬜ pending (human) |
+| Task 2 | 01 | 1 | D-01 | — | Missing `emailed` schema property throws distinguishable `MissingEmailedPropertyError` | manual | same 403 script + manual schema-removal test (detection regex itself unvalidated — see 01-VERIFICATION.md) | ✅ | ⬜ pending (human) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -64,7 +64,7 @@ validated: 2026-07-25
 |----------|-------------|------------|-------------------|
 | A post is excluded from `getUnemailedPublicPosts()` immediately after `markEmailed(pageId)` succeeds against it | DATA-01, DATA-02 | No test framework in repo; behavior depends on live Notion API/database state that shouldn't be mocked (risk of mock/reality divergence) | Query `getUnemailedPublicPosts()`, note count; call `markEmailed()` on the first result; re-query; confirm that post is no longer present (RESEARCH.md "mark-then-requery" script) |
 | `markEmailed()` logs/throws a distinguishable error when the integration lacks "Update content" capability | DATA-04 | Requires temporarily revoking a real Notion integration's capability in the Developer Portal — cannot be simulated without risking divergence from Notion's actual 403 behavior | Temporarily revoke "Update content" capability on the test integration; call `markEmailed()`; confirm the thrown error is `instanceof NotionCapabilityError` (not a generic `Error`); restore the capability afterward (RESEARCH.md "403 capability test" script) |
-| The `Emailed` property missing from the database schema entirely produces a distinguishable, friendly error rather than a raw/unexplained Notion error (D-01) | DATA-01, DATA-02 | Notion's public docs don't specify the exact error shape for a schema-absent property (RESEARCH.md Open Question #1) — must be confirmed against a real workspace, not assumed | Temporarily rename/remove the `Emailed` property on a test database; call `getUnemailedPublicPosts()`/`markEmailed()`; inspect the actual error status/message and adjust the detection condition in code to match reality before considering D-01 done |
+| The `emailed` property missing from the database schema entirely produces a distinguishable, friendly error rather than a raw/unexplained Notion error (D-01) | DATA-01, DATA-02 | Notion's public docs don't specify the exact error shape for a schema-absent property (RESEARCH.md Open Question #1) — must be confirmed against a real workspace, not assumed | Temporarily rename/remove the `emailed` property on a test database; call `getUnemailedPublicPosts()`/`markEmailed()`; inspect the actual error status/message and adjust the detection condition in code to match reality before considering D-01 done |
 
 ---
 
