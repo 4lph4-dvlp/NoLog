@@ -32,4 +32,7 @@ export interface Post {
 
   /** Publication status from the `Status` (select) property — "public" etc. */
   status: string;
+
+  /** Whether a "public" post has already had its one-time subscriber notification sent — from the `Emailed` (checkbox) property. Once true, stays true permanently (see Phase 1 D-02). */
+  emailed: boolean;
 }

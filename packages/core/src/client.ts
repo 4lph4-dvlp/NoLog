@@ -78,13 +78,24 @@ function getFileUrl(page: PageObjectResponse, key: string, fallbackKey?: string)
 function getPeople(page: PageObjectResponse, key: string, fallbackKey?: string): string {
   let prop = page.properties[key];
   if (!prop && fallbackKey) prop = page.properties[fallbackKey];
-  
+
   if (prop?.type === "people") {
     return prop.people
       .map((p) => ("name" in p && p.name ? p.name : "Unknown"))
       .join(", ");
   }
   return "";
+}
+
+function getCheckbox(page: PageObjectResponse, key: string): boolean {
+  // Never throws — a per-page missing/unset value defaults to false. This is
+  // NOT the D-01 schema-missing case (the Emailed property absent from the
+  // database entirely); that is detected at the query/patch call site, not here.
+  const prop = page.properties[key];
+  if (prop?.type === "checkbox") {
+    return prop.checkbox;
+  }
+  return false;
 }
 
 // ─── Mapper ─────────────────────────────────────────────────────────────────
@@ -101,6 +112,7 @@ export function mapPageToPost(page: PageObjectResponse): Post {
     createDate: page.created_time,
     editDate: page.last_edited_time,
     status: getSelect(page, "Status", "status"),
+    emailed: getCheckbox(page, "Emailed"),
   };
 }
 
@@ -194,6 +206,40 @@ export class NologClient {
     return pages.map(mapPageToPost);
   }
 
+  /**
+   * Query all public posts that have not yet been marked `Emailed`
+   * (oldest-first). Reuses `queryDatabase()` — never duplicates the fetch
+   * logic. Returns an empty array (never null, never throws) when nothing
+   * matches.
+   */
+  public async getUnemailedPublicPosts(): Promise<Post[]> {
+    const body: Record<string, unknown> = {
+      page_size: 100,
+      sorts: [{ timestamp: "created_time", direction: "ascending" }],
+      filter: {
+        and: [
+          { property: "status", select: { equals: "public" } },
+          { property: "Emailed", checkbox: { equals: false } },
+        ],
+      },
+    };
+
+    const pages: PageObjectResponse[] = [];
+    let cursor: string | null = null;
+
+    do {
+      const response = await this.queryDatabase({
+        ...body,
+        ...(cursor ? { start_cursor: cursor } : {}),
+      });
+
+      pages.push(...response.results.filter(isPageObjectResponse));
+      cursor = response.next_cursor;
+    } while (cursor);
+
+    return pages.map(mapPageToPost);
+  }
+
   public async getPost(pageId: string): Promise<Post | null> {
     try {
       const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
@@ -243,5 +289,29 @@ export class NologClient {
     } while (cursor);
 
     return blocks;
+  }
+
+  // ─── Mutations ──────────────────────────────────────────────────────────────
+
+  private async patchPage(pageId: string, properties: Record<string, unknown>): Promise<void> {
+    const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+      method: "PATCH",
+      headers: this.getNotionHeaders(),
+      body: JSON.stringify({ properties }),
+      ...this.fetchOptions,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Notion patch failed: ${res.status} ${await res.text()}`);
+    }
+  }
+
+  /**
+   * Durably mark a post as emailed (checkbox write). Per D-04, this writes
+   * ONLY the `Emailed` checkbox — no timestamp/"emailed date" property.
+   * Idempotent — safe to call more than once on the same page.
+   */
+  public async markEmailed(pageId: string): Promise<void> {
+    await this.patchPage(pageId, { Emailed: { checkbox: true } });
   }
 }
