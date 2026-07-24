@@ -58,6 +58,8 @@ completed: 2026-07-25
 status: complete
 ---
 
+> ⚠ **CORRECTION (2026-07-25, post-hoc):** This summary's "Status" (capital) fix was itself a misdiagnosis — the live production database confirmed lowercase `status` was correct all along. Reverted in commit `588496d`; the `Emailed` property was also renamed to `emailed` in `a5eb42d`. See `01-VERIFICATION.md`'s `## CORRECTION` section for the full account. This body is left as originally written (historical record).
+
 # Phase 01 Plan 02: Notion Status Filter Casing Fix (CR-01 Closure) Summary
 
 **Corrected the Notion database query-filter property key from lowercase "status" to canonical "Status" in both getPosts() and getUnemailedPublicPosts(), closing CR-01 from 01-VERIFICATION.md**
