@@ -9,10 +9,10 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Data Layer (DATA)
 
-- [ ] **DATA-01**: `NologClient` can query all public posts not yet marked `emailed`
-- [ ] **DATA-02**: `NologClient` can mark a post as `emailed` after a successful send
+- [x] **DATA-01**: `NologClient` can query all public posts not yet marked `emailed`
+- [x] **DATA-02**: `NologClient` can mark a post as `emailed` after a successful send
 - [ ] **DATA-03**: A one-time backfill script marks all pre-existing public posts as `emailed` before the first production cron run — throttled to Notion's ~3 req/s rate limit and safely re-runnable if interrupted
-- [ ] **DATA-04**: `markEmailed` distinguishes a 403 (missing Notion "Update content" capability) from other failures in its logs, rather than treating it as a generic error
+- [x] **DATA-04**: `markEmailed` distinguishes a 403 (missing Notion "Update content" capability) from other failures in its logs, rather than treating it as a generic error
 
 ### Subscribe (SUB)
 

@@ -2,7 +2,7 @@
 
 ## What This Is
 
-NoLog is a fork-and-deploy blog template: a Notion database as the sole datastore, GitHub for source, and Vercel for hosting/ISR — no separate server, no separate database. Site owners write posts in Notion and flip a `Status` property to `public` to publish. It ships with an optional Cusdis comment integration, gated entirely by an env var, that any forker can turn on or leave off.
+NoLog is a fork-and-deploy blog template: a Notion database as the sole datastore, GitHub for source, and Vercel for hosting/ISR — no separate server, no separate database. Site owners write posts in Notion and flip a `status` property to `public` to publish. It ships with an optional Cusdis comment integration, gated entirely by an env var, that any forker can turn on or leave off.
 
 ## Core Value
 
@@ -17,12 +17,12 @@ A forker can go from "empty Notion database" to "live, working blog" using only 
 - ✓ Multiple page templates (`default`, `terminal`) — existing
 - ✓ Optional Cusdis comment integration, off-by-default via `NEXT_PUBLIC_CUSDIS_APP_ID` — existing (fail-open bug in `CommentSection.tsx` found and fixed this session, commit `7d657c9`)
 - ✓ OG image generation via `/api/og` (edge runtime) — existing
+- ✓ `NologClient.getUnemailedPublicPosts()` / `markEmailed(pageId)`, typed `NotionCapabilityError`/`MissingEmailedPropertyError` — Phase 1 (live-verified against production Notion DB 2026-07-25)
 
 ### Active
 
 **Email subscription for new posts** — fully designed and approved via `/autoplan` on 2026-07-24 (see `.gstack/projects/4lph4-dvlp-NoLog/alpha-pi-main-design-20260724-161749.md` for the full design doc, status APPROVED). Summary:
 
-- [ ] `packages/core`: add `getUnemailedPublicPosts()` and `markEmailed(pageId)` to `NologClient`
 - [ ] One-time backfill script/step: mark all pre-existing public posts as `emailed` before first cron run, so enabling the feature never blasts the back catalog
 - [ ] `/api/notify-subscribers` route: fail-closed on missing `CRON_SECRET`, checks the secret before doing anything else, no-ops immediately if Resend env vars are unset
 - [ ] **Same-day digest**: one cron run finds *all* unemailed public posts and sends **one email listing every post from that run** (title/summary/link/thumbnail per post), not one email per post — pulled forward into v1 scope during roadmap review on 2026-07-24 (was originally deferred to `TODOS.md`, relevant once Resend's 100/day cap became a real concern, but the user wants it now rather than waiting). A problem building one post's section of the digest must not prevent the other posts from being included and sent (isolation moves from per-post-email to per-post-section-within-the-digest).
@@ -79,6 +79,9 @@ These are hypotheses until shipped and validated.
 | RSS deferred rather than bundled into this pass | User's explicit choice at the final `/autoplan` approval gate, re-confirmed after the CEO review's dual-voice subagent argued for bundling it | ✓ Good |
 | Server-component env-var gating (not `NEXT_PUBLIC_*`) for the subscribe form | `RESEND_API_KEY` is a secret, unlike Cusdis's public app ID — found by the DX review's dual-voice subagent as the most significant architectural gap of the session | ✓ Good |
 | Concurrency/distributed-lock gap on the notify route accepted as a limitation, not fixed | A real fix needs new infrastructure (Vercel KV/Redis), which conflicts with the explicit "no new infrastructure" constraint | — Pending |
+| Notion property names are lowercase-first camelCase (`status`, `emailed`, `summary`, etc.), not capitalized — confirmed against the live production DB screenshot, not assumed from code-internal consistency | An initial gap-closure pass ("CR-01") wrongly capitalized the `status` filter based on `mapPageToPost()`'s primary/fallback key order; reverted after live-DB evidence. Also caught and fixed an independent bug: `summary` had a typo'd fallback key and always rendered empty. | ✓ Good |
+
+**Process lesson (Phase 1):** when a defect diagnosis rests on internal code consistency rather than the live external system, verify against the real system before "fixing" — the CR-01 revert-then-refix cycle cost a full extra round trip that direct DB inspection would have skipped.
 
 ## Evolution
 
@@ -98,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-24 after initialization*
+*Last updated: 2026-07-25 after Phase 1*

@@ -13,7 +13,7 @@ This milestone takes NoLog from "blog with no notification channel" to "forkers 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Notion Data Layer** - `NologClient` can query unemailed public posts and durably mark a post as emailed, with clear diagnostics when write access is missing
+- [x] **Phase 1: Notion Data Layer** - `NologClient` can query unemailed public posts and durably mark a post as emailed, with clear diagnostics when write access is missing (completed 2026-07-25)
 - [ ] **Phase 2: Backfill Script** - A one-time, throttled, resumable script marks every pre-existing public post as `emailed` before the cron path ever runs
 - [ ] **Phase 3: Subscribe Path** - A visitor can subscribe via a form that's fully gated, abuse-resistant, and enumeration-safe
 - [ ] **Phase 4: Notify Route** - The cron-only notify route sends one digest email per run listing every newly-public post, isolated per-post-section and compliant
@@ -123,7 +123,7 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Notion Data Layer | 2/2 | In Progress|  |
+| 1. Notion Data Layer | 2/2 | Complete    | 2026-07-25 |
 | 2. Backfill Script | 0/TBD | Not started | - |
 | 3. Subscribe Path | 0/TBD | Not started | - |
 | 4. Notify Route | 0/TBD | Not started | - |

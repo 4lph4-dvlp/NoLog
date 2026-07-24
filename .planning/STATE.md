@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 01
-current_phase_name: notion-data-layer
-status: executing
+current_phase: 2
+current_phase_name: Backfill Script
+status: planning
 stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-07-24T16:28:15.719Z"
+last_updated: "2026-07-24T18:02:27.213Z"
 last_activity: 2026-07-25
-last_activity_desc: Phase 01 execution started
+last_activity_desc: Phase 01 complete, transitioned to Phase 2
 progress:
   total_phases: 1
   completed_phases: 1
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-24)
 
 ## Current Position
 
-Phase: 01 (notion-data-layer) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-07-25 — Phase 01 execution started
+Phase: 2 — Backfill Script
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-25 — Phase 01 complete, transitioned to Phase 2
 
 Progress: [██████████] 100%
 
@@ -38,7 +38,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 2
 - Average duration: - min
 - Total execution time: 0 hours
 
@@ -46,7 +46,7 @@ Progress: [██████████] 100%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 2 | - | - |
 
 **Recent Trend:**
 
@@ -86,7 +86,7 @@ See TODOS.md (repo root) — 3 items still deferred (RSS feed, on-site new-post 
 
 - Two unresolved research gaps flagged for verification during Phase 4/5 execution: (1) Vercel Hobby `maxDuration` figure contested between two sources (10s vs. 300s under Fluid Compute) — must check the actual target Vercel project's config before finalizing notify-route batch size; (2) Resend Broadcast API's confirmed-opt-in / domain-warmup behavior is thin in public docs — verify against a live Resend account during Phase 4 implementation.
 - `PROJECT.md`'s Active requirements text has been corrected to state the right Resend quota (up to 1,000 contacts/month via Broadcast/Audience, not the transactional 100/day cap) — consistent with ROADMAP.md Phase 6 / REQUIREMENTS.md DOCS-02.
-- Phase 1: three manual-only live-Notion verifications (mark-then-requery via verify-phase-1.ts, 403-capability via verify-403.ts, and reconciling the D-01 missing-property detection condition against Notion's real error text) have not been run — requires a human with NOTION_TOKEN/NOTION_DATABASE_ID test credentials and Developer Portal access before phase sign-off
+- [Phase 2] `apps/web/src/app/post/[id]/page.tsx` passes the raw dynamic route segment into `getPost(pageId)`, which interpolates it unvalidated into the Notion API URL (01-REVIEW.md, post-Phase-1 pass) — not part of Phase 1's DATA-01/02/04 scope, needs its own security review (`/gsd-secure-phase` or targeted fix) before considered resolved.
 
 ## Deferred Items
 
