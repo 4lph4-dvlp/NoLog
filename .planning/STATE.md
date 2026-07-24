@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 01
 current_phase_name: notion-data-layer
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-07-24T16:22:18.098Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-07-24T16:28:15.719Z"
 last_activity: 2026-07-25
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-07-24)
 ## Current Position
 
 Phase: 01 (notion-data-layer) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 01
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-07-25 — Phase 01 execution started
 
 Progress: [██████████] 100%
@@ -59,6 +59,7 @@ Progress: [██████████] 100%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 6 | 2 tasks | 5 files |
+| Phase 01 P02 | 15 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - Roadmap review: same-day digest batching pulled forward into v1 scope (NOTIFY-01/04/05, Phase 4) rather than staying deferred in `TODOS.md` — user asked how multi-post days were handled and chose the digest now instead of waiting for Resend's 100/day cap to become a real constraint. `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md` Phase 4, and `TODOS.md` all updated to match.
 - [Phase ?]: Phase 1 Plan 01: D-01 missing-property and D-03 403 detection implemented as best-guess pattern-matches per RESEARCH.md — not yet validated against a live Notion workspace (no credentials in execution environment); pending manual verification before ship
 - [Phase ?]: Phase 1 Plan 01: index.ts barrel export confirmed to need no edit — wildcard export already re-exports the two new error classes
+- [Phase ?]: Fixed getPosts() alongside getUnemailedPublicPosts() in gap-closure task 01-02 (CR-01): both shared the identical case-sensitivity defect in the Notion status query filter; getPosts() was included in-scope despite being outside DATA-01's original REQ-ID, since leaving it broken would keep the primary read path non-functional
+- [Phase ?]: 01-02: ignored 01-RESEARCH.md Pattern 1 / 01-PATTERNS.md lowercase-status guidance — superseded by 01-VERIFICATION.md CR-01 finding; corrected both query filters to canonical property: "Status"
 
 ### Pending Todos
 
@@ -94,6 +97,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-24T14:36:11.287Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-07-24T16:28:15.705Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
