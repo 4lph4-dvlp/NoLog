@@ -179,3 +179,7 @@ None — no new security-relevant surface beyond what `<threat_model>` (T-1-01, 
 ---
 *Phase: 01-notion-data-layer*
 *Completed: 2026-07-24*
+
+## Self-Check: PASSED
+
+All created/modified files confirmed on disk; all three commits (`fdd1044`, `4fdc5c4`, plan-metadata commit) confirmed in `git log`.
