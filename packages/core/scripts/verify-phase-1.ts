@@ -6,8 +6,8 @@
 // dist/, not src/, so a stale build makes new methods look nonexistent).
 //
 // Requires NOTION_TOKEN and NOTION_DATABASE_ID env vars pointing at a test
-// database that has a Checkbox property named exactly "Emailed" and at least
-// one Status=public, Emailed-unchecked post.
+// database that has a Checkbox property named exactly "emailed" and at least
+// one status=public, emailed-unchecked post.
 //
 // Proves DATA-01 (getUnemailedPublicPosts filters correctly) and DATA-02
 // (markEmailed's write is durable and visible on a subsequent read) together,

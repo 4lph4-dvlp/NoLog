@@ -26,7 +26,7 @@ function isNotionQueryResponse(value: unknown): value is NotionQueryResponse {
 // ─── Property extractors ────────────────────────────────────────────────────
 
 function getTitle(page: PageObjectResponse): string {
-  const prop = page.properties["Name"] || page.properties["title"] || page.properties["Title"];
+  const prop = page.properties["title"] || page.properties["Name"] || page.properties["Title"];
   if (prop?.type === "title") {
     return prop.title.map((t) => t.plain_text).join("") || "Untitled";
   }
@@ -89,7 +89,7 @@ function getPeople(page: PageObjectResponse, key: string, fallbackKey?: string):
 
 function getCheckbox(page: PageObjectResponse, key: string): boolean {
   // Never throws — a per-page missing/unset value defaults to false. This is
-  // NOT the D-01 schema-missing case (the Emailed property absent from the
+  // NOT the D-01 schema-missing case (the emailed property absent from the
   // database entirely); that is detected at the query/patch call site, not here.
   const prop = page.properties[key];
   if (prop?.type === "checkbox") {
@@ -104,15 +104,15 @@ export function mapPageToPost(page: PageObjectResponse): Post {
   return {
     id: page.id,
     title: getTitle(page),
-    summary: getRichText(page, "Summary", "summery"), // Handling typo fallback
-    thumbnail: getFileUrl(page, "Thumbnail", "thumbnail"),
-    category: getSelect(page, "Category", "category"),
-    tags: getMultiSelect(page, "Tag", "tag"),
-    author: getPeople(page, "Author", "author") || getRichText(page, "Author", "author"),
+    summary: getRichText(page, "summary", "Summary"),
+    thumbnail: getFileUrl(page, "thumbnail", "Thumbnail"),
+    category: getSelect(page, "category", "Category"),
+    tags: getMultiSelect(page, "tag", "Tag"),
+    author: getPeople(page, "author", "Author") || getRichText(page, "author", "Author"),
     createDate: page.created_time,
     editDate: page.last_edited_time,
     status: getSelect(page, "status", "Status"),
-    emailed: getCheckbox(page, "Emailed"),
+    emailed: getCheckbox(page, "emailed"),
   };
 }
 
@@ -137,7 +137,7 @@ export class NotionCapabilityError extends Error {
 }
 
 /**
- * Thrown when the `Emailed` checkbox property does not exist on the
+ * Thrown when the `emailed` checkbox property does not exist on the
  * database's schema at all (as opposed to existing but unset on a given
  * page — that per-page case is handled by `getCheckbox()`, never throws).
  * Fails loud and clear instead of letting Notion's raw API error propagate
@@ -146,8 +146,8 @@ export class NotionCapabilityError extends Error {
 export class MissingEmailedPropertyError extends Error {
   constructor(notionMessage: string) {
     super(
-      `Emailed property not found on this database — add it in Notion first ` +
-      `(Settings → add a Checkbox property named "Emailed"). See README. ` +
+      `emailed property not found on this database — add it in Notion first ` +
+      `(Settings → add a Checkbox property named "emailed"). See README. ` +
       `(Notion said: ${notionMessage})`
     );
     this.name = "MissingEmailedPropertyError";
@@ -245,7 +245,7 @@ export class NologClient {
   }
 
   /**
-   * Query all public posts that have not yet been marked `Emailed`
+   * Query all public posts that have not yet been marked `emailed`
    * (oldest-first). Reuses `queryDatabase()` — never duplicates the fetch
    * logic. Returns an empty array (never null, never throws) when nothing
    * matches.
@@ -257,7 +257,7 @@ export class NologClient {
       filter: {
         and: [
           { property: "status", select: { equals: "public" } },
-          { property: "Emailed", checkbox: { equals: false } },
+          { property: "emailed", checkbox: { equals: false } },
         ],
       },
     };
@@ -278,7 +278,7 @@ export class NologClient {
     } catch (err) {
       // Same unverified-detection caveat as patchPage() (RESEARCH.md Open
       // Question 1 / Pitfall 3) — adjust to match real Notion behaviour.
-      if (err instanceof Error && /Emailed/i.test(err.message) && /propert/i.test(err.message)) {
+      if (err instanceof Error && /emailed/i.test(err.message) && /propert/i.test(err.message)) {
         throw new MissingEmailedPropertyError(err.message);
       }
       throw err;
@@ -363,9 +363,9 @@ export class NologClient {
       // Pitfall 3). Notion's public docs do not specify the exact error shape
       // for a PATCH properties body referencing a property absent from the
       // schema entirely. Before D-01 is considered done, this must be
-      // validated against a real workspace (temporarily remove the Emailed
+      // validated against a real workspace (temporarily remove the emailed
       // property, observe the actual error, adjust this condition to match).
-      if (res.status === 400 && /Emailed/i.test(bodyText) && /propert/i.test(bodyText)) {
+      if (res.status === 400 && /emailed/i.test(bodyText) && /propert/i.test(bodyText)) {
         throw new MissingEmailedPropertyError(bodyText);
       }
 
@@ -375,10 +375,10 @@ export class NologClient {
 
   /**
    * Durably mark a post as emailed (checkbox write). Per D-04, this writes
-   * ONLY the `Emailed` checkbox — no timestamp/"emailed date" property.
+   * ONLY the `emailed` checkbox — no timestamp/"emailed date" property.
    * Idempotent — safe to call more than once on the same page.
    */
   public async markEmailed(pageId: string): Promise<void> {
-    await this.patchPage(pageId, { Emailed: { checkbox: true } });
+    await this.patchPage(pageId, { emailed: { checkbox: true } });
   }
 }
