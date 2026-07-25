@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 02
 current_phase_name: backfill-script
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-25T15:13:52.049Z"
-last_activity: 2026-07-25
+stopped_at: Completed 02-02-PLAN.md (gap closure)
+last_updated: "2026-07-25T15:21:57.647Z"
+last_activity: 2026-07-26
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 2
   completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-07-24)
 ## Current Position
 
 Phase: 02 (backfill-script) — EXECUTING
-Plan: 1 of 1
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-25 — Phase 02 execution started
+Last activity: 2026-07-26 — Phase 02 execution started
 
 Progress: [██████████] 100%
 
@@ -61,6 +61,7 @@ Progress: [██████████] 100%
 | Phase 01 P01 | 6 | 2 tasks | 5 files |
 | Phase 01 P02 | 15 | 1 tasks | 1 files |
 | Phase 02 P01 | 12 | 3 tasks | 2 files |
+| Phase 02 P02 | 4min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 2026-07-25 CORRECTION: CR-01 was a misdiagnosis. User-provided screenshot of the live production Notion database confirmed the real property is lowercase `status` (matching thumbnail/summary/category/tag/author, all lowercase-camelCase) — not `Status`. The two prior entries above are retracted. Reverted both query filters back to `property: "status"` (commit `588496d`), corrected `mapPageToPost()`'s getSelect() primary/fallback order and both `Post.status` JSDoc copies to match reality. `01-VERIFICATION.md` and `01-REVIEW.md` both carry `## CORRECTION` sections documenting this.
 - [Phase ?]: Phase 2 Plan 01: all fifteen D-01..D-15 locked decisions implemented as specified; no deviations required
 - [Phase ?]: Phase 2 Plan 01: live-database human-check verification (DATA-03 SC#1-3, D-04, D-05) deferred — no Notion credentials in this execution environment, matching Phase 1's identical carried-forward blocker
+- [Phase ?]: isSystemicAbort() classifies purely on instanceof identity (never message text); branch order isSystemicAbort -> isRateLimited -> generic is load-bearing and automated-line-asserted
+- [Phase ?]: COVERAGE.md row 0/row 9 cells rebalanced (not truncated) to satisfy the api-coverage length validator; all 18 rows and 9/9 INTEGRATE/OPT-OUT decisions preserved
 
 ### Pending Todos
 
@@ -102,6 +105,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-25T08:17:53.199Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-07-25T15:21:57.631Z
+Stopped at: Completed 02-02-PLAN.md (gap closure)
 Resume file: None
