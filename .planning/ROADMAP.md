@@ -52,7 +52,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Interrupting the script partway through and re-running it processes only posts still unmarked (check-before-write) and completes cleanly without re-marking or erroring on already-emailed posts.
   3. The script's request rate during a run stays within Notion's ~3 req/s limit, confirmed by inspecting timing/log output against a nontrivial post count.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+- [ ] 02-01-PLAN.md — Backfill CLI: end-to-end dry-run preview tracer (D-01/D-03), throttled write loop with N marked/M failed summary and exit codes (D-04/D-06/D-08/D-09/D-10), and single fixed-backoff retry on a Notion rate-limit response (D-07/D-14)
 
 ### Phase 3: Subscribe Path
 
@@ -124,7 +126,7 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Notion Data Layer | 2/2 | Complete    | 2026-07-25 |
-| 2. Backfill Script | 0/TBD | Not started | - |
+| 2. Backfill Script | 0/1 | Planned | - |
 | 3. Subscribe Path | 0/TBD | Not started | - |
 | 4. Notify Route | 0/TBD | Not started | - |
 | 5. Production Cutover | 0/TBD | Not started | - |
