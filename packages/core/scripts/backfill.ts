@@ -52,6 +52,29 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Fixed backoff for the single rate-limit retry (D-07). Deliberately does
+// NOT honor a real Retry-After header: patchPage() (client.ts, read-only
+// this phase) exposes only the response body text through the thrown
+// Error's message, never the Response object or its headers, so D-07's
+// "...if present, else a short fixed backoff" resolves to its else branch —
+// the header is not present TO THIS SCRIPT (D-14).
+const RETRY_BACKOFF_MS = 1000;
+
+// markEmailed() has no typed rate-limit error class — the only available
+// signal is patchPage()'s generic Error message, which embeds the raw
+// status code as `Notion patch failed: ${res.status} ...`. Anchor on the
+// message PREFIX (not a substring search anywhere in the string) so a
+// status code appearing inside Notion's response body text cannot produce
+// a false positive. 529 is included alongside 429 per Notion's own
+// rate-limit/service-overload guidance.
+function isRateLimited(err: unknown): boolean {
+  return (
+    err instanceof Error &&
+    (err.message.startsWith("Notion patch failed: 429 ") ||
+      err.message.startsWith("Notion patch failed: 529 "))
+  );
+}
+
 async function main() {
   let posts;
   try {
@@ -115,20 +138,40 @@ async function main() {
         console.error(`${marked} marked / ${failed} failed (partial — aborted)`);
         process.exitCode = 1;
         return;
+      } else if (isRateLimited(err)) {
+        // One bounded retry after a fixed backoff before this falls through
+        // to a permanent per-post failure (D-07). The post is accounted for
+        // exactly once across this branch — never incremented in both the
+        // retry's catch and the outer catch. The loop's single trailing
+        // sleep(DELAY_MS) below still runs exactly once for this iteration
+        // — no extra sleep is duplicated here.
+        await sleep(RETRY_BACKOFF_MS);
+        try {
+          await client.markEmailed(post.id);
+          marked += 1;
+          console.log(`  marked  ${post.id}  ${post.title} (after rate-limit retry)`);
+        } catch (retryErr) {
+          const retryMessage = retryErr instanceof Error ? retryErr.message : String(retryErr);
+          console.error(
+            `  FAILED  ${post.id}  ${post.title}: rate-limit retry also failed: ${retryMessage}`
+          );
+          failed += 1;
+        }
+      } else {
+        // Any other per-post failure is logged and the loop continues — a
+        // second run automatically picks these up, since
+        // getUnemailedPublicPosts() already excludes everything that
+        // succeeded (D-06).
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`  FAILED  ${post.id}  ${post.title}: ${message}`);
+        failed += 1;
       }
-
-      // Any other per-post failure is logged and the loop continues — a
-      // second run automatically picks these up, since
-      // getUnemailedPublicPosts() already excludes everything that
-      // succeeded (D-06).
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`  FAILED  ${post.id}  ${post.title}: ${message}`);
-      failed += 1;
     }
 
     // Hold the request spacing on both the success and the failure paths —
     // sleeping only on success would let a run of failures burst past the
-    // rate limit.
+    // rate limit. Runs exactly once per iteration regardless of which
+    // branch above was taken.
     await sleep(DELAY_MS);
   }
 

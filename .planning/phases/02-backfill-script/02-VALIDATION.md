@@ -5,7 +5,7 @@ slug: backfill-script
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
 status: draft
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-07-25
 ---
 
@@ -44,12 +44,12 @@ Task IDs are assigned by the planner; this map is keyed on behavior and is bound
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | DATA-03 (SC#1) | — | Marks all N pre-existing public posts as `emailed`, prints "N marked / M failed" | manual-only | Live run against test DB, then confirm `getUnemailedPublicPosts()` returns `[]` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | DATA-03 (SC#2) | — | Interrupt mid-run, re-run processes only still-unmarked posts, no re-marking or erroring | manual-only | Run, `Ctrl+C` partway (400ms delay gives a comfortable window), re-run, confirm the second run's "found N unemailed" reflects only the remainder | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | DATA-03 (SC#3) | — | Request rate stays within Notion's ~3 req/s | manual-only | Run against 10+ posts, inspect per-post log timestamps for ≥~400ms gaps (~2.5 req/s), confirm no 429s | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-04 (abort path) | T-02-01 | `NotionCapabilityError` aborts immediately with exactly one message, non-zero exit | manual-only | Revoke "Update content" (same technique as `verify-403.ts`), run against 2+ unemailed posts, confirm one abort message (not N) and `echo $?` non-zero | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-05 (abort path) | T-02-01 | `MissingEmailedPropertyError` aborts immediately | manual-only | Remove the `emailed` property (same technique as `01-UAT.md` test 3), run, confirm abort message and non-zero exit | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | D-01/D-03 (dry-run) | T-02-02 | `--dry-run` writes nothing and lists count + per-post titles | manual-only | Run with `--dry-run` against a DB with unemailed posts, then confirm `getUnemailedPublicPosts()` count is unchanged | ❌ W0 | ⬜ pending |
+| 02-01-T2 | 01 | 1 | DATA-03 (SC#1) | — | Marks all N pre-existing public posts as `emailed`, prints "N marked / M failed" | manual-only | Live run against test DB, then confirm `getUnemailedPublicPosts()` returns `[]` | ✅ | ⬜ pending (no live Notion credentials in execution environment) |
+| 02-01-T2 | 01 | 1 | DATA-03 (SC#2) | — | Interrupt mid-run, re-run processes only still-unmarked posts, no re-marking or erroring | manual-only | Run, `Ctrl+C` partway (400ms delay gives a comfortable window), re-run, confirm the second run's "found N unemailed" reflects only the remainder | ✅ | ⬜ pending (no live Notion credentials in execution environment) |
+| 02-01-T2 | 01 | 1 | DATA-03 (SC#3) | — | Request rate stays within Notion's ~3 req/s | manual-only | Run against 10+ posts, inspect per-post log timestamps for ≥~400ms gaps (~2.5 req/s), confirm no 429s | ✅ | ⬜ pending (no live Notion credentials in execution environment) |
+| 02-01-T2 | 01 | 1 | D-04 (abort path) | T-02-01 | `NotionCapabilityError` aborts immediately with exactly one message, non-zero exit | manual-only | Revoke "Update content" (same technique as `verify-403.ts`), run against 2+ unemailed posts, confirm one abort message (not N) and `echo $?` non-zero | ✅ | ⬜ pending (no live Notion credentials in execution environment) |
+| 02-01-T1 | 01 | 1 | D-05 (abort path) | T-02-01 | `MissingEmailedPropertyError` aborts immediately | manual-only | Remove the `emailed` property (same technique as `01-UAT.md` test 3), run, confirm abort message and non-zero exit | ✅ | ⬜ pending (no live Notion credentials in execution environment) |
+| 02-01-T1 | 01 | 1 | D-01/D-03 (dry-run) | T-02-02 | `--dry-run` writes nothing and lists count + per-post titles | automated smoke + manual | Run with `--dry-run` against a DB with unemailed posts, then confirm `getUnemailedPublicPosts()` count is unchanged | ✅ | ✅ automated smoke green (invalid-credential ABORT probe); live-DB human-check pending (no credentials in execution environment) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -59,9 +59,9 @@ Task IDs are assigned by the planner; this map is keyed on behavior and is bound
 
 ## Wave 0 Requirements
 
-- [ ] `packages/core/scripts/backfill.ts` — does not exist yet; this phase's entire deliverable
-- [ ] `packages/core/package.json` `backfill` script entry — does not exist yet
-- [ ] No framework install needed — explicitly out of scope
+- [x] `packages/core/scripts/backfill.ts` — created across 02-01-T1/T2/T3
+- [x] `packages/core/package.json` `backfill` script entry — added in 02-01-T1
+- [x] No framework install needed — explicitly out of scope
 
 *Every ❌ W0 above resolves once this phase's own deliverable exists; there is no separate test-scaffolding wave.*
 
