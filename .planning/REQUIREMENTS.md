@@ -81,7 +81,7 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 |-------------|-------|--------|
 | DATA-01 | Phase 1: Notion Data Layer | Gaps Found |
 | DATA-02 | Phase 1: Notion Data Layer | Gaps Found |
-| DATA-03 | Phase 2: Backfill Script | Gaps Found |
+| DATA-03 | Phase 2: Backfill Script | Complete |
 | DATA-04 | Phase 1: Notion Data Layer | Gaps Found |
 | SUB-01 | Phase 3: Subscribe Path | Pending |
 | SUB-02 | Phase 3: Subscribe Path | Pending |

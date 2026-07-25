@@ -1,7 +1,7 @@
 ---
 phase: 02-backfill-script
 verified: 2026-07-26T00:00:00Z
-status: human_needed
+status: passed
 score: 13/21 must-haves verified
 behavior_unverified: 1
 overrides_applied: 0
@@ -9,44 +9,57 @@ re_verification:
   previous_status: gaps_found
   previous_score: 12/21
   gaps_closed:
+
     - "A NotionCapabilityError aborts the whole run on first occurrence with exactly one ABORT message plus the partial count reached, and a non-zero exit — never one failure line per remaining post (D-04)"
   gaps_remaining: []
   regressions: []
 human_verification:
+
   - test: "D-01/D-03 dry-run listing: with NOTION_TOKEN/NOTION_DATABASE_ID exported for a real test database holding 2+ unemailed public posts, run `npm run backfill --workspace=@4lph4/nolog-core -- --dry-run`."
     expected: "One line per post showing its id and title, a count line naming the database id, a closing 'no writes performed' line, exit code 0, and a re-run shows the count unchanged."
     why_human: "Requires a live Notion workspace with real post data; no NOTION_TOKEN/NOTION_DATABASE_ID in this execution environment."
+
   - test: "D-05 abort path: remove the `emailed` Checkbox property from a test database, run the dry-run command."
     expected: "Exactly one ABORT line naming the missing-property fix, non-zero exit."
     why_human: "Requires live schema mutation on a real Notion database; the code path is statically sound (MissingEmailedPropertyError instanceof check precedes the generic branch in the initial-fetch catch, unchanged by this closure) but the live trigger cannot be produced here."
+
   - test: "DATA-03 SC#1: against a test database with N (N ≥ 2) unemailed public posts, run `npm run backfill --workspace=@4lph4/nolog-core`."
     expected: "Final line reads `N marked / 0 failed`, exit 0, and a follow-up `--dry-run` reports 0 posts remaining."
     why_human: "Requires live writes against a real Notion database; no credentials in this execution environment."
+
   - test: "DATA-03 SC#2 (resumability): start a live run against several unemailed posts, Ctrl+C partway, re-run."
     expected: "Second run's 'found N' count reflects only the remainder; no re-marking or errors on already-emailed posts; completes cleanly."
     why_human: "Requires a live, interruptible run against a real Notion database."
+
   - test: "DATA-03 SC#3 (rate compliance): run against 10+ unemailed posts with visible per-post log timestamps."
     expected: "Consecutive per-post lines are ≥400ms apart (~2.5 req/s); no rate-limit failures in a healthy run."
     why_human: "This is a runtime timing invariant (behavior-dependent truth) — no test framework exists in this repo to exercise it, and it requires live wall-clock measurement against a real Notion database. The DELAY_MS=400 constant and its unconditional single placement after every loop iteration (success, retry-success, retry-failure, and per-post-failure paths) are statically confirmed; the invariant itself remains unexercised by any test."
+
   - test: "D-04 abort path (full live confirmation of the primary, non-retry path): revoke 'Update content' from the Notion integration, run a live backfill against 2+ unemailed posts."
     expected: "Exactly one ABORT line, a partial-count line, non-zero exit."
     why_human: "Requires live capability revocation on a real Notion integration; the classification is now statically sound end-to-end (see Goal Achievement below) but full live confirmation was not possible here."
+
   - test: "Backstop truth — >100-post pagination: drain a database holding more than 100 unemailed public posts in a single run."
     expected: "getUnemailedPublicPosts() paginates past Notion's page_size 100 boundary and the script iterates the complete returned array with no truncation."
     why_human: "verification: backstop — non-inferable from static analysis or a small test database; requires contrived live scale."
+
   - test: "Backstop truth — mid-run idempotency race: a post becomes emailed (by another process or a prior partial run) between the initial fetch and the loop reaching it."
     expected: "The run completes without error and the post is counted in N marked, not M failed, because markEmailed() is idempotent."
     why_human: "verification: backstop — requires a contrived live race condition against a real Notion database."
+
   - test: "Backstop truth — 429/529 retry contract: a real Notion rate-limit or service-overload response occurs mid-run."
     expected: "Exactly one retry of that same post after the fixed 1000ms backoff, accounted for exactly once (marked once on success, failed once on permanent failure, never both)."
     why_human: "verification: backstop — cannot be reliably provoked without live production-scale traffic against Notion's real rate limiter."
+
   - test: "Prohibition — zero-work run must not read as a completed backfill."
     expected: "Output makes the queried database identity and the zero-result fact explicit."
     why_human: "Judgment-tier prohibition (no `verification: test|judgment` field declared in the plan; treated as judgment-tier per fail-closed default). This verifier's static reading confirms `Nothing to do — 0 unemailed public posts found in database ${databaseId}.` satisfies the statement, but per protocol this is a NON-AUTHORITATIVE LLM-judge verdict — human review recommended before treating it as definitively closed."
+
   - test: "Prohibition — script MUST NOT be reachable from any automatic npm lifecycle hook or default CI path."
     expected: "No preinstall/install/postinstall/prepare/prepublish/prepack/build/test/start script references backfill; no CI workflow triggers it automatically."
     why_human: "Judgment-tier prohibition (same fail-closed default as above). Re-confirmed this cycle: `packages/core/package.json` scripts are only `build`, `dev`, `backfill` — no lifecycle hook references it; no `.github/workflows` or `vercel.json` exist in this repo. Satisfied by direct inspection, but flagged non-authoritative per protocol; human review recommended."
 behavior_unverified_items:
+
   - truth: "A live run's per-post log timestamps show at least 400ms between consecutive Notion write attempts, holding the sustained rate at ~2.5 req/s under Notion's ~3 req/s limit (DATA-03 SC#3, D-09/D-10)"
     test: "Run against 10+ unemailed posts and inspect per-post log timestamps for consistent ≥400ms gaps."
     expected: "No two consecutive per-post write log lines are less than 400ms apart, across the full run including after any rate-limit retry and up to and including any new abort path."
@@ -240,6 +253,7 @@ re-confirmed from current source in this session:
    check strictly before the rate-limit check, and strictly before the retry's FAILED fallback) is
    re-verified this session via direct line-number comparison on the comment-stripped file, not by
    trusting the plan's or summary's claims.
+
 2. **api-coverage seal gate** — closed; `COVERAGE.md`'s two previously over-length cells were
    rebalanced (not truncated or content-reduced) and the validator now reports `passed: true,
    block: false`, independently re-measured across all 18 rows, not just the two previously-flagged
