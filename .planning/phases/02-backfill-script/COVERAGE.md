@@ -10,7 +10,7 @@ subtraction record, not a wish list.
 
 | capability | decision | reason |
 |---|---|---|
-| `POST /v1/databases/{id}/query` — fetch public posts with `emailed` unchecked (via `getUnemailedPublicPosts()`) | INTEGRATE | |
+| `POST /v1/databases/{id}/query` — fetch unemailed public posts | INTEGRATE | Via `getUnemailedPublicPosts()`; server-side filter on `status` public + `emailed` unchecked |
 | Query pagination (`start_cursor` / `next_cursor`, `page_size: 100`) | INTEGRATE | Handled inside `getUnemailedPublicPosts()`; the script consumes the complete returned array, so a >100-post back catalog drains in one run |
 | Query sort (`created_time` ascending) | INTEGRATE | Script preserves the returned order; it never re-sorts or reverses |
 | `PATCH /v1/pages/{id}` — set the `emailed` checkbox (via `markEmailed()`) | INTEGRATE | |
@@ -19,7 +19,7 @@ subtraction record, not a wish list.
 | 429 response status — rate limited | INTEGRATE | Detected from `patchPage()`'s generic Error message prefix → D-07 single retry with fixed backoff |
 | 529 response status — service overloaded | INTEGRATE | Notion's own rate-limit documentation directs callers to handle 529 identically to 429; one extra alternation, no cost on the 429 path (02-RESEARCH.md assumption A3, resolved by planner discretion) |
 | Documented ~3 req/s rate limit | INTEGRATE | Fixed 400ms inter-request delay (~2.5 req/s, ~17% headroom) per D-09/D-10 |
-| `Retry-After` response header on a 429 | OPT-OUT | `patchPage()` surfaces only the response body text through the thrown `Error`'s message — never the `Response` object or its headers — and this phase's boundary forbids changing `packages/core/src/client.ts`. D-14 locks fixed-backoff-only. Reinstating this is a purely additive change Phase 4 can make on its own terms. |
+| `Retry-After` response header on a 429 | OPT-OUT | `patchPage()` surfaces only body text, never response headers, and `client.ts` is out of scope this phase. D-14 locks fixed-backoff-only. Phase 4 can reinstate it additively. |
 | Notion structured error `code` field / request id | OPT-OUT | Not surfaced by `patchPage()`; the thrown message already carries the status code plus body text, which is sufficient for both the D-07 retry decision and the D-06 per-post failure log |
 | `POST /v1/pages` (create page) | OPT-OUT | Not needed — a backfill only flips an existing checkbox; it never creates content |
 | Page archive / delete (`PATCH` with `archived: true`) | OPT-OUT | Not needed, and deliberately out of reach: this tool must never destroy a forker's posts |
