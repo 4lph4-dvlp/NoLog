@@ -8,13 +8,15 @@ updated: 2026-07-26T00:00:00Z
 
 ## Current Test
 
-number: 4
-name: DATA-03 SC#2 — resumability / check-before-write
+number: 6
+name: D-04 abort path — revoked "Update content" capability
 expected: |
-  A re-run against a partially-marked database processes only the still-unmarked
-  posts, re-marks nothing, and errors on nothing.
-setup_required: uncheck ONE of the three `emailed` boxes in Notion, leaving two checked
+  Exactly one ABORT line, a partial-count line, non-zero exit.
+setup_required: uncheck all three `emailed` boxes; revoke "Update content" from the integration
 awaiting: user response
+blocked_on: |
+  SECURITY — the integration token was pasted in plaintext during test 5 and must be rotated
+  at notion.so/my-integrations before further live testing. Resume after rotation.
 
 ## Tests
 
@@ -95,13 +97,81 @@ note: |
 ### 4. DATA-03 SC#2 — resumability across interruption
 setup: several unemailed posts; start a live run, Ctrl+C partway, then re-run
 expected: Second run's "found N" count reflects only the remainder; no re-marking or errors on already-emailed posts; completes cleanly.
-result: [pending]
+result: pass
+observed: |
+  Found 1 unemailed public post(s) in database 3532c61e4a248000aac4f0bee1bbfb68.
+    marked  36e2c61e-4a24-8048-b7be-c6765c807e23  Antigravity 2.0 사용기
+  1 marked / 0 failed
+method_deviation: |
+  The literal procedure (Ctrl+C a run partway, then re-run) is not executable on this
+  database: 3 posts x 400ms means the whole run finishes in ~1.2s, so a hand-timed SIGINT
+  cannot reliably land mid-loop. The partial state was instead produced directly by
+  unchecking one of the three `emailed` boxes in the Notion UI, then re-running.
+
+  This tests the same invariant more deterministically. What SC#2 actually asserts is a
+  property of the partially-marked STATE ("processes only posts still unmarked, without
+  re-marking or erroring on already-emailed posts"); the interruption is merely one way to
+  produce that state. What the deviation does NOT exercise is a real SIGINT mid-loop — but
+  the script installs no interrupt handler, holds no local state across iterations, and each
+  markEmailed() is an independent idempotent PATCH, so a kill between writes has no state to
+  corrupt. Residual risk judged negligible.
+note: |
+  Found exactly 1 (not 3), marked exactly that one, `1 marked / 0 failed`, exit 0. The two
+  already-checked posts were never listed, never re-marked, and produced no error —
+  check-before-write confirmed against a live database. SC#2 satisfied.
 
 ### 5. DATA-03 SC#3 — rate compliance
 setup: 10+ unemailed posts, with per-post log timestamps visible
 expected: Consecutive per-post lines are >=400ms apart (~2.5 req/s); no rate-limit failures in a healthy run.
 note: DELAY_MS=400 and its unconditional single placement after every loop iteration (success, retry-success, retry-failure, per-post-failure) are statically confirmed; only the wall-clock invariant is unexercised.
-result: [pending]
+result: pass
+observed: |
+  01:13:51.440 Found 3 unemailed public post(s) in database 3532c61e4a248000aac4f0bee1bbfb68.
+  01:13:51.866   marked  6b42c61e-4a24-82b0-ae11-01fdb5e7110f  NoLog를 만들며
+  01:13:52.963   marked  36e2c61e-4a24-8048-b7be-c6765c807e23  Antigravity 2.0 사용기
+  01:13:54.070   marked  3702c61e-4a24-8001-a9a6-c4ff3aadadb5  만년필을 선물 하는 것
+  01:13:54.470 3 marked / 0 failed
+measured: |
+  Gap 1 (marked #1 -> #2): 51.866 -> 52.963 = 1097ms  >= 400ms PASS
+  Gap 2 (marked #2 -> #3): 52.963 -> 54.070 = 1107ms  >= 400ms PASS
+  Observed sustained rate ~0.9 req/s, far under Notion's ~3 req/s limit.
+  Each gap decomposes as the fixed 400ms throttle plus ~700ms of real Notion PATCH latency.
+
+  BONUS CONFIRMATION not asked for by the test: the summary line lands at 54.470, exactly
+  ~400ms after the final `marked` line at 54.070. That proves sleep(DELAY_MS) also runs after
+  the LAST iteration — i.e. the throttle is unconditionally placed once per iteration rather
+  than only between posts. That is the D-09/D-10 "runs once per iteration on every path"
+  property, observed rather than merely read from source.
+method_deviation: |
+  The literal procedure asked for "10+ unemailed posts with visible per-post log timestamps".
+  Two problems with it as written: (1) this database holds only 3 posts, and (2) the script
+  does not emit timestamps at all, so the stated observation was impossible as specified.
+  Substituted: piped stdout through a per-line `date +%H:%M:%S.%3N` prefixer, which measures
+  the inter-request delay directly.
+
+  What this does NOT cover: sustained behaviour at scale (drift over 100+ posts). Judged low
+  residual risk — DELAY_MS is a fixed integer constant, not an adaptive/computed value, and
+  its single unconditional placement per iteration is statically confirmed on all four paths
+  (success, per-post failure, retry-success, retry-failure). Scale adds no new mechanism.
+incidental_finding: |
+  The first attempt at this test ran in a shell that did not carry NOTION_TOKEN (shell state
+  does not persist between separate invocations), producing a live 401. Not a test failure —
+  but it did incidentally exercise D-15 for free, against a real Notion 401:
+
+    01:12:45.452 ABORT: initial fetch of unemailed public posts failed: Notion query failed:
+      401 {"object":"error","status":401,"code":"unauthorized","message":"API token is invalid.",
+      "request_id":"31b1877e-8b0e-4db3-a67f-d10034eb6c28"}
+    npm error code 1
+
+  This confirms 02-01's D-15 truth live: "Any other failure of the initial
+  getUnemailedPublicPosts() call also aborts before the per-post loop with one ABORT message
+  and a non-zero exit." Exactly one ABORT line, no per-post lines emitted, exit 1. That truth
+  had only ever been checked statically and via a deliberately-bogus-token probe; this is an
+  organic confirmation with a genuine Notion 401 body.
+
+  Also note the timing: 01:12:37.746 (tsx start) -> 01:12:45.452 (abort) is ~7.7s spent on a
+  single failing query round-trip. Unrelated to the throttle, but worth knowing that Notion
+  API latency here is seconds, not milliseconds — the 400ms throttle is not the dominant cost.
 
 ### 6. D-04 abort path — revoked "Update content" capability (primary, non-retry path)
 setup: revoke "Update content" from the Notion integration; run a live backfill against 2+ unemailed posts
@@ -149,9 +219,9 @@ result: [pending]
 ## Summary
 
 total: 12
-passed: 4
+passed: 6
 issues: 0
-pending: 8
+pending: 6
 skipped: 0
 blocked: 0
 
