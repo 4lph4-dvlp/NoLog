@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "backfill": "npx tsx scripts/backfill.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.20.0"
