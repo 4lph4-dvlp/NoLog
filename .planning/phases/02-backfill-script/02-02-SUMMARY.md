@@ -155,3 +155,12 @@ None - no external service configuration required.
 ---
 *Phase: 02-backfill-script*
 *Completed: 2026-07-25*
+
+## Self-Check: PASSED
+
+- FOUND: packages/core/scripts/backfill.ts
+- FOUND: .planning/phases/02-backfill-script/COVERAGE.md
+- FOUND: .planning/phases/02-backfill-script/02-02-SUMMARY.md
+- FOUND commit: 8d4a1f3 (Task 1)
+- FOUND commit: 8036646 (Task 2)
+- FOUND commit: 1096bcd (SUMMARY.md)
