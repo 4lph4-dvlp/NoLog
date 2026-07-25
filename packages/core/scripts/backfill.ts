@@ -75,6 +75,31 @@ function isRateLimited(err: unknown): boolean {
   );
 }
 
+// The single systemic-vs-per-post decision, reached from every catch site in
+// the write loop below (the outer per-post catch AND the rate-limit retry's
+// inner catch). Classifies on typed instance identity ONLY — never on
+// message text, which is Notion-controlled data an attacker or a coincidence
+// could shape to look like something else. A typed class outranks a string.
+function isSystemicAbort(err: unknown): err is NotionCapabilityError | MissingEmailedPropertyError {
+  return (
+    err instanceof NotionCapabilityError || err instanceof MissingEmailedPropertyError
+  );
+}
+
+// Single emitter for both loop abort sites, so "exactly one ABORT message"
+// plus the partial count is a structural guarantee rather than a convention
+// each call site has to remember. Callers are responsible for `return`ing
+// out of `main()` immediately after calling this.
+function reportSystemicAbort(
+  err: NotionCapabilityError | MissingEmailedPropertyError,
+  marked: number,
+  failed: number
+): void {
+  console.error("ABORT:", err.message);
+  console.error(`${marked} marked / ${failed} failed (partial — aborted)`);
+  process.exitCode = 1;
+}
+
 async function main() {
   let posts;
   try {
@@ -128,15 +153,16 @@ async function main() {
       marked += 1;
       console.log(`  marked  ${post.id}  ${post.title}`);
     } catch (err) {
-      if (err instanceof NotionCapabilityError) {
-        // Systemic setup failure — every remaining post would fail
-        // identically. Abort immediately rather than burning the request
-        // budget printing one identical failure line per remaining post
-        // (D-04). This branch MUST be checked before the generic catch
-        // below.
-        console.error("ABORT:", err.message);
-        console.error(`${marked} marked / ${failed} failed (partial — aborted)`);
-        process.exitCode = 1;
+      if (isSystemicAbort(err)) {
+        // Systemic condition — a revoked "Update content" capability, or the
+        // `emailed` property vanishing from the schema mid-run. Every
+        // remaining post would fail identically. Abort immediately rather
+        // than burning the request budget printing one identical failure
+        // line per remaining post (D-04). This branch MUST be checked before
+        // both the rate-limit branch and the generic per-post branch below —
+        // a 403 or a schema-400 that happens to be shaped like a rate-limit
+        // response must never be routed into the retry path.
+        reportSystemicAbort(err, marked, failed);
         return;
       } else if (isRateLimited(err)) {
         // One bounded retry after a fixed backoff before this falls through
@@ -151,6 +177,15 @@ async function main() {
           marked += 1;
           console.log(`  marked  ${post.id}  ${post.title} (after rate-limit retry)`);
         } catch (retryErr) {
+          if (isSystemicAbort(retryErr)) {
+            // A systemic condition can first surface inside this ~1s retry
+            // window (e.g. capability revoked, or the schema changed,
+            // between the rate-limit response and its retry). Treating it as
+            // per-post noise here would reintroduce the exact behavior D-04
+            // forbids, just one retry later.
+            reportSystemicAbort(retryErr, marked, failed);
+            return;
+          }
           const retryMessage = retryErr instanceof Error ? retryErr.message : String(retryErr);
           console.error(
             `  FAILED  ${post.id}  ${post.title}: rate-limit retry also failed: ${retryMessage}`
