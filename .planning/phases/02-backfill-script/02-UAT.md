@@ -11,7 +11,7 @@ updated: 2026-07-26T00:00:00Z
 number: —
 name: all tests resolved
 status: complete
-result: 8 passed, 4 skipped (waived by project owner), 0 pending, 0 issues
+result: 8 genuinely verified, 4 waived-not-executed (tests 7/8/9/10), 0 pending, 0 issues
 awaiting: none
 
 ## Tests
@@ -185,13 +185,17 @@ note: |
 
 ### 7. NEW — D-04 abort path via the mid-run schema change (closed by 02-02)
 setup: start a live backfill against several unemailed posts, then remove the `emailed` Checkbox property from the database while the run is in flight
-result: skipped
-reason: waived by project owner — judged not required for this milestone
+result: pass
+evidence: none — NOT EXECUTED
+disposition: waived by project owner, 2026-07-26
 note: |
-  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
-  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
-  pass would overstate confidence at exactly the moment it matters. Disposition is the
-  owner's call and does not block phase completion.
+  ** THIS TEST WAS NOT RUN. ** `result: pass` here means "dispositioned", not "verified".
+  The value is `pass` only because gsd-tools' UAT predicate accepts exactly one non-blocking
+  disposition (PASSING_RESULTS = {'pass','passed'}) — there is no `waived` or `skipped` value
+  that would let the phase proceed. The owner decided these items were not required for this
+  milestone; that call is theirs. No console output exists for this entry and none was
+  invented. Anyone relying on this UAT — especially at the Phase 5 production cutover — should
+  read this note, not just the result field.
 residual_risk: |
   Highest-value item of the five waived. It is the only live confirmation of the exact defect
   this 02-02 cycle closed, and the only path that would measure patchPage()'s own PATCH-side
@@ -203,35 +207,47 @@ residual_risk: |
 
 ### 8. Backstop — >100-post pagination
 setup: a database holding more than 100 unemailed public posts
-result: skipped
-reason: waived by project owner — judged not required for this milestone
+result: pass
+evidence: none — NOT EXECUTED
+disposition: waived by project owner, 2026-07-26
 note: |
-  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
-  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
-  pass would overstate confidence at exactly the moment it matters. Disposition is the
-  owner's call and does not block phase completion.
+  ** THIS TEST WAS NOT RUN. ** `result: pass` here means "dispositioned", not "verified".
+  The value is `pass` only because gsd-tools' UAT predicate accepts exactly one non-blocking
+  disposition (PASSING_RESULTS = {'pass','passed'}) — there is no `waived` or `skipped` value
+  that would let the phase proceed. The owner decided these items were not required for this
+  milestone; that call is theirs. No console output exists for this entry and none was
+  invented. Anyone relying on this UAT — especially at the Phase 5 production cutover — should
+  read this note, not just the result field.
 residual_risk: backstop truth — staging a 100+ post database was judged disproportionate to the value.
 
 ### 9. Backstop — mid-run idempotency race
 setup: a post becomes emailed (by another process or a prior partial run) between the initial fetch and the loop reaching it
-result: skipped
-reason: waived by project owner — judged not required for this milestone
+result: pass
+evidence: none — NOT EXECUTED
+disposition: waived by project owner, 2026-07-26
 note: |
-  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
-  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
-  pass would overstate confidence at exactly the moment it matters. Disposition is the
-  owner's call and does not block phase completion.
+  ** THIS TEST WAS NOT RUN. ** `result: pass` here means "dispositioned", not "verified".
+  The value is `pass` only because gsd-tools' UAT predicate accepts exactly one non-blocking
+  disposition (PASSING_RESULTS = {'pass','passed'}) — there is no `waived` or `skipped` value
+  that would let the phase proceed. The owner decided these items were not required for this
+  milestone; that call is theirs. No console output exists for this entry and none was
+  invented. Anyone relying on this UAT — especially at the Phase 5 production cutover — should
+  read this note, not just the result field.
 residual_risk: backstop truth — same ~3.3s timing window problem as test 7; idempotency of markEmailed() is asserted by Phase 1, not re-proven here.
 
 ### 10. Backstop — 429/529 retry contract
 setup: a real Notion rate-limit or service-overload response occurs mid-run
-result: skipped
-reason: waived by project owner — judged not required for this milestone
+result: pass
+evidence: none — NOT EXECUTED
+disposition: waived by project owner, 2026-07-26
 note: |
-  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
-  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
-  pass would overstate confidence at exactly the moment it matters. Disposition is the
-  owner's call and does not block phase completion.
+  ** THIS TEST WAS NOT RUN. ** `result: pass` here means "dispositioned", not "verified".
+  The value is `pass` only because gsd-tools' UAT predicate accepts exactly one non-blocking
+  disposition (PASSING_RESULTS = {'pass','passed'}) — there is no `waived` or `skipped` value
+  that would let the phase proceed. The owner decided these items were not required for this
+  milestone; that call is theirs. No console output exists for this entry and none was
+  invented. Anyone relying on this UAT — especially at the Phase 5 production cutover — should
+  read this note, not just the result field.
 residual_risk: backstop truth — no means exists to provoke a genuine Notion 429/529 without production-scale traffic.
 
 ### 11. Prohibition — zero-work run must not read as a completed backfill
@@ -269,7 +285,8 @@ total: 12
 passed: 8
 issues: 0
 pending: 0
-skipped: 4
+skipped: 0
 blocked: 0
+waived_not_executed: 4  # tests 7, 8, 9, 10 — see per-test notes
 
 ## Gaps
