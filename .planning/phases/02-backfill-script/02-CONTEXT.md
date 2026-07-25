@@ -42,6 +42,13 @@ This phase adds the script only — no changes to `NologClient` itself (`getUnem
 - **D-12:** Flags pass through the npm script wrapper via standard `--` pass-through syntax: `npm run backfill --workspace=@4lph4/nolog-core -- --dry-run`. No separate `backfill:dry-run` script entry.
 - **D-13:** The script requires `NOTION_TOKEN`/`NOTION_DATABASE_ID` as already-exported shell env vars, matching `verify-phase-1.ts`/`verify-403.ts` exactly — no dotenv auto-loading of `apps/web/.env.local`. No new dependency, consistent with the established pattern.
 
+### Post-research decisions (added 2026-07-25 after `02-RESEARCH.md`)
+
+Research surfaced two questions the discuss-phase decisions didn't fully resolve. Both were put to the user and answered:
+
+- **D-14:** D-07's 429 retry uses **fixed backoff only** — it does NOT honor a real `Retry-After` header, because `patchPage()` does not currently surface response headers to callers and this phase's boundary is "no changes to `NologClient`". D-07's own "…if present, else a short fixed backoff" wording resolves to the `else` branch: the header is not present *to the script*. Rationale: at 400ms/request (~2.5 req/s, D-10) a 429 is already an unlikely edge case, and threading the header through `client.ts` would expand Phase 2's scope into Phase 1's completed code. — **Reversibility:** reversible — surfacing the header later is a purely additive change to `patchPage()`; Phase 4's notify route can make that change on its own terms if it needs it.
+- **D-15:** A generic (non-typed) failure of the **initial** `getUnemailedPublicPosts()` call — i.e. before the per-post loop exists — aborts immediately with a non-zero exit, joining D-04/D-05 as a third abort case rather than being retried. D-06's log-and-continue model does not apply here because there is no post list yet and therefore nothing to continue to. Re-running the script simply re-fetches from scratch. — **Reversibility:** reversible — a local control-flow branch.
+
 ### Claude's Discretion
 - Exact log line format/verbosity for per-post progress (e.g., whether every marked post gets its own log line, or only failures + a running count) — no explicit decision was requested; follow the existing terse style in `verify-phase-1.ts`/`verify-403.ts` (plain `console.log`, PASS/FAIL-style summary lines).
 - Exact wording of the abort messages for D-04/D-05 — should point at the concrete fix (grant capability / add property in Notion), mirroring the wording already in `NotionCapabilityError`/`MissingEmailedPropertyError`'s own constructor messages in `client.ts`.
