@@ -1,5 +1,5 @@
 ---
-status: testing
+status: complete
 phase: 02-backfill-script
 source: [02-VERIFICATION.md]
 started: 2026-07-26T00:00:00Z
@@ -8,15 +8,11 @@ updated: 2026-07-26T00:00:00Z
 
 ## Current Test
 
-number: 7
-name: D-04 abort path via mid-run schema change (the scenario 02-02 closed)
-expected: |
-  Aborts on the first affected post with exactly one ABORT line plus the partial count
-  reached, and a non-zero exit — NOT one FAILED line per remaining post.
-setup_required: |
-  Requires removing the `emailed` property WHILE a run is in flight. With only 3 posts the
-  run lasts ~3.3s, which is too short to hit by hand — see the staging options in the entry.
-awaiting: user response
+number: —
+name: all tests resolved
+status: complete
+result: 8 passed, 4 skipped (waived by project owner), 0 pending, 0 issues
+awaiting: none
 
 ## Tests
 
@@ -189,23 +185,54 @@ note: |
 
 ### 7. NEW — D-04 abort path via the mid-run schema change (closed by 02-02)
 setup: start a live backfill against several unemailed posts, then remove the `emailed` Checkbox property from the database while the run is in flight
-expected: The run aborts on the first affected post with exactly one ABORT line plus the partial count reached, and a non-zero exit — NOT one FAILED line per remaining post. This is the scenario gap 02-02 closed; it is the only genuinely new item this cycle.
-result: [pending]
+result: skipped
+reason: waived by project owner — judged not required for this milestone
+note: |
+  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
+  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
+  pass would overstate confidence at exactly the moment it matters. Disposition is the
+  owner's call and does not block phase completion.
+residual_risk: |
+  Highest-value item of the five waived. It is the only live confirmation of the exact defect
+  this 02-02 cycle closed, and the only path that would measure patchPage()'s own PATCH-side
+  error body — leaving the `client.ts` best-guess pattern-match comment UNVERIFIED for the
+  PATCH path. Mitigating evidence that does exist: the classifier was traced in source
+  independently by the code reviewer, the verifier, and the orchestrator; and test 2 confirmed
+  the same error class live on the query path, with a body shape that satisfies the PATCH
+  heuristic. Static confidence high; live confirmation absent.
 
 ### 8. Backstop — >100-post pagination
 setup: a database holding more than 100 unemailed public posts
-expected: `getUnemailedPublicPosts()` paginates past Notion's page_size 100 boundary and the script iterates the complete returned array with no truncation.
-result: [pending]
+result: skipped
+reason: waived by project owner — judged not required for this milestone
+note: |
+  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
+  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
+  pass would overstate confidence at exactly the moment it matters. Disposition is the
+  owner's call and does not block phase completion.
+residual_risk: backstop truth — staging a 100+ post database was judged disproportionate to the value.
 
 ### 9. Backstop — mid-run idempotency race
 setup: a post becomes emailed (by another process or a prior partial run) between the initial fetch and the loop reaching it
-expected: The run completes without error and the post is counted in N marked, not M failed, because `markEmailed()` is idempotent.
-result: [pending]
+result: skipped
+reason: waived by project owner — judged not required for this milestone
+note: |
+  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
+  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
+  pass would overstate confidence at exactly the moment it matters. Disposition is the
+  owner's call and does not block phase completion.
+residual_risk: backstop truth — same ~3.3s timing window problem as test 7; idempotency of markEmailed() is asserted by Phase 1, not re-proven here.
 
 ### 10. Backstop — 429/529 retry contract
 setup: a real Notion rate-limit or service-overload response occurs mid-run
-expected: Exactly one retry of that same post after the fixed 1000ms backoff, accounted for exactly once (marked once on success, failed once on permanent failure, never both).
-result: [pending]
+result: skipped
+reason: waived by project owner — judged not required for this milestone
+note: |
+  NOT EXECUTED. Recorded as skipped rather than pass so this file does not assert evidence
+  that does not exist — Phase 5 (production cutover) consults this UAT, and a fabricated
+  pass would overstate confidence at exactly the moment it matters. Disposition is the
+  owner's call and does not block phase completion.
+residual_risk: backstop truth — no means exists to provoke a genuine Notion 429/529 without production-scale traffic.
 
 ### 11. Prohibition — zero-work run must not read as a completed backfill
 expected: Output makes the queried database identity and the zero-result fact explicit.
@@ -222,16 +249,27 @@ note: |
 
 ### 12. Prohibition — script must not be reachable from any automatic npm lifecycle hook or CI path
 expected: No preinstall/install/postinstall/prepare/prepublish/prepack/build/test/start script references backfill; no CI workflow triggers it automatically.
-note: Re-confirmed this cycle — `packages/core/package.json` scripts are only `build`, `dev`, `backfill`; no `.github/workflows` or `vercel.json` exist. Non-authoritative per protocol; human review recommended.
-result: [pending]
+result: pass
+observed: |
+  root package.json          -> scripts: {} (none at all)
+  packages/core/package.json -> build, dev, backfill   (backfill referenced by no other script)
+  apps/web/package.json      -> dev, build, start, lint (no backfill reference)
+  grep backfill across all package.json -> single hit, the explicit entry itself
+  .github/workflows, vercel.json, .gitlab-ci.yml, Jenkinsfile, .circleci -> none exist
+note: |
+  Genuinely verified, not waived. This prohibition needs no live environment — it is a pure
+  static property of the repo, checked directly this session. No lifecycle hook
+  (preinstall/install/postinstall/prepare/prepublish/prepack/build/test/start) references
+  backfill in any workspace, and the repo contains no CI or deploy config of any kind, so the
+  irreversible bulk write is reachable only by an explicit operator-typed invocation.
 
 ## Summary
 
 total: 12
-passed: 7
+passed: 8
 issues: 0
-pending: 5
-skipped: 0
+pending: 0
+skipped: 4
 blocked: 0
 
 ## Gaps
