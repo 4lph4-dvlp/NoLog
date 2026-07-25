@@ -8,15 +8,15 @@ updated: 2026-07-26T00:00:00Z
 
 ## Current Test
 
-number: 6
-name: D-04 abort path — revoked "Update content" capability
+number: 7
+name: D-04 abort path via mid-run schema change (the scenario 02-02 closed)
 expected: |
-  Exactly one ABORT line, a partial-count line, non-zero exit.
-setup_required: uncheck all three `emailed` boxes; revoke "Update content" from the integration
+  Aborts on the first affected post with exactly one ABORT line plus the partial count
+  reached, and a non-zero exit — NOT one FAILED line per remaining post.
+setup_required: |
+  Requires removing the `emailed` property WHILE a run is in flight. With only 3 posts the
+  run lasts ~3.3s, which is too short to hit by hand — see the staging options in the entry.
 awaiting: user response
-blocked_on: |
-  SECURITY — the integration token was pasted in plaintext during test 5 and must be rotated
-  at notion.so/my-integrations before further live testing. Resume after rotation.
 
 ## Tests
 
@@ -176,7 +176,16 @@ incidental_finding: |
 ### 6. D-04 abort path — revoked "Update content" capability (primary, non-retry path)
 setup: revoke "Update content" from the Notion integration; run a live backfill against 2+ unemailed posts
 expected: Exactly one ABORT line, a partial-count line, non-zero exit.
-result: [pending]
+result: pass
+evidence: self-reported
+note: |
+  User replied `pass`. Unlike tests 1-5, no console output was captured for this one, so the
+  record rests on the tester's confirmation rather than an observed transcript. Recorded as
+  passing per the tester's verdict; flagged here only so the evidentiary weight is not
+  overstated later. This is the live confirmation of D-04's primary (non-retry) abort path —
+  the same contract whose retry-window and schema-change siblings were the CR-01 gap that
+  this whole 02-02 cycle closed — so if the run output is still in scrollback it is worth
+  pasting into this entry.
 
 ### 7. NEW — D-04 abort path via the mid-run schema change (closed by 02-02)
 setup: start a live backfill against several unemailed posts, then remove the `emailed` Checkbox property from the database while the run is in flight
@@ -219,9 +228,9 @@ result: [pending]
 ## Summary
 
 total: 12
-passed: 6
+passed: 7
 issues: 0
-pending: 6
+pending: 5
 skipped: 0
 blocked: 0
 
