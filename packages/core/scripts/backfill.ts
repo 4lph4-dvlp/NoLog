@@ -43,6 +43,15 @@ const client = new NologClient({
   databaseId,
 });
 
+// Fixed inter-request delay — ~2.5 req/s, roughly 17% under Notion's
+// documented ~3 req/s limit (D-09/D-10). Integer milliseconds only, no
+// floating-point arithmetic anywhere in the throttle or the counters.
+const DELAY_MS = 400;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function main() {
   let posts;
   try {
@@ -85,7 +94,46 @@ async function main() {
     return;
   }
 
-  // Live write loop added in Task 02-01-T2.
+  // Live write path: mark every post, one at a time, throttled. No
+  // confirmation prompt beyond omitting --dry-run (D-02).
+  let marked = 0;
+  let failed = 0;
+
+  for (const post of posts) {
+    try {
+      await client.markEmailed(post.id);
+      marked += 1;
+      console.log(`  marked  ${post.id}  ${post.title}`);
+    } catch (err) {
+      if (err instanceof NotionCapabilityError) {
+        // Systemic setup failure — every remaining post would fail
+        // identically. Abort immediately rather than burning the request
+        // budget printing one identical failure line per remaining post
+        // (D-04). This branch MUST be checked before the generic catch
+        // below.
+        console.error("ABORT:", err.message);
+        console.error(`${marked} marked / ${failed} failed (partial — aborted)`);
+        process.exitCode = 1;
+        return;
+      }
+
+      // Any other per-post failure is logged and the loop continues — a
+      // second run automatically picks these up, since
+      // getUnemailedPublicPosts() already excludes everything that
+      // succeeded (D-06).
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`  FAILED  ${post.id}  ${post.title}: ${message}`);
+      failed += 1;
+    }
+
+    // Hold the request spacing on both the success and the failure paths —
+    // sleeping only on success would let a run of failures burst past the
+    // rate limit.
+    await sleep(DELAY_MS);
+  }
+
+  console.log(`${marked} marked / ${failed} failed`);
+  process.exitCode = failed > 0 ? 1 : 0;
 }
 
 main();
