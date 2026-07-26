@@ -43,19 +43,25 @@ These are the copy-pasteable commands referenced by the sampling rates above. Th
 
 **SC#2 — env-unset means no form in the server-rendered HTML (SUB-02, SEC-03)**
 
-Build and serve twice, diffing on a stable marker unique to the form (the planner assigns the exact marker attribute):
+Build and serve twice, diffing on a stable marker unique to the form. Marker assigned by the planner:
+`data-testid="subscribe-form"`, carried on the `<form>` element in BOTH variants (see `03-01-PLAN.md`
+§ Artifacts this phase produces).
 
 ```sh
 # configured: fake values are fine, this check never calls Resend
 RESEND_API_KEY=re_fake RESEND_AUDIENCE_ID=aud_fake npm run build --workspace=apps/web
-# → serve, then:
-curl -s http://localhost:3000/ | grep -c '<FORM_MARKER>'   # expect > 0
+# → serve with the same two vars exported, then:
+curl -s http://localhost:3000/ | grep -c 'data-testid="subscribe-form"'   # expect > 0
 
 # unconfigured
-unset RESEND_API_KEY RESEND_AUDIENCE_ID && npm run build --workspace=apps/web
-# → serve, then:
-curl -s http://localhost:3000/ | grep -c '<FORM_MARKER>'   # expect exactly 0
+env -u RESEND_API_KEY -u RESEND_AUDIENCE_ID npm run build --workspace=apps/web
+# → serve with both unset, then:
+curl -s http://localhost:3000/ | grep -c 'data-testid="subscribe-form"'   # expect exactly 0
 ```
+
+Note: `/` exercises the `default` template, which is `CONFIG.template`'s shipped value and which
+renders the form from `Layout.tsx` on every page (D-03). The `terminal` template's equivalent probe
+targets a post URL and is bound to task `03-03-T2`.
 
 **SC#4a — honeypot-populated submission is dropped, never reaches Resend (SUB-04)**
 
@@ -64,10 +70,20 @@ With `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` set to obviously-invalid placeholders
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/api/subscribe \
   -H 'Content-Type: application/json' \
-  -d '{"email":"test@example.com","<HONEYPOT_FIELD>":"bot-filled"}'
+  -d '{"email":"test@example.com","company":"bot-filled"}'
 # expect 200 with body {"ok":true} AND no Resend-error log line —
 # that combination is the evidence the honeypot short-circuited before the Resend call (D-23 order)
+
+# Non-vacuous control (bound to task 03-02-T2): the SAME served session must show that an
+# identical request with an EMPTY honeypot does reach Resend and returns code "server_error"
+# against the placeholder credentials. Without this control, a 200 above proves nothing.
+curl -s -X POST http://localhost:3000/api/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"test@example.com","company":""}'
 ```
+
+Honeypot field name assigned by the planner: `company` — deliberately plausible rather than named
+after the mechanism (see `03-01-PLAN.md` § Artifacts this phase produces).
 
 **SC#4b — 6th submission from one IP inside the window returns 429 (SUB-04)**
 

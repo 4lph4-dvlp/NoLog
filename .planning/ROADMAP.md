@@ -71,7 +71,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A submission with the honeypot field populated, or one submitted past the per-IP rate limit, is rejected/dropped rather than added to the Audience.
   5. Inspecting the built client-side JS bundle confirms `RESEND_API_KEY` never appears in it, verified via grep against build output rather than visual absence of the form alone.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Tracer: end-to-end subscribe on the default template — Resend SDK + `lib/email.ts`, the single Server-Component env gate, the client form, and the Node route through the unconditional `contacts.create`+`update` pair; then the fail-closed 404 boundary that closes SC#2 and SC#5
+- [ ] 03-02-PLAN.md — Abuse resistance: per-IP in-memory rate limit (5 per 10 min, `"unknown"` bucket) and the server-side honeypot fake-success, inserted in D-23 order so no path bypasses the counter
+- [ ] 03-03-PLAN.md — Terminal template: CLI-prompt visual variant behind the same `variant` prop, placed below the post via a Server-rendered `subscribeSlot` because that template's post page is a client module
+
 **UI hint**: yes
 
 ### Phase 4: Notify Route
@@ -128,7 +134,7 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 |-------|-----------------|--------|-----------|
 | 1. Notion Data Layer | 2/2 | Complete    | 2026-07-25 |
 | 2. Backfill Script | 2/2 | Complete    | 2026-07-26 |
-| 3. Subscribe Path | 0/TBD | Not started | - |
+| 3. Subscribe Path | 0/3 | Planned | - |
 | 4. Notify Route | 0/TBD | Not started | - |
 | 5. Production Cutover | 0/TBD | Not started | - |
 | 6. Documentation | 0/TBD | Not started | - |
