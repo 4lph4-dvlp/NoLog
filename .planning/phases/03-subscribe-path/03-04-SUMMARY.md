@@ -134,3 +134,12 @@ None — no external service configuration required. No new env var, dependency,
 ---
 *Phase: 03-subscribe-path*
 *Completed: 2026-07-26*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/03-subscribe-path/03-04-SUMMARY.md`
+- FOUND: `apps/web/src/app/api/subscribe/route.ts`
+- FOUND commit: `fe44aab` (T1)
+- FOUND commit: `0af71b7` (T2)
+- FOUND commit: `3f8f14e` (T3)
+- FOUND commit: `8b78314` (docs: SUMMARY)

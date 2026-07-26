@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 03
 current_phase_name: subscribe-path
 status: executing
-stopped_at: Completed 03-03-PLAN.md (T1 terminal presentation variant, T2 Server-rendered slot placement) — Phase 03 subscribe-path complete
-last_updated: "2026-07-26T11:34:28.521Z"
+stopped_at: Completed 03-04-PLAN.md (CR-01 rate-limit identity gap closure) — Phase 03 subscribe-path fully complete
+last_updated: "2026-07-26T12:01:16.459Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-07-24)
 ## Current Position
 
 Phase: 03 (subscribe-path) — EXECUTING
-Plan: 3 of 3
+Plan: 2 of 4
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 03 execution started
 
@@ -66,6 +66,7 @@ Progress: [██████████] 100%
 | Phase 03 P01 | ~2h | 2 tasks | 8 files |
 | Phase 03 P02 | 35min | 2 tasks | 1 files |
 | Phase 03 P03 | ~20min | 2 tasks | 3 files |
+| Phase 03 P04 | 21min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 3 Plan 01: lib/email.ts switched from eager to lazy Resend client construction (getResend() accessor) after discovering the installed SDK's constructor throws when RESEND_API_KEY is unresolvable, which crashed next build for unconfigured forks; D-20's no-default/no-fallback constraint preserved
 - [Phase ?]: Phase 3 Plan 02: rate limit + honeypot inserted into D-23 pipeline stages 2/3 exactly as specified, zero deviations; verification harness switched to setsid-detached background server processes after plain-& backgrounding was killed by the sandbox's process-group timeout (harness detail only, not a code change)
 - [Phase ?]: Phase 3 Plan 03: SubscribeForm split into two full render branches (default/terminal) sharing one fetch, one honeypot block, one variant-parameterized errorMessage() mapping; terminal placement wired via a Server-rendered subscribeSlot prop (post/[id]/page.tsx constructs <SubscribeSection variant="terminal" />, terminal/PostPage.tsx renders it) rather than a direct import, since that template carries a client directive and a direct import would evaluate the env gate in client code where the secret resolves to undefined
+- [Phase ?]: Phase 3 Plan 04 (gap closure): getRateLimitKey replaces getClientIp with a tiered platform-header-first derivation (x-vercel-forwarded-for -> x-real-ip -> x-forwarded-for, last comma entry), closing CR-01's spoofable rate-limit key; live probe confirms exactly 3 of 8 fabricated-header requests refused, against 0 of 8 before the fix
+- [Phase ?]: Phase 3 Plan 04: ATTEMPTS_MAX_KEYS=2000 expiry-independent ceiling added to isRateLimited, closing CR-01's secondary DoS defect (the expiry sweep alone could not bound a high-cardinality burst); collapse-not-reject into a shared overflow bucket, guarded by attempts.has() so existing visitors are never evicted
+- [Phase ?]: Phase 3 Plan 04: optional T3 (review finding IN-04, email length cap at 254 chars before regex) was executed rather than dropped; reuses the existing invalid_email/400 response, no new machine code
 
 ### Pending Todos
 
@@ -113,6 +117,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T07:12:24.509Z
-Stopped at: Completed 03-03-PLAN.md (T1 terminal presentation variant, T2 Server-rendered slot placement) — Phase 03 subscribe-path complete
+Last session: 2026-07-26T12:01:16.441Z
+Stopped at: Completed 03-04-PLAN.md (CR-01 rate-limit identity gap closure) — Phase 03 subscribe-path fully complete
 Resume file: None
