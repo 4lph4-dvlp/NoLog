@@ -7,6 +7,13 @@ export const runtime = "nodejs";
 // locals — Resend is the final authority on address validity.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// IN-04, defense in depth: the regex above is deliberately loose and runs
+// over whatever arrived, so bounding its input first keeps an unbounded body
+// from becoming regex work. This is not a validity rule and must not
+// tighten what D-15 accepts — 254 is the maximum length of a practical
+// SMTP addr-spec, well above any real address.
+const MAX_EMAIL_LENGTH = 254;
+
 // D-10: five attempts per key per fixed ten-minute window. A legitimate
 // visitor subscribes once and retries at most once or twice; the window
 // lets a shared-key false positive clear itself quickly. It does NOT bound
@@ -216,6 +223,10 @@ export async function POST(request: Request) {
   // ONLY identifier in the module holding the address — D-24's no-logging
   // guarantee is asserted against this identifier specifically.
   const normalizedEmail = String(rawEmail ?? "").trim().toLowerCase();
+
+  if (normalizedEmail.length > MAX_EMAIL_LENGTH) {
+    return Response.json({ ok: false, code: "invalid_email" }, { status: 400 });
+  }
 
   if (!EMAIL_PATTERN.test(normalizedEmail)) {
     return Response.json({ ok: false, code: "invalid_email" }, { status: 400 });
