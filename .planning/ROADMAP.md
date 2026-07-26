@@ -71,7 +71,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A submission with the honeypot field populated, or one submitted past the per-IP rate limit, is rejected/dropped rather than added to the Audience.
   5. Inspecting the built client-side JS bundle confirms `RESEND_API_KEY` never appears in it, verified via grep against build output rather than visual absence of the form alone.
 
-**Plans**: 4/4 plans executed
+**Plans**: 4/5 plans executed
 
 Plans:
 **Wave 1**
@@ -86,6 +86,10 @@ Plans:
 **Wave 3** *(gap closure — blocked on Wave 2 completion)*
 
 - [x] 03-04-PLAN.md — Gap closure (CR-01, Critical): the per-IP rate limiter keyed on the first entry of the client-suppliable `x-forwarded-for`, so a fabricated header per request minted a fresh bucket (0 of 8 spoofed POSTs refused). Re-derives the key from `x-vercel-forwarded-for` → `x-real-ip` → `x-forwarded-for` (last entry, platform-first, verified against Vercel's request-headers docs), collapses a platform-header-less value into one shared bucket, and adds an expiry-independent 2000-key ceiling on the counter map. Closes ROADMAP SC#4's rate-limit half and unblocks SUB-04
+
+**Wave 4** *(gap closure — blocked on Wave 3 completion)*
+
+- [ ] 03-05-PLAN.md — Gap closure (CR-01 *origin*, Critical — a NEW finding from the regenerated 2026-07-26 review, not the closed rate-limit-key defect that reused the same label): `POST /api/subscribe` performed no Origin validation and `Request.json()` acted on a body regardless of its declared media type, so any third-party page could drive a visitor's browser into enrolling an arbitrary victim in the owner's Resend Audience — no double opt-in exists downstream to catch it. Adds `isSameOriginRequest`, comparing the `Origin` header's parsed host against the request's **own** `x-forwarded-host`/`host` rather than the static `CONFIG.site.url` (which would reject every Vercel preview deployment and every local run, and trust the template author's domain on a fork that never edited it), positioned ahead of the rate limiter so forged traffic cannot weaponise the counter; plus `hasJsonContentType` requiring `application/json` before the parse, removing the preflight-free delivery mechanism. Refusals reuse the existing `400`/`invalid_email` verbatim so SUB-03's no-enumeration-oracle contract is unchanged. Closes no REQUIREMENTS.md ID (none covers cross-site request authorization) and protects SUB-01…SUB-04 + SEC-03 as non-regression
 
 **UI hint**: yes
 
