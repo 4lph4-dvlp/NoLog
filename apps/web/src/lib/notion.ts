@@ -32,6 +32,21 @@ export async function getBlocks(blockId: string) {
   return nologClient.getBlocks(blockId);
 }
 
+// Deliberately not memoised (no `cache` wrapper) — the notify cron must
+// observe fresh state on every invocation, never a memoised read from an
+// earlier request in the same render pass (04-RESEARCH.md, Architectural
+// Responsibility Map).
+export async function getUnemailedPublicPosts(): Promise<Post[]> {
+  return nologClient.getUnemailedPublicPosts();
+}
+
+// Deliberately not memoised (no `cache` wrapper) — a write path must never
+// be memoised, or a second call in the same request/render cycle would
+// silently no-op.
+export async function markEmailed(pageId: string): Promise<void> {
+  return nologClient.markEmailed(pageId);
+}
+
 // Re-export notion client instance if any other parts of the app use it directly
 export const notion = nologClient.notion;
 export { DATABASE_ID };

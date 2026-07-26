@@ -35,6 +35,20 @@ export const CONFIG = {
     twitter: "",
   },
 
+  /**
+   * Digest notification email config. Leaving EITHER field "" disables notify
+   * sends entirely (fail-closed, D-09) — the notify route no-ops rather than
+   * risk sending a CAN-SPAM-noncompliant email. Both values are public,
+   * forker-visible branding/legal info, not secrets, which is why they live
+   * here instead of an env var.
+   */
+  notify: {
+    /** CAN-SPAM required physical mailing address, rendered in every digest footer. */
+    physicalAddress: "",
+    /** Digest sender identity in Resend's "Name <user@verified-domain>" form. */
+    fromAddress: "",
+  },
+
   /** ISR revalidation interval in seconds (30 mins to prevent image expiration) */
   revalidate: 180,
 
