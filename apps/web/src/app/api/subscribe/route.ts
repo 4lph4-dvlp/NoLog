@@ -24,17 +24,69 @@ const ATTEMPTS_SWEEP_THRESHOLD = 1000;
 // accepted and recorded here rather than glossed over.
 const attempts = new Map<string, { count: number; windowStart: number }>();
 
+// Shared bucket for a request whose only identity claim is a
+// client-suppliable header (see getRateLimitKey tier 3). Kept distinct from
+// the "unknown" literal below on purpose: merging them would let a tier-3
+// spoofing burst throttle header-less traffic too.
+const ATTEMPTS_UNTRUSTED_KEY = "untrusted";
+
 /**
- * Extracts the client IP from `x-forwarded-for` (D-12): first
- * comma-separated entry, trimmed, since intermediary proxies append hops to
- * that header. Falls back to the single shared literal `"unknown"` when the
- * header is absent, empty, or whitespace-only, so stripping the header is
- * never a bypass and local development still works against one shared key.
+ * Derives the rate-limit bucket key for `request`, preferring platform-owned
+ * headers over a client-suppliable one (CR-01). Tries, in order, first
+ * non-empty match winning:
+ *
+ *   1. `x-vercel-forwarded-for` — the platform-owned client IP. Trusted.
+ *   2. `x-real-ip` — the documented platform-injected equivalent. Trusted.
+ *   3. `x-forwarded-for` — present with neither platform header alongside
+ *      it. NOT trusted: the value is deliberately discarded and every such
+ *      request shares one bucket (`ATTEMPTS_UNTRUSTED_KEY`) instead of
+ *      minting a fresh counter per fabricated value. Restoring the raw
+ *      value here would re-introduce the exact defect this replaces.
+ *
+ * Falls back to the shared `"unknown"` literal (D-12, unchanged) when none
+ * of the three headers yields a non-empty entry, so stripping every header
+ * is never a bypass and local development still works against one shared
+ * key.
+ *
+ * Deployment tradeoff, stated plainly: on Vercel a platform header is
+ * always present, so tier 3 is unreachable in production and per-visitor
+ * counting is unaffected. On a host that injects no platform header, every
+ * visitor collapses into the tier-3 bucket and the limit becomes site-wide
+ * rather than per-visitor — over-throttling, never under-throttling, the
+ * same fail-closed direction D-12 already chose. Vercel is this template's
+ * only supported host (PROJECT.md), so this tradeoff is accepted.
  */
-function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim();
-  return ip && ip.length > 0 ? ip : "unknown";
+function getRateLimitKey(request: Request): string {
+  const candidates = [
+    { header: "x-vercel-forwarded-for", trusted: true },
+    { header: "x-real-ip", trusted: true },
+    { header: "x-forwarded-for", trusted: false },
+  ] as const;
+
+  for (const { header, trusted } of candidates) {
+    const raw = request.headers.get(header);
+    if (!raw) continue;
+
+    // Exactly one trusted hop — the Vercel edge — appends to these headers
+    // on a supported deployment, so if a header ever carries several
+    // comma-separated entries, the LAST is the one that hop appended (the
+    // entry nearest the platform, not nearest the client).
+    const parts = raw.split(",");
+    const entry = parts[parts.length - 1]?.trim();
+    if (!entry) continue;
+
+    if (!trusted) {
+      // Tier 3: the value itself is untrustworthy (client-suppliable), so
+      // it is discarded rather than used as a key — every such request
+      // shares one bucket instead of minting a fresh one. This is the
+      // substance of the CR-01 fix.
+      return ATTEMPTS_UNTRUSTED_KEY;
+    }
+
+    return entry;
+  }
+
+  return "unknown";
 }
 
 /**
@@ -88,12 +140,12 @@ export async function POST(request: Request) {
   // D-23 stage 2 — ahead of every other request stage, including body
   // parsing, so a flood of malformed bodies costs the same budget as
   // well-formed submissions. A genuine 429 rather than a silent fake success
-  // (D-11): a real person caught by a shared-IP false positive would
+  // (D-11): a real person caught by a shared-key false positive would
   // otherwise walk away believing they subscribed. The body carries only the
   // machine code — nothing here varies with Audience membership (SUB-03).
-  // Logs nothing (D-25); the IP key never reaches a log (D-24).
-  const clientIp = getClientIp(request);
-  if (isRateLimited(clientIp)) {
+  // Logs nothing (D-25); the rate-limit key never reaches a log (D-24).
+  const rateLimitKey = getRateLimitKey(request);
+  if (isRateLimited(rateLimitKey)) {
     return Response.json({ ok: false, code: "rate_limited" }, { status: 429 });
   }
 
