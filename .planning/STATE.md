@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 4
+current_phase: 04
 current_phase_name: Notify Route
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-07-26T23:39:42.401Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-07-26T23:51:37.225Z"
 last_activity: 2026-07-27
-last_activity_desc: Phase 03 complete, transitioned to Phase 4
+last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-24)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 03 — subscribe-path
+**Current focus:** Phase 04 — Notify Route
 
 ## Current Position
 
-Phase: 4 — Notify Route
-Plan: Not started
+Phase: 04 (Notify Route) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-27 — Phase 03 complete, transitioned to Phase 4
+Last activity: 2026-07-27 — Phase 04 execution started
 
-Progress: [██████████] 100%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [██████████] 100%
 | Phase 03 P04 | 21min | 3 tasks | 1 files |
 | Phase 03 P05 | ~20min | 2 tasks | 1 files |
 | Phase 03 P06 | 25min | 1 tasks | 1 files |
+| Phase 04 P01 | ~25min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 3 Plan 05 (gap closure): isSameOriginRequest anchors the same-origin check to the request's own x-forwarded-host/host, never CONFIG.site.url — closes CR-01 (origin)/T-03-19; fails open on absent Origin (forbidden header, browsers always add it on POST), refuses the literal opaque "null" origin; placed after the configuration 404 and before the rate limiter so forged traffic never spends a rate-limit slot
 - [Phase ?]: Phase 3 Plan 05: hasJsonContentType requires Content-Type application/json (parameters/case permitted) before request.json() runs, closing the CORS-safelisted-media-type preflight-bypass mechanism (T-03-20); both new refusal paths reuse the existing 400/invalid_email response verbatim so the module's observable status/code sets stay unchanged (SUB-03, D-21)
 - [Phase ?]: Phase 3 Plan 06 (gap closure): unconfiguredLogged module-scope latch added, mirroring originRejectionLogged, bounding the configuration-gate console.error to one line per instance; the bare 404 return stays outside the latch block so the response contract is unchanged, closing CR-01 (2026-07-26 review)
+- [Phase ?]: Phase 4 Plan 01: D-08 revised under its own escape hatch — visible {{{RESEND_UNSUBSCRIBE_URL}}} footer link added instead of relying solely on Resend's automatic header injection (04-RESEARCH.md Open Question 1 could not confirm unconditional RFC 8058 header injection)
+- [Phase ?]: Phase 4 Plan 01: D-11 batch-cap env var resolved to NOTIFY_BATCH_SIZE (default 50); Open Question 2 resolved in favor of short-circuiting remaining markEmailed attempts after the first NotionCapabilityError in a run
+- [Phase ?]: Phase 4 Plan 01: fromAddress placed in site.config.ts alongside physicalAddress under D-06's public-value rationale (forker-visible branding, not a secret)
 
 ### Pending Todos
 
@@ -123,6 +127,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T18:36:25.228Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-notify-route/04-CONTEXT.md
+Last session: 2026-07-26T23:51:37.205Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None

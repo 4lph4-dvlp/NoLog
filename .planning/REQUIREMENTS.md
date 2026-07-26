@@ -23,16 +23,16 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Notification (NOTIFY)
 
-- [ ] **NOTIFY-01**: When one or more Notion posts flip `Status` to `public`, current subscribers receive **a single digest email per cron run** listing every newly-public post found in that run (title, summary, link, OG-image thumbnail per post), within ~24h via the daily cron
-- [ ] **NOTIFY-02**: Every notification email includes a one-click unsubscribe link, a forker-configurable physical mailing address, and a "why you're receiving this" line
-- [ ] **NOTIFY-03**: The notify route sends via Resend's Broadcast API (one broadcast per cron run, not a per-subscriber send loop), so unsubscribe handling and RFC 8058 compliance are automatic
-- [ ] **NOTIFY-04**: A problem building one post's section of the digest doesn't prevent the other posts from that run being included and sent (per-post isolation moves to the content-assembly stage, since there's now one email per run rather than one per post)
-- [ ] **NOTIFY-05**: Only posts successfully included in a sent digest are marked `emailed`; if the whole send fails, no posts in that run are marked, so they're picked up again by the next run
+- [x] **NOTIFY-01**: When one or more Notion posts flip `Status` to `public`, current subscribers receive **a single digest email per cron run** listing every newly-public post found in that run (title, summary, link, OG-image thumbnail per post), within ~24h via the daily cron
+- [x] **NOTIFY-02**: Every notification email includes a one-click unsubscribe link, a forker-configurable physical mailing address, and a "why you're receiving this" line
+- [x] **NOTIFY-03**: The notify route sends via Resend's Broadcast API (one broadcast per cron run, not a per-subscriber send loop), so unsubscribe handling and RFC 8058 compliance are automatic
+- [x] **NOTIFY-04**: A problem building one post's section of the digest doesn't prevent the other posts from that run being included and sent (per-post isolation moves to the content-assembly stage, since there's now one email per run rather than one per post)
+- [x] **NOTIFY-05**: Only posts successfully included in a sent digest are marked `emailed`; if the whole send fails, no posts in that run are marked, so they're picked up again by the next run
 
 ### Access Control (SEC)
 
-- [ ] **SEC-01**: `/api/notify-subscribers` rejects any request without a valid `CRON_SECRET`, checked first via a timing-safe comparison, before any other work runs
-- [ ] **SEC-02**: `/api/notify-subscribers` and `/api/subscribe` both fail closed (no-op) if their required env vars are unset
+- [x] **SEC-01**: `/api/notify-subscribers` rejects any request without a valid `CRON_SECRET`, checked first via a timing-safe comparison, before any other work runs
+- [x] **SEC-02**: `/api/notify-subscribers` and `/api/subscribe` both fail closed (no-op) if their required env vars are unset
 - [x] **SEC-03**: The subscribe form is gated server-side (a Server Component reads the secret env vars and conditionally renders the client form) — `RESEND_API_KEY` never reaches the client bundle, unlike Cusdis's public app ID pattern
 
 ### Deployment & Ops (OPS)
@@ -87,13 +87,13 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | SUB-02 | Phase 3: Subscribe Path | Complete |
 | SUB-03 | Phase 3: Subscribe Path | Complete |
 | SUB-04 | Phase 3: Subscribe Path | Complete |
-| NOTIFY-01 | Phase 4: Notify Route | Pending |
-| NOTIFY-02 | Phase 4: Notify Route | Pending |
-| NOTIFY-03 | Phase 4: Notify Route | Pending |
-| NOTIFY-04 | Phase 4: Notify Route | Pending |
-| NOTIFY-05 | Phase 4: Notify Route | Pending |
-| SEC-01 | Phase 4: Notify Route | Pending |
-| SEC-02 | Phase 4: Notify Route | Pending |
+| NOTIFY-01 | Phase 4: Notify Route | Complete |
+| NOTIFY-02 | Phase 4: Notify Route | Complete |
+| NOTIFY-03 | Phase 4: Notify Route | Complete |
+| NOTIFY-04 | Phase 4: Notify Route | Complete |
+| NOTIFY-05 | Phase 4: Notify Route | Complete |
+| SEC-01 | Phase 4: Notify Route | Complete |
+| SEC-02 | Phase 4: Notify Route | Complete |
 | SEC-03 | Phase 3: Subscribe Path | Complete |
 | OPS-01 | Phase 5: Production Cutover | Pending |
 | DOCS-01 | Phase 6: Documentation | Pending |
