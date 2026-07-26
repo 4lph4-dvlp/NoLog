@@ -75,6 +75,26 @@ function getFileUrl(page: PageObjectResponse, key: string, fallbackKey?: string)
   return null;
 }
 
+/**
+ * Mirrors getFileUrl()'s lookup exactly (same key/fallbackKey pair, same
+ * files-property guard, same files[0] selection) but returns which variant
+ * the first file entry is, instead of its URL. Deliberately NOT refactored
+ * into a shared helper with getFileUrl() — the two functions reading
+ * files[0] independently keeps the live site's image path untouched by a
+ * change only the digest needs.
+ */
+function getFileType(page: PageObjectResponse, key: string, fallbackKey?: string): "file" | "external" | null {
+  let prop = page.properties[key];
+  if (!prop && fallbackKey) prop = page.properties[fallbackKey];
+
+  if (prop?.type === "files" && prop.files.length > 0) {
+    const file = prop.files[0];
+    if (file.type === "file") return "file";
+    if (file.type === "external") return "external";
+  }
+  return null;
+}
+
 function getPeople(page: PageObjectResponse, key: string, fallbackKey?: string): string {
   let prop = page.properties[key];
   if (!prop && fallbackKey) prop = page.properties[fallbackKey];
@@ -106,6 +126,7 @@ export function mapPageToPost(page: PageObjectResponse): Post {
     title: getTitle(page),
     summary: getRichText(page, "summary", "Summary"),
     thumbnail: getFileUrl(page, "thumbnail", "Thumbnail"),
+    thumbnailType: getFileType(page, "thumbnail", "Thumbnail"),
     category: getSelect(page, "category", "Category"),
     tags: getMultiSelect(page, "tag", "Tag"),
     author: getPeople(page, "author", "Author") || getRichText(page, "author", "Author"),

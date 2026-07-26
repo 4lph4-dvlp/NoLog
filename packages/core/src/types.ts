@@ -15,6 +15,18 @@ export interface Post {
   /** Thumbnail image URL from the `Thumbnail` (files) property */
   thumbnail: string | null;
 
+  /**
+   * Which `files`-property variant `thumbnail` was read from: `"file"` for an
+   * image uploaded directly into Notion, whose URL is a presigned S3 link
+   * Notion expires one hour after the page is fetched
+   * (see developers.notion.com/docs/retrieving-files); `"external"` for a
+   * pasted public URL, which does not expire; `null` when no thumbnail is
+   * set. Any consumer embedding `thumbnail` somewhere that cannot be
+   * revalidated (an outbound email being the concrete case) MUST treat
+   * `"file"` as equivalent to no thumbnail at all.
+   */
+  thumbnailType: "file" | "external" | null;
+
   /** Category from the `Category` (select) property */
   category: string;
 
