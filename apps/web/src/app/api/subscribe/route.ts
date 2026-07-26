@@ -172,6 +172,14 @@ const ORIGIN_LOG_MAX_LENGTH = 100;
 // start, never shared across instances, never persisted.
 let originRejectionLogged = false;
 
+// D-25 / D-09, same shape as `originRejectionLogged` above: an attacker must
+// not be able to drive a forker's log volume, and an unconfigured deployment
+// is deterministic — the first request already carries the whole diagnosis,
+// so logging every subsequent one would add only attacker-controlled volume.
+// Per-instance mutable state: resets on cold start, never shared across
+// instances, never persisted.
+let unconfiguredLogged = false;
+
 /**
  * Same-origin precondition ahead of the rate limiter (CR-01 (origin),
  * T-03-19). See 03-05-PLAN.md § Design decision record for the full
@@ -300,11 +308,22 @@ export async function POST(request: Request) {
   // forker. The operator log below is the one place the missing detail
   // is spelled out.
   if (!apiKey || !audienceId) {
-    const missing = [
-      !apiKey ? "RESEND_API_KEY" : null,
-      !audienceId ? "RESEND_AUDIENCE_ID" : null,
-    ].filter(Boolean);
-    console.error(`[Subscribe] Route called while unconfigured — missing: ${missing.join(", ")}`);
+    // Latched (D-25, mirrors originRejectionLogged): the misconfiguration is
+    // deterministic and this line is the ONLY channel a forker who forgot to
+    // configure ever gets — the external response below is a bare 404 by
+    // design. The 404 itself is deliberately NOT latched: it sits outside
+    // this block so every request still gets the response contract SUB-02
+    // depends on, whether or not the log fired.
+    if (!unconfiguredLogged) {
+      unconfiguredLogged = true;
+      const missing = [
+        !apiKey ? "RESEND_API_KEY" : null,
+        !audienceId ? "RESEND_AUDIENCE_ID" : null,
+      ].filter(Boolean);
+      console.error(
+        `[Subscribe] Route called while unconfigured — missing: ${missing.join(", ")}. Further occurrences in this instance are not logged.`,
+      );
+    }
     return new Response(null, { status: 404 });
   }
 
