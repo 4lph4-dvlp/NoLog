@@ -158,6 +158,102 @@ function isRateLimited(key: string): boolean {
   return entry.count > RATE_LIMIT_MAX;
 }
 
+// Bound applied to both values written by the log site inside
+// isSameOriginRequest below, so an attacker-supplied Origin header cannot
+// inflate the operator log's line length or, once escaped, splice
+// additional structure into it.
+const ORIGIN_LOG_MAX_LENGTH = 100;
+
+// D-25: an attacker must not be able to drive a forker's log volume, and a
+// host derivation that disagrees with the browser's Origin is deterministic
+// — the first refusal already carries the whole diagnosis, so logging every
+// subsequent one would add only attacker-controlled volume. Per-instance
+// mutable state, exactly like `attempts` above (D-09): resets on cold
+// start, never shared across instances, never persisted.
+let originRejectionLogged = false;
+
+/**
+ * Same-origin precondition ahead of the rate limiter (CR-01 (origin),
+ * T-03-19). See 03-05-PLAN.md § Design decision record for the full
+ * reasoning; summarized here.
+ *
+ * The expected host is derived from THIS REQUEST — `x-forwarded-host`, then
+ * `host`, first non-empty match winning — and NEVER from a static
+ * configured value. A static production URL rejects every Vercel preview
+ * deployment and every local run, and a forker who never edits it
+ * simultaneously refuses their own visitors AND trusts a domain they do not
+ * control: the false positive and the under-protection are the same bug.
+ * This function reads no configuration, no env var, and imports nothing new.
+ *
+ * The comparison is host-and-port only (the `Origin` header's parsed
+ * `.host`, which the URL parser already lowercases and strips a default
+ * port from) — the header pair carries no scheme, so a scheme-inclusive
+ * comparison is not available from this data. This is the same shape
+ * Next.js itself uses to validate its own Server Actions' Origin.
+ *
+ * Fail-open when `Origin` is absent: it is a forbidden request header page
+ * script cannot set, and a browser adds it to every same-origin and
+ * cross-origin POST (MDN) — so an absent value identifies a non-browser
+ * client, which could forge any Origin it likes anyway. Refusing on absence
+ * would reject this repo's own credential-free probes and a forker's `curl`
+ * smoke test while stopping no real adversary.
+ *
+ * The literal opaque origin (`"null"`) IS refused, explicitly rather than
+ * left to `URL` parsing throwing: a sandboxed iframe, a CSP-sandbox
+ * document, a `data:`/`blob:`/`file:` document and a cross-origin redirect
+ * all produce it, an attacker can induce it deliberately, and none of them
+ * is this app's own first-party page.
+ *
+ * What this control does NOT do, stated plainly (residual T-03-21): a
+ * scripted, non-browser client can set `Origin` to anything and passes
+ * trivially. This stops a cross-site PAGE from borrowing a visitor's
+ * browser and IP address to submit on their behalf — nothing more.
+ */
+function isSameOriginRequest(request: Request): boolean {
+  const trimmedOrigin = request.headers.get("origin")?.trim() ?? "";
+
+  if (trimmedOrigin.length === 0) {
+    return true;
+  }
+
+  // Candidate 1 — Vercel docs: "identical to the `host` header".
+  const forwardedHost = request.headers.get("x-forwarded-host")?.trim() ?? "";
+  // Candidate 2 — Vercel docs: "the domain name as it was accessed by the
+  // client", including a custom domain over the underlying deployment URL.
+  const hostHeader = request.headers.get("host")?.trim() ?? "";
+  const expectedHost = (forwardedHost.length > 0 ? forwardedHost : hostHeader).toLowerCase();
+
+  let allowed = false;
+
+  // An Origin was presented, so the request claims a browser context; with
+  // no expected host to compare it against, the only safe answer is refusal
+  // (handled by `allowed` staying `false` when `expectedHost` is empty).
+  if (trimmedOrigin !== "null" && expectedHost.length > 0) {
+    try {
+      const originHost = new URL(trimmedOrigin).host.toLowerCase();
+      allowed = originHost === expectedHost;
+    } catch {
+      allowed = false;
+    }
+  }
+
+  if (!allowed && !originRejectionLogged) {
+    originRejectionLogged = true;
+    const boundedExpected = JSON.stringify(expectedHost.slice(0, ORIGIN_LOG_MAX_LENGTH));
+    const boundedOrigin = JSON.stringify(trimmedOrigin.slice(0, ORIGIN_LOG_MAX_LENGTH));
+    // The 400/invalid_email response this refusal produces is deliberately
+    // uninformative (SUB-03) — this is the one place an operator whose host
+    // derivation disagrees with the browser's Origin could ever learn why
+    // every submission is being refused. Latched to at most one line per
+    // instance (D-25); further refusals in this instance are not logged.
+    console.error(
+      `[Subscribe] Cross-origin submission rejected — expected host ${boundedExpected}, received origin ${boundedOrigin}. Further refusals in this instance are not logged.`,
+    );
+  }
+
+  return allowed;
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.RESEND_API_KEY;
   const audienceId = process.env.RESEND_AUDIENCE_ID ?? "";
@@ -178,8 +274,27 @@ export async function POST(request: Request) {
     return new Response(null, { status: 404 });
   }
 
-  // D-23 stage 2 — ahead of every other request stage, including body
-  // parsing, so a flood of malformed bodies costs the same budget as
+  // D-23 stage 2 — the same-origin precondition (CR-01 (origin), T-03-19),
+  // strictly after the configuration 404 (D-22/SUB-02: refusing before the
+  // 404 would confirm the route exists to a scanner) and strictly before
+  // the rate limiter. Origin precedes the limiter, not the reverse: a
+  // refusal is two header reads and a string compare, cheaper than the
+  // limiter's counter write, and if the limiter ran first an attacker
+  // driving many victims' browsers would spend rate-limit budget keyed by
+  // *victim* addresses — collapsing real visitors into the shared overflow
+  // bucket once ATTEMPTS_MAX_KEYS fills, turning a cross-site attack into a
+  // denial of service against genuine subscribers. Reuses the existing
+  // 400/invalid_email response verbatim (D-21): no new status, no new
+  // machine code, so a prober gains no way to tell a rejected origin from a
+  // malformed address, and the honeypot's fake 200 is deliberately NOT
+  // reused here — an origin refusal is unambiguous, not a trap to disguise.
+  if (!isSameOriginRequest(request)) {
+    return Response.json({ ok: false, code: "invalid_email" }, { status: 400 });
+  }
+
+  // D-23 stage 3 — the rate limiter. No longer the pipeline's first stage
+  // (the origin check above now precedes it), but still strictly ahead of
+  // body parsing, so a flood of malformed bodies costs the same budget as
   // well-formed submissions. A genuine 429 rather than a silent fake success
   // (D-11): a real person caught by a shared-key false positive would
   // otherwise walk away believing they subscribed. The body carries only the
