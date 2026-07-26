@@ -254,6 +254,40 @@ function isSameOriginRequest(request: Request): boolean {
   return allowed;
 }
 
+// The single accepted media type for the body parse below (T-03-20). A
+// parameter such as a charset is permitted, matching case-insensitively —
+// see hasJsonContentType.
+const REQUIRED_CONTENT_TYPE = "application/json";
+
+/**
+ * Media-type precondition on the body parse (CR-01 (origin) — the
+ * `Request.json()`-regardless-of-Content-Type mechanism the review named,
+ * T-03-20). Independent of isSameOriginRequest above: that check refuses a
+ * request AFTER it arrives, whereas requiring a media type that is not
+ * CORS-safelisted makes the BROWSER itself refuse to send a cross-origin
+ * request at all — a `fetch` declaring `application/json` across origins
+ * becomes preflighted, this route emits no CORS response headers, so the
+ * preflight fails and the request never reaches this handler. Two
+ * independent layers, one enforced server-side and one enforced by the
+ * browser before any byte is sent.
+ *
+ * This is a media-type precondition, NOT a validity rule about the address
+ * — it must not tighten what D-15 deliberately accepts.
+ */
+function hasJsonContentType(request: Request): boolean {
+  const contentType = request.headers.get("content-type");
+  if (!contentType) {
+    return false;
+  }
+
+  // A real client legitimately appends parameters after a semicolon (e.g. a
+  // charset), and HTTP media types are case-insensitive — an exact
+  // whole-header comparison would refuse valid submissions, so only the
+  // portion before the first semicolon is compared, trimmed and lowercased.
+  const mediaType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+  return mediaType === REQUIRED_CONTENT_TYPE;
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.RESEND_API_KEY;
   const audienceId = process.env.RESEND_AUDIENCE_ID ?? "";
@@ -303,6 +337,16 @@ export async function POST(request: Request) {
   const rateLimitKey = getRateLimitKey(request);
   if (isRateLimited(rateLimitKey)) {
     return Response.json({ ok: false, code: "rate_limited" }, { status: 429 });
+  }
+
+  // Media-type precondition on the parse below (T-03-20), after the rate
+  // limit so a flood of wrongly-typed bodies still spends its own quota
+  // exactly as D-23 intends for malformed bodies. Reuses the existing
+  // 400/invalid_email response verbatim — no new status, no new machine
+  // code, so a prober gains no way to tell a wrong-media-type refusal from
+  // a malformed one.
+  if (!hasJsonContentType(request)) {
+    return Response.json({ ok: false, code: "invalid_email" }, { status: 400 });
   }
 
   let body: unknown;
