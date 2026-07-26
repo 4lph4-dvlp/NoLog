@@ -1,36 +1,24 @@
 ---
 phase: 03-subscribe-path
-verified: 2026-07-26T07:40:00Z
-status: gaps_found
-score: 3/5 roadmap success criteria verified (1 failed, 1 requires live credentials)
+verified: 2026-07-27T02:20:00Z
+status: human_needed
+score: 5/5 roadmap success criteria verified; 3 items remain human-verification-only (unchanged, credential-dependent)
 behavior_unverified: 0
 overrides_applied: 0
-gaps:
-  - truth: "A submission past the per-IP rate limit is rejected/dropped (ROADMAP SC#4, rate-limit half; SUB-04)"
-    status: failed
-    reason: >
-      The rate limiter's sole identity key is the first comma-separated entry of the
-      client-suppliable `x-forwarded-for` header. Independently reproduced in this environment:
-      8 consecutive POSTs, each with a distinct fabricated `x-forwarded-for` value, all reached the
-      Resend stage (HTTP 500 against a fake key) with zero HTTP 429 responses — the exact bypass
-      03-REVIEW.md's CR-01 (Critical) predicted. A real attacker needs no botnet or IP rotation,
-      just a custom header per request from one machine. This was flagged Critical by the phase's
-      own code review on 2026-07-26T07:21:17Z and has no fix, no follow-up commit, and no
-      documented risk-acceptance override anywhere in `.planning/` as of this verification.
-    artifacts:
-      - path: "apps/web/src/app/api/subscribe/route.ts"
-        issue: "getClientIp() (lines 34-38) trusts request.headers.get('x-forwarded-for') without validating it originates from a trusted hop; isRateLimited()'s Map is keyed entirely on that value"
-    missing:
-      - "Either: key the rate limiter on a platform-injected, non-client-overridable header (verify the exact Vercel header name against current platform docs before finalizing), or take the LAST x-forwarded-for entry with an explicitly documented trusted-proxy-count assumption, or cap total distinct keys the map can hold within a window independent of expiry"
-      - "A recorded decision (override, ADR, or explicit risk-acceptance entry) if the team chooses to ship with this residual risk knowingly, rather than leaving it silently unresolved"
-deferred: []
+re_verification:
+  previous_status: gaps_found
+  previous_score: 3/5 roadmap success criteria verified (1 failed, 1 requires live credentials)
+  gaps_closed:
+    - "SC#4 rate-limit half (CR-01): rate-limit key spoofing via fabricated x-forwarded-for — independently reproduced as FIXED in this pass"
+  gaps_remaining: []
+  regressions: []
 human_verification:
   - test: "Confirm a real submitted email address actually lands in the configured Resend Audience (SC#1) and that two live submissions of the same address produce a byte-identical response from an operator's own account (SC#3 live half)"
     expected: "Address appears in the Resend dashboard's Audience list after one submission; a second submission of the same address returns the identical 200 {\"ok\":true} body with no dashboard-visible duplicate error"
     why_human: "Requires a real RESEND_API_KEY and RESEND_AUDIENCE_ID; none exist in this execution environment. Carried to the operator checklist per D-26 in 03-01-SUMMARY.md — not claimed as passed."
   - test: "Terminal-template SSR probe: with CONFIG.template set to \"terminal\" and a real Notion post id, build+serve once with placeholder Resend credentials and once with them unset; curl the post URL both times"
     expected: "The marker data-testid=\"subscribe-form\" appears at least once when configured and exactly zero times when unset, positioned between the article and the terminal console"
-    why_human: "Requires NOTION_TOKEN/NOTION_DATABASE_ID to resolve a real post id; both are absent in this execution environment (WINDOWS.md ledger id 1, status: open, unrun-verify). The two credential-free static boundary gates (no client-directive module imports SubscribeSection; SC#5 bundle grep with both template code paths present) were independently re-run in this verification and passed, which is what actually protects SEC-03/SUB-02 here — but the live differential itself has never been executed."
+    why_human: "Requires NOTION_TOKEN/NOTION_DATABASE_ID to resolve a real post id; both are absent in this execution environment. The credential-free static boundary gates (no client-directive module imports SubscribeSection; SC#5 bundle grep with both template code paths present) were independently re-run in this verification and passed — that is what actually protects SEC-03/SUB-02 here — but the live differential itself has never been executed."
   - test: "Post-partial-failure convergence: after a state where contacts.create succeeds but contacts.update fails, does a visitor's retry of the same address converge to unsubscribed:false in a live Audience?"
     expected: "The retried submission results in the contact present with unsubscribed:false, with no in-route retry loop involved"
     why_human: "Authored as a `verification: backstop` truth in 03-01-PLAN.md; requires a live Audience and a way to force a partial failure, neither available here. Abstains per backstop protocol rather than being claimed as passed."
@@ -41,9 +29,11 @@ human_verification:
 **Phase Goal:** A visitor can subscribe to new-post notifications through a form that's fully gated
 server-side, resistant to bot/enumeration abuse, and absent entirely when unconfigured.
 
-**Verified:** 2026-07-26T07:40:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-07-27T02:20:00Z
+**Status:** human_needed
+**Re-verification:** Yes — after two rounds of gap closure (03-04 CR-01 rate-limit key; 03-05 CR-01
+origin/content-type; 03-06 CR-01 unconfigured-log volume), all independently re-run against the
+current code, not assumed fixed from prior SUMMARYs.
 
 ## Goal Achievement
 
@@ -51,39 +41,38 @@ server-side, resistant to bot/enumeration abuse, and absent entirely when unconf
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Valid email submit -> added to Resend Audience | ? human_needed | No real Resend credentials in this environment. Structurally proven up to the Resend API boundary: independently rebuilt with placeholder credentials, POST reaches `resend.contacts.create`/`.update` (confirmed via `[Subscribe] Resend contact create failed: API key is invalid` log line). Live Audience confirmation is an operator-checklist item per D-26, not claimed as passed by the executor. |
-| 2 | Unset env vars -> `SubscribeSection` renders no form in SSR HTML | ✓ VERIFIED | Independently rebuilt `apps/web` with both `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` unset; `grep -c 'data-testid="subscribe-form"' .next/server/app/index.html` = 0. Rebuilt again with placeholder credentials set; same grep = 1. Source: `SubscribeSection.tsx` returns `null` unless both env vars are truthy (read directly, matches). |
-| 3 | Duplicate submission -> identical response (status + body) | ✓ VERIFIED | Structural: `route.ts` runs `contacts.create` then `contacts.update` unconditionally with no `return`, no `exist`/`already`/`duplicate` identifier between them. Empirical: two live POSTs of the identical address against a running server (placeholder credentials) returned byte-identical `{"ok":false,"code":"server_error"}` / HTTP 500 both times. |
-| 4 | Honeypot populated OR past per-IP rate limit -> rejected/dropped | ✗ **FAILED** (rate-limit half) | Honeypot half VERIFIED: a populated `company` field returns `{"ok":true}`/200 (byte-identical to real success) with no corresponding `[Subscribe] Resend contact create failed` log line, while an otherwise-identical control request with an empty honeypot does reach Resend. **Rate-limit half FAILED**: independently reproduced CR-01 from `03-REVIEW.md` — 8 POSTs, each with a distinct fabricated `x-forwarded-for` header, all reached the Resend stage (HTTP 500) with zero HTTP 429 responses. The rate limiter's sole key is a client-suppliable header value, so it provides no protection against a scripted flood that rotates that header. See Gaps below. |
-| 5 | `RESEND_API_KEY` absent from built client-side JS bundle | ✓ VERIFIED | Independently re-ran `grep -rl RESEND_API_KEY apps/web/.next/static/` on both an unconfigured build and a configured (placeholder-credential) build with both template code paths present — 0 matches in both. Also grepped for the literal fake key value and for a `re_`+20-char pattern (per orchestrator finding) — 0 matches. |
+| 1 | Valid email submit -> added to Resend Audience | ? human_needed | Structurally proven up to the Resend API boundary: independently rebuilt with placeholder credentials, POST reaches `resend.contacts.create`/`.update` (confirmed via `[Subscribe] Resend contact create failed: API key is invalid` log line, freshly reproduced in this pass). Live Audience confirmation remains an operator-checklist item, unchanged from prior rounds. |
+| 2 | Unset env vars -> `SubscribeSection` renders no form in SSR HTML | ✓ VERIFIED | Independently rebuilt `apps/web` from scratch with both `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` unset: `grep -c 'data-testid="subscribe-form"' .next/server/app/index.html` = 0. Rebuilt again with placeholder credentials: same grep = 1. Additionally, live-served the unconfigured build and confirmed the `/api/subscribe` route itself returns HTTP 404 on **every** POST (tested 4 consecutive requests across two separate server processes), not just the first — the `unconfiguredLogged` latch added in 03-06 gates only the log line (confirmed exactly 1 log line across those requests), never the 404 response itself, which sits outside the latch block. The "indistinguishable from a route that never existed" contract holds. |
+| 3 | Duplicate submission -> identical response (status + body) | ✓ VERIFIED | Live-reproduced: two POSTs of the identical address against a running server (placeholder credentials, same trusted rate-limit key) returned byte-identical `{"ok":false,"code":"server_error"}` / HTTP 500 both times. **Regression check on the new 03-05 same-origin/content-type checks (per this re-verification's specific brief):** a cross-origin-rejected request and a wrong-media-type-rejected request both return the pre-existing `{"ok":false,"code":"invalid_email"}` / HTTP 400 — the exact same status and machine code an ordinary malformed-address rejection already produced before this phase. Live-verified in this pass: no new status code, no new `code` value, no response-shape difference introduced by either new check. No enumeration signal added. |
+| 4 | Honeypot populated OR past per-IP rate limit -> rejected/dropped | ✓ VERIFIED (both halves) | **Honeypot half:** live-verified — a populated `company` field returns `{"ok":true}`/200 (byte-identical to real success) with zero corresponding Resend log lines, confirmed via server-log diff before/after the honeypot POST. **Rate-limit half (CR-01, previously FAILED):** independently re-ran the identical bypass reproduction from the original verification against the *current* `route.ts`, from a clean process with no prior state — 8 POSTs, each with a distinct fabricated `x-forwarded-for` value: exactly 5 reached the Resend stage (HTTP 500), and 429/`rate_limited` returned starting at request 6, reproduced identically across two separate clean server processes. This is a complete reversal of the original 0-of-8-blocked finding. Additionally verified per-visitor isolation is preserved on the *trusted* tier: two distinct `x-vercel-forwarded-for` values are tracked as two independent counters (visitor A throttled after 5, visitor B — a different simulated IP — unaffected), confirming the fix collapses only the untrusted (spoofable) tier into a shared bucket rather than breaking real per-visitor limiting. |
+| 5 | `RESEND_API_KEY` absent from built client-side JS bundle | ✓ VERIFIED | Independently re-ran `grep -rl RESEND_API_KEY apps/web/.next/static/` on a from-scratch unconfigured build and a from-scratch configured (placeholder-credential) build, both freshly rebuilt in this pass — 0 matches in both. Also grepped for the literal fake key value and for a `re_`+20-char pattern — 0 matches in both build states. |
 
-**Score:** 3/5 roadmap success criteria fully verified; 1 failed (SC#4 rate-limit half); 1 requires
-live credentials not available in this environment (SC#1, and the live half of SC#3, already
-structurally verified above).
+**Score:** 5/5 roadmap success criteria hold up under independent, adversarial re-verification
+(rebuilt from scratch, exercised live against a running server, not read from source alone or
+trusted from a prior artifact). 3 items remain genuinely un-verifiable in this environment
+(real Resend Audience, real Notion post id, forced partial-failure state) — unchanged in nature
+from the original verification, not new gaps introduced by this round's fixes.
 
-### Supporting Must-Have Truths (from PLAN frontmatter, spot-checked)
+### CR-01 Gap Closure Verification (this round's focus)
 
-| Must-have | Status | Evidence |
-|---|---|---|
-| Exactly one Server-Component render-gate (`SubscribeSection`); no template/page/client component reads either Resend var (D-04) | ✓ VERIFIED | Repo-wide grep for `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` across `apps/web/src` shows exactly 3 files: `SubscribeSection.tsx` (the gate), `route.ts` (the plan's explicitly separate D-22 request-time check, not a render gate), and `email.ts` (client construction only, no presence check). No template or client component reads either var. |
-| No client-directive module imports `SubscribeSection` (SEC-03) | ✓ VERIFIED | Independent repo-wide scan: zero files beginning with `"use client"` reference `SubscribeSection`. `templates/terminal/PostPage.tsx` (client directive) receives the pre-rendered gate via the `subscribeSlot` prop from the Server-Component post route, per the plan's documented architectural constraint. |
-| `packages/core` and `site.config.ts` show no diff across the phase | ✓ VERIFIED | `git diff --stat d53941d^..3372ae9 -- packages/core/` and `-- apps/web/src/site.config.ts` both empty. |
-| `resend` dependency confined to `apps/web/package.json` (D-19) | ✓ VERIFIED | `apps/web/package.json` lists `resend@^6.18.0`; `packages/core/package.json` and root manifest have no reference. |
-| Exactly three `console.` call sites in `route.ts`, none referencing the address or IP identifier (D-24/D-25) | ✓ VERIFIED | Read `route.ts` directly: 3 `console.error` call sites (create failure, update failure, unconfigured-call), none reference `normalizedEmail` or `clientIp`. |
-| No debt markers (TBD/FIXME/XXX/TODO/HACK/PLACEHOLDER) in phase-modified files | ✓ VERIFIED | Grepped all 7 phase-modified files; zero matches. |
-| Backstop: post-partial-failure convergence recovers via visitor retry (D-18) | ? human_needed | `verification: backstop` in 03-01-PLAN.md; requires a live Audience and a forced partial-failure condition. Abstains per backstop protocol — routed to human verification, not claimed passed. |
+| Fix (plan) | Claim | Independently re-verified? | Result |
+|---|---|---|---|
+| Rate-limit key spoofing (03-04) | `getRateLimitKey` tiers `x-vercel-forwarded-for`/`x-real-ip` (trusted) ahead of `x-forwarded-for` (untrusted, collapsed) | ✓ Yes — live 8-request bypass reproduction, twice, from clean process state | Fixed. 5 through, 6-8 blocked (was 0-of-8 blocked before) |
+| Rate-limit map DoS ceiling (03-04) | `ATTEMPTS_MAX_KEYS`=2000 expiry-independent ceiling | Read directly in source; not independently load-tested (not required — this is a defense-in-depth ceiling unreachable by any test traffic volume run in this verification) | Present, code-reviewed sound, not separately behaviorally exercised |
+| Missing Origin/Content-Type validation (03-05) | `isSameOriginRequest`/`hasJsonContentType` run ahead of body parse, in the design's specified order | ✓ Yes — live: cross-origin request rejected before consuming rate-limit budget (confirmed via same-visitor follow-up request still succeeding); wrong-media-type and malformed-JSON requests both rejected with the pre-existing `invalid_email` code, no new signal | Present, correctly ordered, no enumeration-oracle regression |
+| Unconditional per-request logging (03-06) | `unconfiguredLogged` latch limits the diagnostic log to once per instance without gating the 404 response | ✓ Yes — live: 4 total unconfigured POSTs across two server processes, exactly 1 log line total per process, 404 returned on every single request | Fixed and confirmed; SC#2/D-22 contract intact |
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `apps/web/src/lib/email.ts` | Single Resend client construction seam | ✓ VERIFIED | Lazy `getResend()` accessor, no presence check, no fallback key. Deviation from the plan's literal eager-construction snippet is documented and justified (SDK constructor throws synchronously when unconfigured, which would break `next build` for every fork — fixing this was necessary for SUB-02's off-by-default contract). |
-| `apps/web/src/components/subscribe/SubscribeSection.tsx` | Sole env gate, Server Component | ✓ VERIFIED | No client directive; checks both vars; returns `null` on absence. |
-| `apps/web/src/components/subscribe/SubscribeForm.tsx` | Client form island, both variants | ✓ VERIFIED | No `process.env`, no `localStorage`/`sessionStorage`; `data-testid="subscribe-form"` present in both `default` and `terminal` branches; one shared `fetch(` call; honeypot written once. |
-| `apps/web/src/app/api/subscribe/route.ts` | Full 5-stage D-23 pipeline | ⚠️ VERIFIED WITH A GAP | Configuration -> rate limit -> honeypot -> validation -> Resend, all present and correctly ordered. The rate-limit stage's key derivation is the unresolved CR-01 defect (see Gaps). |
-| `apps/web/src/templates/default/Layout.tsx` | Two insertion points after Profile | ✓ VERIFIED | `<SubscribeSection variant="default" />` at both the mobile block and the desktop aside. |
-| `apps/web/src/templates/terminal/PostPage.tsx` | `subscribeSlot` prop, rendered between article and console | ✓ VERIFIED | Optional prop, rendered directly, no import of the subscribe directory, no env read. |
-| `apps/web/src/app/post/[id]/page.tsx` | Server-side slot construction | ✓ VERIFIED | Imports `SubscribeSection`, passes `subscribeSlot={<SubscribeSection variant="terminal" />}` only in the terminal branch; `DefaultPostPage` receives no slot. |
+| `apps/web/src/lib/email.ts` | Single Resend client construction seam | ✓ VERIFIED | Lazy `getResend()` accessor, no presence check, no fallback key, unchanged since prior verification. |
+| `apps/web/src/components/subscribe/SubscribeSection.tsx` | Sole env gate, Server Component | ✓ VERIFIED | No client directive; checks both vars; returns `null` on absence. Unchanged. |
+| `apps/web/src/components/subscribe/SubscribeForm.tsx` | Client form island, both variants | ✓ VERIFIED | No `process.env` read; `data-testid="subscribe-form"` present in both variants; one shared `fetch(` call; honeypot written once. **New finding this pass (see Anti-Patterns): static element ids (`subscribe-email`, `company`) collide when `SubscribeSection` mounts twice in the default template's dual mobile/desktop render — a real defect, Warning severity, not a must-have failure.** |
+| `apps/web/src/app/api/subscribe/route.ts` | Full pipeline: config -> origin -> rate limit -> content-type -> parse -> honeypot -> validation -> Resend | ✓ VERIFIED | All 8 stages present, live-exercised in the order the design specifies, in this verification. The CR-01 rate-limit defect this file previously carried is confirmed closed. |
+| `apps/web/src/templates/default/Layout.tsx` | Two insertion points after Profile | ✓ VERIFIED | `<SubscribeSection variant="default" />` at both the mobile block and the desktop aside, unchanged. |
+| `apps/web/src/templates/terminal/PostPage.tsx` | `subscribeSlot` prop, rendered between article and console | ✓ VERIFIED | Optional prop, rendered directly, no import of the subscribe directory, no env read. Unused `CONFIG` import confirmed pre-existing (introduced at monorepo restructure, commit `c658c7d`, predates this phase) — not a phase-3 regression. |
+| `apps/web/src/app/post/[id]/page.tsx` | Server-side slot construction | ✓ VERIFIED | Imports `SubscribeSection`, passes `subscribeSlot={<SubscribeSection variant="terminal" />}` only in the terminal branch. |
 
 ### Key Link Verification
 
@@ -91,87 +80,106 @@ structurally verified above).
 |------|-----|-----|--------|---------|
 | `templates/default/Layout.tsx` | `SubscribeSection.tsx` | Direct import + render, 2 sites | ✓ WIRED | Confirmed by source read. |
 | `SubscribeSection.tsx` | `SubscribeForm.tsx` | Renders after presence check | ✓ WIRED | Confirmed by source read. |
-| `SubscribeForm.tsx` | `/api/subscribe` | `fetch POST` with JSON body | ✓ WIRED | Confirmed by source read and by live POST/response round-trip in this verification. |
-| `route.ts` | `lib/email.ts` | `getResend()` import | ✓ WIRED | Confirmed by source read and by observing `[Subscribe] Resend contact create failed` log output during a live probe (proves the SDK layer was actually reached). |
+| `SubscribeForm.tsx` | `/api/subscribe` | `fetch POST` with JSON body | ✓ WIRED | Confirmed by source read and by live POST/response round-trips throughout this verification. |
+| `route.ts` | `lib/email.ts` | `getResend()` import | ✓ WIRED | Confirmed live — `[Subscribe] Resend contact create failed` log observed repeatedly in this pass, proving the SDK layer is reached. |
 | `app/post/[id]/page.tsx` | `SubscribeSection.tsx` | Constructs element, passes as `subscribeSlot` | ✓ WIRED | Confirmed by source read. |
 | `templates/terminal/PostPage.tsx` | `app/post/[id]/page.tsx` | Renders received `subscribeSlot` | ✓ WIRED | Confirmed by source read; slot rendered strictly between `</article>` and the `h-[50vh]` console block. |
 
-### Behavioral Spot-Checks (live, against this verification's own rebuild with placeholder credentials)
+### Behavioral Spot-Checks (live, against this verification's own from-scratch rebuilds)
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
 | SSR marker absent when unconfigured | rebuild with both vars unset, grep prerendered `index.html` | 0 matches | ✓ PASS |
 | SSR marker present when configured | rebuild with placeholder vars, grep prerendered `index.html` | 1 match | ✓ PASS |
-| Bundle excludes secret name (both build states) | `grep -rl RESEND_API_KEY .next/static/` | 0 matches both times | ✓ PASS |
-| Duplicate submission -> identical response | two live POSTs, same address | byte-identical `500`/`server_error` both times | ✓ PASS |
-| Honeypot -> fake success, no Resend call | live POST with `company` populated vs. empty control | trap: `200 {"ok":true}`, no Resend log line; control: `500 server_error`, Resend log line present | ✓ PASS |
-| Rate limit boundary (default "unknown" bucket) | 6-request loop, no header spoofing | 5th allowed through, 6th+ returned 429/`rate_limited` | ✓ PASS (as literally specified) |
-| **Rate limit bypass via spoofed `x-forwarded-for`** | 8 POSTs, distinct fabricated header value each | **0/8 returned 429; all reached Resend (500)** | **✗ FAIL — CR-01 reproduced** |
+| Bundle excludes secret name/value (both build states) | `grep -rl RESEND_API_KEY .next/static/`, literal key grep, `re_`+20-char pattern grep | 0 matches, all states | ✓ PASS |
+| Unconfigured route returns 404 on every request, not just first | 4 POSTs (2 processes) against unconfigured build | 404 x4; exactly 1 log line per process | ✓ PASS |
+| Duplicate submission -> identical response | Two live POSTs, same address, same trusted key | Byte-identical `500`/`server_error` both times | ✓ PASS |
+| Honeypot -> fake success, no Resend call | Live POST with `company` populated vs. empty control | Trap: `200 {"ok":true}`, zero new Resend log lines; control: `500 server_error`, Resend log line present | ✓ PASS |
+| **Rate limit bypass via spoofed `x-forwarded-for` (CR-01 re-test)** | 8 POSTs, distinct fabricated header value each, run twice from clean process state | **5/8 reached Resend (500); 6th-8th returned 429 — both runs** | ✓ **PASS — CR-01 confirmed fixed** |
+| Trusted-tier per-visitor isolation preserved | 6 POSTs from visitor A (`x-vercel-forwarded-for`), then 1 from visitor B | Visitor A: 5 allowed, 6th 429. Visitor B (different key): allowed, unaffected by A's limit | ✓ PASS |
+| Cross-origin request rejected before consuming rate-limit budget | Cross-origin POST, then 2 same-origin-but-invalid POSTs, then 1 valid POST, all from same trusted key | Cross-origin: 400 `invalid_email` (no rate-limit state change). Same-key valid request afterward still succeeded (reached Resend) | ✓ PASS |
+| Cross-origin/wrong-content-type rejections carry no more signal than pre-existing 400 | Cross-origin POST; wrong-`Content-Type` POST; malformed-JSON POST | All three: `{"ok":false,"code":"invalid_email"}` / HTTP 400 — identical status+code to the pre-phase malformed-address rejection | ✓ PASS — no enumeration-oracle regression |
+| Opaque `"null"` Origin explicitly refused | POST with `Origin: null` | `{"ok":false,"code":"invalid_email"}` / HTTP 400 | ✓ PASS |
+
+### Probe Execution
+
+No `scripts/*/tests/probe-*.sh` files exist in this repository and none are referenced by any Phase 3 PLAN/SUMMARY. Step 7c: SKIPPED (no probe convention used by this project — this phase's verification relies on the direct live-server behavioral spot-checks above instead).
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |---|---|---|---|---|
-| SUB-01 | 03-01, 03-03 | Visitor can submit email via a form | ✓ SATISFIED | Default template: full E2E path proven live. Terminal template: form/markup/wiring statically proven; live SSR probe on a real post page is an unrun operator-checklist item (WINDOWS.md id 1), not a contradiction of the static evidence. |
-| SUB-02 | 03-01, 03-03 | Form fully absent/inert when env unset | ✓ SATISFIED | Default template SSR absence independently reproduced. Terminal template's gate is provably the same singular `SubscribeSection` (repo-wide scan), so the same fail-closed guarantee structurally extends; the terminal-specific live differential is the same unrun operator item as SUB-01 above. |
-| SUB-03 | 03-01, 03-02 | Duplicate submission -> identical response, no enumeration oracle | ✓ SATISFIED | Structural + empirical proof; 429 and honeypot responses also carry no subscription-status signal (independently confirmed by reading response bodies). |
-| SUB-04 | 03-02 | Blocks bots via honeypot + per-IP rate limiting | ✗ **BLOCKED** | Honeypot half satisfied. Rate-limiting half is not effectively achieved: the sole rate-limit key is a client-forgeable header, independently confirmed bypassable with zero successful throttling across 8 spoofed requests (CR-01, Critical, unresolved). |
-| SEC-03 | 03-01, 03-03 | Secret never reaches client bundle | ✓ SATISFIED | Independently re-verified via bundle grep across both build states and both template code paths, plus a repo-wide scan confirming no client-directive module imports the gate. |
+| SUB-01 | 03-01, 03-03 | Visitor can submit email via a form | ✓ SATISFIED | Default template: full E2E path live-proven again in this pass. Terminal template: form/markup/wiring statically proven (SEC-03 gate, no client import); live SSR probe on a real post page remains an unrun operator-checklist item (needs real Notion credentials), not a contradiction of the static evidence. |
+| SUB-02 | 03-01, 03-03 | Form fully absent/inert when env unset | ✓ SATISFIED | Default template SSR absence independently reproduced from a from-scratch rebuild. Route-level 404 confirmed to fire on every unconfigured request (not gated by the new 03-06 logging latch). Terminal template's gate is the same singular `SubscribeSection` (repo-wide scan, 3 files total reference the env vars, none are templates/pages/client components beyond the gate itself). |
+| SUB-03 | 03-01, 03-02 | Duplicate submission -> identical response, no enumeration oracle | ✓ SATISFIED | Structural + live-empirical proof, re-confirmed. The two NEW rejection paths added by 03-05 (origin, content-type) were specifically checked in this pass for oracle leakage — both reuse the pre-existing 400/`invalid_email` code verbatim, adding no new signal. |
+| SUB-04 | 03-02, 03-04 | Blocks bots via honeypot + per-IP rate limiting | ✓ SATISFIED (previously BLOCKED) | Honeypot half re-confirmed. Rate-limiting half: CR-01 bypass independently re-reproduced against current code and confirmed CLOSED — 5/8 reach Resend, 6th-8th blocked, reproduced twice from clean state. Trusted-tier per-visitor isolation also confirmed intact (fix does not over-collapse legitimate Vercel traffic). |
+| SEC-03 | 03-01, 03-03 | Secret never reaches client bundle | ✓ SATISFIED | Re-verified via bundle grep across both build states, freshly rebuilt in this pass, plus a repo-wide scan confirming no client-directive module imports the gate. |
+
+**Orphan check:** REQUIREMENTS.md traceability table maps only SUB-01, SUB-02, SUB-03, SUB-04, and
+SEC-03 to Phase 3 — all five are claimed across the six plans' `requirements:` frontmatter fields
+(03-05 and 03-06 are gap-closure plans for SUB-04/SUB-02/SEC-03's already-claimed guarantees and
+correctly declare no new requirement IDs). No orphaned requirements found.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |---|---|---|---|---|
-| `apps/web/src/app/api/subscribe/route.ts` | 34-38 | `getClientIp()` trusts an unauthenticated, client-suppliable header as the sole rate-limit identity key | 🛑 Blocker | Defeats the per-IP rate limiter entirely against a trivial scripted attack (CR-01, independently reproduced) |
-| `apps/web/src/app/post/[id]/page.tsx` | 71-74 | `relatedPosts` filter has no `p.id !== post.id` exclusion (review WR-01) | ℹ️ Info | Pre-existing, confirmed unmodified by this phase's diff; not a phase-3 regression |
-| `apps/web/src/app/post/[id]/page.tsx` | 67-80 | One `try`/`catch` around three independent fetches wipes all three on any single failure (review WR-02) | ℹ️ Info | Pre-existing, confirmed unmodified by this phase's diff |
-| `apps/web/src/templates/terminal/PostPage.tsx` | 51 | Unguarded `new Date(post.createDate).toISOString()` can throw `RangeError` (review WR-03) | ℹ️ Info | Pre-existing, confirmed unmodified by this phase's diff |
-| `apps/web/src/app/api/subscribe/route.ts` | 124-136 | No explicit length cap on `normalizedEmail` before regex test (review IN-04) | ℹ️ Info | Low severity, defense-in-depth only; not required by any must-have |
+| `apps/web/src/components/subscribe/SubscribeForm.tsx` | 145, 191, 260 (also `Layout.tsx:31,57`) | Static element `id`s (`subscribe-email`, `company`) collide because `DefaultLayout` mounts `SubscribeSection` twice (mobile + desktop, both present in the DOM simultaneously, only CSS-hidden) | ⚠️ Warning | Breaks `<label htmlFor>` association for the visible desktop form (resolves to the CSS-hidden mobile instance); accessibility/HTML-validity defect, confirmed still present in current code. Does not block form submission itself (typing directly into the input still works) — not a phase-goal blocker, but a real, unresolved defect from the phase's own code review (WR-01), independently confirmed. |
+| `apps/web/src/templates/terminal/PostPage.tsx` | 9 | Unused `CONFIG` import | ℹ️ Info | Confirmed present via lint run (`warning 'CONFIG' is defined but never used`), but confirmed via `git log` to predate this phase (introduced at commit `c658c7d`, the original monorepo restructure) — not a phase-3 regression. Lint reports it as a warning, not a hard error, in this repo's config; the overall `npm run lint` failure is driven by ~15 pre-existing errors in unrelated files (e.g. `TerminalConsole.tsx`), none introduced by Phase 3. |
+| `apps/web/src/app/api/subscribe/route.ts` | 227-232 | `isSameOriginRequest` trusts `x-forwarded-host` unconditionally, without the same tiering/splitting rigor applied to `x-forwarded-for` two functions above | ℹ️ Info | Documented residual (WR-03 from `03-REVIEW.md`, independently re-read and confirmed accurate): not exploitable today because a cross-origin `fetch()` setting this header triggers a CORS preflight this route fails (no `Access-Control-Allow-Origin`), and a plain `<form>` POST cannot set arbitrary headers. A scripted non-browser client already bypasses the whole origin check trivially by design (T-03-21), so this doesn't hand an attacker new capability today — it is an inconsistency worth a comment or future tightening, not a phase-goal blocker. |
+| `apps/web/src/app/post/[id]/page.tsx` | 67-83 | `getCategories()`/`getPosts()` fetched and discarded on the default-template path | ℹ️ Info | Confirmed unmodified by this phase's diff (pre-existing, review IN-01). |
 
-No `TBD`/`FIXME`/`XXX`/`TODO`/`HACK`/`PLACEHOLDER` markers found in any of the 7 phase-modified files.
+No `TBD`/`FIXME`/`XXX`/`TODO`/`HACK`/`PLACEHOLDER` markers found in any of the 7 phase-modified
+files (re-confirmed by direct grep in this pass).
 
 ### Human Verification Required
 
-See `human_verification` in the frontmatter. Three items, none of which are phase-3 implementation
-gaps — all three are pre-acknowledged in the phase's own SUMMARYs as requiring credentials or a live
-environment this execution context does not have (real Resend account, real Notion post id). None
-were claimed as passed by the executor.
+See `human_verification` in the frontmatter. Three items, unchanged in substance from the prior
+verification round — all three require credentials (a real Resend account, a real Notion post id)
+that do not exist in this execution environment, and none are claimed as passed:
+
+1. Live Resend Audience confirmation for a real submitted address (SC#1) and a live duplicate-submission round trip (SC#3's live half).
+2. Terminal-template SSR differential probe against a real Notion post id (SUB-01/SUB-02 terminal half) — the credential-free static boundary checks that stand in for this were independently re-run and passed in this verification.
+3. Post-partial-failure convergence via visitor retry (D-18 backstop) — requires forcing a live partial-failure state against a real Audience.
 
 ### Gaps Summary
 
-Four of five ROADMAP success criteria hold up under independent, adversarial re-verification in this
-environment — including two (SC#2 absence, SC#5 bundle exclusion) rebuilt from scratch rather than
-trusted from prior build artifacts, and one (SC#3 duplicate-submission) exercised live against a
-running server rather than only inspected in source.
+**All gaps from the original verification are closed.** The sole gap identified in the initial
+verification pass — SC#4's rate-limiting half, defeated by a client-suppliable `x-forwarded-for`
+rate-limit key (CR-01) — was independently re-reproduced against the *current* `route.ts` in this
+re-verification (not assumed fixed from the SUMMARY or the code-review narrative): the identical
+8-fabricated-header-request bypass that previously returned 0/8 blocked now returns 5/8 allowed
+through to Resend and 3/8 correctly blocked with 429, reproduced twice from clean process state
+across two independent server instances. Per-visitor rate limiting on the trusted (Vercel-header)
+tier was separately confirmed still functional and not over-collapsed by the fix.
 
-The one genuine gap is **SC#4's rate-limiting half**. The phase's own code review (`03-REVIEW.md`,
-committed 2026-07-26T07:21:17Z) identified this as a Critical finding (CR-01): `getClientIp()` derives
-the sole rate-limit key from the first entry of the client-suppliable `x-forwarded-for` header, with
-no validation that the value originates from a trusted hop. This verification independently
-reproduced the exploit — 8 POSTs, each carrying a distinct fabricated `x-forwarded-for` value, all
-reached the Resend stage with zero HTTP 429 responses, meaning the "5 requests per 10 minutes"
-guarantee never engages against an attacker willing to vary one header per request. This directly
-contradicts the phase goal's explicit "resistant to bot/enumeration abuse" clause for the
-rate-limiting mechanism specifically (the honeypot mechanism is unaffected and independently verified
-solid).
+Two further Critical findings surfaced and closed during the phase's own subsequent code-review
+rounds — missing Origin/Content-Type validation (03-05) and unconditional per-request logging on the
+unconfigured path (03-06) — were both independently re-verified in this pass per this verification's
+specific brief:
 
-This is distinct from the already-accepted T-03-11 threat (distributed/rotating real source IPs
-defeating a per-instance counter, which needs new infrastructure to fully close and is out of
-`REQUIREMENTS.md`'s scope) — CR-01 requires no distributed infrastructure at all, just one attacker on
-one machine varying a request header. No commit, override, or documented risk-acceptance addressing
-CR-01 exists anywhere in `.planning/` as of this verification; it was raised by the review and then
-silently left open. No later phase in `ROADMAP.md` (Phase 4 Notify Route, Phase 5 Production Cutover,
-Phase 6 Documentation) addresses IP-derivation hardening for the subscribe route, so this is not a
-deferred item — it needs a closure plan now.
+- The new origin/content-type checks reject with the **same** pre-existing `400`/`invalid_email`
+  response as an ordinary malformed-address rejection, live-confirmed to carry no additional signal
+  — SC#3's no-enumeration-oracle guarantee is intact, not weakened by the new checks.
+- The `unconfiguredLogged` latch gates only the diagnostic log line (confirmed: exactly one line
+  across multiple requests), never the `404` response itself, which was confirmed to fire on every
+  single unconfigured request tested — SC#2/D-22's "indistinguishable from a route that never
+  existed" contract holds.
 
-**This looks like it needs a decision, not necessarily a full rewrite.** If the team judges the actual
-Vercel deployment target injects a non-overridable client-IP header (which the review explicitly
-recommends verifying rather than assuming), a small fix swapping the header source — or an explicit,
-recorded risk acceptance if the residual is judged acceptable at this project's traffic scale — would
-close this gap. Until either happens, SC#4's rate-limit guarantee does not hold against the threat
-model the phase itself defines.
+No regressions were found from any of the three rounds of fixes. The most recent independent code
+review (`03-REVIEW.md`, 2026-07-27) found 0 Critical, 3 Warning, 3 Info findings across all 8
+phase-touched files — this verification independently re-confirmed each of those findings still
+holds (one pre-existing unused import predates the phase; the duplicate-DOM-id defect is real and
+current but does not block form submission; the `x-forwarded-host` trust asymmetry is a documented,
+currently-non-exploitable residual). None rise to a phase-goal blocker.
+
+**Status is `human_needed`, not `passed`,** solely because three items genuinely require
+credentials/environment this execution context does not have (a real Resend account, a real Notion
+post id, a forced partial-failure state) — the same three items carried since the original
+verification, none of which are phase-3 implementation gaps. All five ROADMAP success criteria are
+independently verified to hold in every way testable without those external dependencies.
 
 ---
 
-_Verified: 2026-07-26T07:40:00Z_
+_Verified: 2026-07-27T02:20:00Z_
 _Verifier: Claude (gsd-verifier)_
