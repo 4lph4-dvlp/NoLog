@@ -71,7 +71,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A submission with the honeypot field populated, or one submitted past the per-IP rate limit, is rejected/dropped rather than added to the Audience.
   5. Inspecting the built client-side JS bundle confirms `RESEND_API_KEY` never appears in it, verified via grep against build output rather than visual absence of the form alone.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/4 plans executed (04 is gap closure, pending)
 
 Plans:
 **Wave 1**
@@ -82,6 +82,10 @@ Plans:
 
 - [x] 03-02-PLAN.md — Abuse resistance: per-IP in-memory rate limit (5 per 10 min, `"unknown"` bucket) and the server-side honeypot fake-success, inserted in D-23 order so no path bypasses the counter
 - [x] 03-03-PLAN.md — Terminal template: CLI-prompt visual variant behind the same `variant` prop, placed below the post via a Server-rendered `subscribeSlot` because that template's post page is a client module
+
+**Wave 3** *(gap closure — blocked on Wave 2 completion)*
+
+- [ ] 03-04-PLAN.md — Gap closure (CR-01, Critical): the per-IP rate limiter keyed on the first entry of the client-suppliable `x-forwarded-for`, so a fabricated header per request minted a fresh bucket (0 of 8 spoofed POSTs refused). Re-derives the key from `x-vercel-forwarded-for` → `x-real-ip` → `x-forwarded-for` (last entry, platform-first, verified against Vercel's request-headers docs), collapses a platform-header-less value into one shared bucket, and adds an expiry-independent 2000-key ceiling on the counter map. Closes ROADMAP SC#4's rate-limit half and unblocks SUB-04
 
 **UI hint**: yes
 
