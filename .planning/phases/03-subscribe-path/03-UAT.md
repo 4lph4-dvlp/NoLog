@@ -3,16 +3,16 @@ status: testing
 phase: 03-subscribe-path
 source: [03-VERIFICATION.md]
 started: 2026-07-27T00:00:00Z
-updated: 2026-07-27T02:15:00Z
+updated: 2026-07-27T02:45:00Z
 ---
 
 ## Current Test
 
-number: 2
-name: Terminal-template SSR probe: with CONFIG.template set to "terminal" and a real Notion post id, build+serve once with placeholder Resend credentials and once with them unset; curl the post URL both times
+number: 3
+name: Post-partial-failure convergence — after a state where contacts.create succeeds but contacts.update fails, does a visitor's retry of the same address converge to unsubscribed:false in a live Audience?
 expected: |
-  The marker data-testid="subscribe-form" appears at least once when configured and exactly zero times when unset, positioned between the article and the terminal console
-awaiting: user response
+  The retried submission results in the contact present with unsubscribed:false, with no in-route retry loop involved
+awaiting: user response (deliberately skipped for now per operator decision — see result below)
 
 ## Tests
 
@@ -24,19 +24,23 @@ Setup issues encountered and resolved along the way (not code defects): (1) the 
 
 ### 2. Terminal-template SSR probe: with CONFIG.template set to "terminal" and a real Notion post id, build+serve once with placeholder Resend credentials and once with them unset; curl the post URL both times
 expected: The marker data-testid="subscribe-form" appears at least once when configured and exactly zero times when unset, positioned between the article and the terminal console
-result: [pending]
+result: PASSED — tested live (2026-07-27) with `CONFIG.template` temporarily set to `"terminal"` and a real Notion post id (`3702c61e-4a24-8001-a9a6-c4ff3aadadb5`, resolved from the operator's real Notion database via the RSC payload of the homepage, not fabricated). Rebuilt once, then served twice with different Resend env states:
+- **Configured** (real `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` set): `curl /post/{id}` showed `data-testid="subscribe-form"` exactly once, positioned after `</article>` and before the terminal console block (`h-[50vh]`) — confirmed programmatically via byte-offset comparison, not just visual inspection.
+- **Unconfigured** (`RESEND_API_KEY=""`, `RESEND_AUDIENCE_ID=""` via env override, Notion vars untouched): same URL, same post — `data-testid="subscribe-form"` appeared 0 times.
+
+`site.config.ts`'s temporary `"terminal"` edit was reverted to `"default"` after the test; `git diff` on that file is empty.
 
 ### 3. Post-partial-failure convergence: after a state where contacts.create succeeds but contacts.update fails, does a visitor's retry of the same address converge to unsubscribed:false in a live Audience?
 expected: The retried submission results in the contact present with unsubscribed:false, with no in-route retry loop involved
-result: [pending]
+result: SKIPPED (operator decision, 2026-07-27) — forcing a live partial-failure state (create succeeds, update fails) against a real Resend account is impractical to trigger deliberately without an unsupported/unreliable technique (e.g. racing a network interruption between the two calls). Remains a backstop truth per `03-01-PLAN.md`'s `verification: backstop` marker — the code path (unconditional create→update pair, D-17/D-18) was already verified structurally and the executor's static-analysis gates confirmed no branch exists that could skip the recovery-by-retry behavior. Left open as a `human_needed` item for whenever the operator has a concrete way to reproduce a live partial failure; not blocking phase completion.
 
 ## Summary
 
 total: 3
-passed: 1
+passed: 2
 issues: 0
-pending: 2
-skipped: 0
+pending: 0
+skipped: 1
 blocked: 0
 
 ## Gaps
