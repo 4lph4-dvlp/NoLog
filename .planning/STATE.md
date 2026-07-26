@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: Notify Route
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-07-26T23:51:37.225Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-07-26T23:59:32.910Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-24)
 ## Current Position
 
 Phase: 04 (Notify Route) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 04 execution started
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Progress: [█████████░] 85%
 | Phase 03 P05 | ~20min | 2 tasks | 1 files |
 | Phase 03 P06 | 25min | 1 tasks | 1 files |
 | Phase 04 P01 | ~25min | 2 tasks | 3 files |
+| Phase 04 P02 | ~10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 4 Plan 01: D-08 revised under its own escape hatch — visible {{{RESEND_UNSUBSCRIBE_URL}}} footer link added instead of relying solely on Resend's automatic header injection (04-RESEARCH.md Open Question 1 could not confirm unconditional RFC 8058 header injection)
 - [Phase ?]: Phase 4 Plan 01: D-11 batch-cap env var resolved to NOTIFY_BATCH_SIZE (default 50); Open Question 2 resolved in favor of short-circuiting remaining markEmailed attempts after the first NotionCapabilityError in a run
 - [Phase ?]: Phase 4 Plan 01: fromAddress placed in site.config.ts alongside physicalAddress under D-06's public-value rationale (forker-visible branding, not a secret)
+- [Phase ?]: Phase 4 Plan 02: Post.thumbnailType added to the published core package (option (a) from 04-RESEARCH.md Pitfall 1) instead of a send-time re-fetch; getFileType() duplicates getFileUrl()'s files[0] lookup deliberately rather than sharing a helper, keeping the live site's image path untouched
+- [Phase ?]: Phase 4 Plan 02: digest buildSectionHtml() only embeds a thumbnail when thumbnailType === "external" AND the URL parses as absolute https; Notion-hosted (presigned, one-hour-expiring) or malformed thumbnails downgrade silently to D-05's existing text-only rendering, with one per-run [Notify] log line reporting the downgrade count
 
 ### Pending Todos
 
@@ -127,6 +130,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T23:51:37.205Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-07-26T23:59:32.889Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
