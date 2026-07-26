@@ -2,9 +2,24 @@ import { timingSafeEqual } from "node:crypto";
 import { getResend } from "@/lib/email";
 import { getUnemailedPublicPosts, markEmailed } from "@/lib/notion";
 import { CONFIG } from "@/site.config";
-import type { Post } from "@4lph4/nolog-core";
+import { NotionCapabilityError, type Post } from "@4lph4/nolog-core";
 
 export const runtime = "nodejs";
+
+// D-10/D-11/D-12: a reasoned default, not an authoritative one, against
+// Vercel Hobby's confirmed 300s maxDuration (04-RESEARCH.md Pitfall 3) — the
+// realistic bottleneck is Notion's own per-request latency, not the 300s
+// ceiling, and 50 new posts in one digest is already a generous upper bound
+// for a personal blog. NOTIFY_BATCH_SIZE exists precisely so Phase 5's live
+// duration check can retune this without a code change.
+const NOTIFY_BATCH_SIZE_DEFAULT = 50;
+
+// SEC-02 operator signal (same shape as the sibling subscribe route's
+// unconfiguredLogged, D-25): bounds the unconfigured console.error to one
+// line per serverless instance. The 200 no-op response itself stays OUTSIDE
+// this latch so the response contract is identical whether or not the log
+// fired.
+let unconfiguredLogged = false;
 
 // ─── Auth (SEC-01) ──────────────────────────────────────────────────────────
 
@@ -137,6 +152,18 @@ export async function GET(request: Request) {
   const physicalAddress = CONFIG.notify.physicalAddress.trim();
   const fromAddress = CONFIG.notify.fromAddress.trim();
   if (!apiKey || !audienceId || !physicalAddress || !fromAddress) {
+    if (!unconfiguredLogged) {
+      unconfiguredLogged = true;
+      const missing = [
+        !apiKey ? "RESEND_API_KEY" : null,
+        !audienceId ? "RESEND_AUDIENCE_ID" : null,
+        !physicalAddress ? "CONFIG.notify.physicalAddress" : null,
+        !fromAddress ? "CONFIG.notify.fromAddress" : null,
+      ].filter(Boolean);
+      console.error(
+        `[Notify] Route called while unconfigured — missing: ${missing.join(", ")}. Further occurrences in this instance are not logged.`,
+      );
+    }
     return Response.json({ ok: true, code: "unconfigured" }, { status: 200 });
   }
 
@@ -154,10 +181,38 @@ export async function GET(request: Request) {
     return Response.json({ ok: true, code: "no_posts" }, { status: 200 });
   }
 
+  // Batch cap (D-10/D-11/D-12/D-13) — measured in post count, never elapsed
+  // time. Applied BEFORE any section is assembled. A typo'd/non-positive
+  // override can never silently disable the feature or produce a
+  // zero-length batch — it falls back to the default instead.
+  const parsedBatchSize = Number.parseInt(process.env.NOTIFY_BATCH_SIZE ?? "", 10);
+  const batchSize =
+    Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? parsedBatchSize : NOTIFY_BATCH_SIZE_DEFAULT;
+  const batch = candidates.slice(0, batchSize);
+  const deferredCount = candidates.length - batch.length;
+  if (deferredCount > 0) {
+    // D-13: posts past the cap need no resume bookkeeping — they are still
+    // unemailed, so the next run's query finds them naturally.
+    console.log(`[Notify] Deferred ${deferredCount} post(s) to next run (batch cap NOTIFY_BATCH_SIZE reached).`);
+  }
+
   // Assemble — preserve array order exactly (D-01): no sort, no reverse, no
   // de-duplication, since getUnemailedPublicPosts() already returns Notion
-  // created_time ascending.
-  const sections = candidates.map((post) => buildSectionHtml(post));
+  // created_time ascending. Per-post isolation (NOTIFY-04): a bad section is
+  // dropped, never fatal to the rest of the digest.
+  const sections: { post: Post; html: string }[] = [];
+  for (const post of batch) {
+    try {
+      sections.push({ post, html: buildSectionHtml(post) });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[Notify] Failed to build section for post ${post.id}: ${message}`);
+    }
+  }
+
+  if (sections.length === 0) {
+    return Response.json({ ok: true, code: "no_sections" }, { status: 200 });
+  }
 
   // Send — exactly one call, never inside a loop (NOTIFY-03). The subject is
   // count-based and generic (D-02), same shape whether the count is 1 or many.
@@ -171,7 +226,7 @@ export async function GET(request: Request) {
     audienceId,
     from: fromAddress,
     subject,
-    html: buildDigestHtml(sections),
+    html: buildDigestHtml(sections.map((section) => section.html)),
     send: true,
   });
 
@@ -180,10 +235,41 @@ export async function GET(request: Request) {
     return Response.json({ ok: false, code: "send_failed" }, { status: 500 });
   }
 
-  // Mark, only after a clean send.
-  for (const post of candidates) {
-    await markEmailed(post.id);
+  // Mark, only after a clean send (NOTIFY-05) — isolated per post, so one
+  // failure never stops the rest. A missing Notion "Update content" grant
+  // 403s identically for every post in the batch, so once seen, short-circuit
+  // the remaining attempts rather than burn N doomed PATCH calls (resolves
+  // 04-RESEARCH.md Open Question 2 in favor of short-circuiting).
+  let marked = 0;
+  let capabilityBlocked = false;
+  let capabilityErrorLogged = false;
+  for (const { post } of sections) {
+    if (capabilityBlocked) {
+      continue;
+    }
+    try {
+      await markEmailed(post.id);
+      marked += 1;
+    } catch (error: unknown) {
+      if (error instanceof NotionCapabilityError) {
+        capabilityBlocked = true;
+        if (!capabilityErrorLogged) {
+          capabilityErrorLogged = true;
+          console.error('[Notify] markEmailed blocked — the Notion integration lacks "Update content".');
+        }
+      } else {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`[Notify] markEmailed failed for post ${post.id}: ${message}`);
+      }
+    }
   }
 
-  return Response.json({ ok: true, code: "sent", count: candidates.length }, { status: 200 });
+  const unmarked = sections.length - marked;
+  if (capabilityBlocked && unmarked > 0) {
+    console.error(
+      `[Notify] ${unmarked} post(s) left unmarked due to the missing Notion capability; they will be re-sent on the next run.`,
+    );
+  }
+
+  return Response.json({ ok: true, code: "sent", count: sections.length, marked }, { status: 200 });
 }
