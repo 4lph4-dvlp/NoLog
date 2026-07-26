@@ -14,9 +14,9 @@ files_reviewed_list:
   - apps/web/src/templates/terminal/PostPage.tsx
 findings:
   critical: 1
-  warning: 6
+  warning: 7
   info: 6
-  total: 13
+  total: 14
 status: issues_found
 ---
 
@@ -29,77 +29,79 @@ status: issues_found
 
 ## Summary
 
-This is a fresh, independent pass over all 8 files in the subscribe-path phase, not a delta against
-the prior review. The prior CR-01 finding (the per-IP rate limiter keying on the client-suppliable
-first entry of `X-Forwarded-For`) has been meaningfully remediated in the current `route.ts`: the
-key derivation now tiers through `x-vercel-forwarded-for` → `x-real-ip` → a shared bucket for
-untrusted `x-forwarded-for`-only traffic, and a cardinality cap (`ATTEMPTS_MAX_KEYS`) bounds the
-counter map independent of expiry. That fix is sound as far as it can be verified by reading the
-file, and the previously-flagged missing email length bound has also been added
-(`MAX_EMAIL_LENGTH`). Neither is re-flagged here.
+This is a fresh, independent pass over the current state of all 8 files, not a delta against either
+prior review round. Both previously-reported CR-01 findings look genuinely remediated in the
+`route.ts` on disk now: `getRateLimitKey` prefers platform-owned headers (`x-vercel-forwarded-for`,
+`x-real-ip`) over the client-spoofable `x-forwarded-for`, with a sound cardinality cap
+(`ATTEMPTS_MAX_KEYS`) independent of expiry; and `isSameOriginRequest`/`hasJsonContentType` are
+correctly staged between the configuration gate and the rate limiter, deriving the expected host from
+the request's own headers rather than a static config value, matching the documented Next.js
+Server-Actions precedent. Stage ordering in `POST` is coherent end to end and the reasoning in the
+comments matches what the code actually does.
 
-This pass did, however, find a new Critical issue outside the prior review's scope: `POST
-/api/subscribe` performs no Origin/Referer validation at all. `Request.json()` parses the body
-regardless of `Content-Type`, so a cross-site request using a CORS-preflight-free content type can
-still deliver a JSON body this route will happily act on. Combined with the project's explicit
-"no double opt-in" constraint, this lets any third-party page silently enroll an arbitrary victim's
-email into the site owner's Resend audience without consent — a real abuse vector, not just a
-theoretical one, with consequences for the owner's sending reputation.
+This pass found one new BLOCKER: the "route unconfigured" branch (stage 1, the very first thing
+`POST` does) logs unconditionally on every request with no rate limiting or per-instance latch ahead
+of it — the exact log-volume-abuse class the file's own D-25 principle was written to prevent for the
+origin-rejection site, but not applied here even though this branch runs first and is the code path
+every fresh, unconfigured fork (the feature's default state) actually executes on every hit.
 
-Several issues carried over from the pre-existing files this phase wires into (`post/[id]/page.tsx`,
-`templates/terminal/PostPage.tsx`) are still present and unfixed — a self-inclusion bug in
-`relatedPosts`, an unguarded `Date` parse that can throw during render, and a catch-all that
-discards unrelated successfully-fetched data on any single failure. A new duplicate-DOM-ID defect
-was also found in the default template, where `SubscribeForm` is rendered twice for responsive
-layout and both instances share the same `id`/`data-testid`.
+Several pre-existing defects in the files this phase wires into (`post/[id]/page.tsx`,
+`templates/terminal/PostPage.tsx`) remain present: a self-inclusion bug in `relatedPosts`, a
+single `try/catch` that discards already-successful data when one unrelated fetch fails, and an
+unguarded `Date` parse that can throw during render. A duplicate-DOM-id defect was found in the
+default template where `SubscribeForm` renders twice for responsive layout with identical hard-coded
+`id`/`data-testid` values, and two logging-hygiene issues were found in `route.ts`'s Resend
+integration (unsanitized SDK error messages risking PII in logs, and a fully silent outer `catch`
+that leaves zero operator diagnostics for unexpected exceptions).
 
 ## Critical Issues
 
-### CR-01: No Origin/Referer validation permits cross-site subscription abuse
+### CR-01: Unconditional, unrate-limited log line on the default (unconfigured) code path of `POST /api/subscribe`
 
-**File:** `apps/web/src/app/api/subscribe/route.ts:161-272` (whole `POST` handler)
-**Issue:** The handler validates rate-limit key, honeypot, and email format, but never checks the
-request's `Origin` or `Referer` header. `Request.json()` parses the body purely from its content,
-independent of the `Content-Type` header, so an attacker's page can send a cross-origin request
-using a CORS-"simple" content type (e.g. `text/plain`, sent with `fetch(..., { mode: "no-cors" })`
-or an equivalent technique) to avoid a preflight, while the body still contains valid JSON
-(`{"email":"victim@example.com","company":""}`) that this route parses and acts on. The honeypot
-does not stop this — the attacker's script simply sends an empty `company` field, same as a real
-client.
-
-Because the project's explicit design constraint is "no confirmation/double-opt-in flow" (per
-`.claude/CLAUDE.md`), there is no secondary consent check anywhere downstream either. The practical
-result: any third-party website can silently enroll an arbitrary victim's email address into the
-site owner's Resend audience with zero consent from that victim, using the site's own sending
-reputation. The per-IP rate limiter does not limit by target email or by requesting origin, so this
-scales with attacker-controlled traffic (e.g. many distinct visitor IPs each firing one request) —
-a real mechanism to spam-enroll third parties, risking spam complaints and possible action against
-the site owner's Resend sending domain.
-
-**Fix:** Add an Origin/Referer allowlist check ahead of (or alongside) the rate-limit stage,
-mirroring the fail-closed posture already used elsewhere in this file:
+**File:** `apps/web/src/app/api/subscribe/route.ts:291-309`
+**Issue:** The very first branch `POST` can take — reached before `isSameOriginRequest`, before
+`isRateLimited`, before anything else — logs on every single request when the route is unconfigured:
 
 ```ts
-function isSameOriginRequest(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return true; // adjust to fail-closed if that tradeoff is preferred
-
-  try {
-    return new URL(origin).origin === new URL(CONFIG.site.url).origin;
-  } catch {
-    return false;
-  }
-}
-
-// inside POST, before or alongside the rate-limit stage:
-if (!isSameOriginRequest(request)) {
-  return Response.json({ ok: false, code: "invalid_email" }, { status: 400 });
+if (!apiKey || !audienceId) {
+  const missing = [...].filter(Boolean);
+  console.error(`[Subscribe] Route called while unconfigured — missing: ${missing.join(", ")}`);
+  return new Response(null, { status: 404 });
 }
 ```
 
-If cross-origin embedding of the subscribe form on other sites is an intentional feature, that must
-be a deliberate, documented decision (the same way every other tradeoff in this file carries a
-`D-xx` comment) rather than an oversight — as written today it reads as a gap, not a choice.
+Per `.claude/CLAUDE.md`, the subscribe feature is explicitly off-by-default ("A forker who sets no
+env vars sees no subscribe form and has no active email logic"), and the Next.js API route file is
+always deployed regardless of whether `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` are configured. That
+means this branch is the one every fresh NoLog fork actually executes on every request to this
+predictable, guessable, unauthenticated path — with zero cap on log volume, since no rate limiter or
+origin check precedes it.
+
+This is precisely the class of risk the file's own `originRejectionLogged` latch (D-25, lines
+161-173) exists to prevent — "an attacker must not be able to drive a forker's log volume" — but that
+principle was applied only to the origin-rejection log site, not to this one, even though this one is
+more exposed: it runs first, ahead of any filter, and is live-by-default on the majority of forks
+(anyone who hasn't yet configured, or has deliberately chosen not to enable, the feature). A trivial
+loop of anonymous POSTs generates unbounded log lines/cost against an operator who never opted into
+the feature at all.
+
+**Fix:** Apply the same per-instance latch already used for the origin-rejection log:
+
+```ts
+let unconfiguredLogged = false;
+
+if (!apiKey || !audienceId) {
+  if (!unconfiguredLogged) {
+    unconfiguredLogged = true;
+    const missing = [
+      !apiKey ? "RESEND_API_KEY" : null,
+      !audienceId ? "RESEND_AUDIENCE_ID" : null,
+    ].filter(Boolean);
+    console.error(`[Subscribe] Route called while unconfigured — missing: ${missing.join(", ")}. Further occurrences in this instance are not logged.`);
+  }
+  return new Response(null, { status: 404 });
+}
+```
 
 ## Warnings
 
@@ -114,10 +116,9 @@ if (post.category) {
 }
 ```
 The filter matches on category only, with no exclusion of the post being viewed
-(`p.id !== post.id`). `relatedPosts` — passed to `TerminalPostPage`'s `posts` prop for the embedded
-terminal console — will always include the current post alongside its actual siblings. Given the
-variable name and its use as "other posts you might want to navigate to," including the post the
-visitor is already on is very likely a bug.
+(`p.id !== post.id`). `relatedPosts` is passed to `TerminalPostPage`'s `posts` prop for the embedded
+terminal console's navigation; the current post will always appear in its own "related posts" list
+alongside its actual siblings.
 **Fix:**
 ```ts
 relatedPosts = allPosts.filter(p => p.category === post.category && p.id !== post.id);
@@ -125,28 +126,30 @@ relatedPosts = allPosts.filter(p => p.category === post.category && p.id !== pos
 
 ### WR-02: A single fetch failure wipes unrelated, already-successful data
 
-**File:** `apps/web/src/app/post/[id]/page.tsx:64-80`
+**File:** `apps/web/src/app/post/[id]/page.tsx:63-80`
 **Issue:** `getPageRecordMap`, `getCategories`, and the related-posts `getPosts()` call are awaited
-sequentially inside one `try`. If any later call throws — for example `getCategories()` failing
-after `getPageRecordMap(id)` already succeeded — the single `catch` resets **all three** to their
-empty defaults, including the already-fetched `recordMap`. The visitor then sees "ERR: Content
-could not be loaded." (terminal template) or the equivalent default-template fallback for a post
-whose content actually loaded fine, purely because an unrelated categories/related-posts fetch
-failed afterward.
-**Fix:** Fetch independently so one failure doesn't blank data that already succeeded:
+sequentially inside one `try`. If any later call throws — e.g. `getCategories()` failing after
+`getPageRecordMap(id)` already succeeded — the single `catch` resets **all three** to their empty
+defaults, including the already-fetched `recordMap`:
 ```ts
-const [recordMapResult, categoriesResult, relatedPostsResult] = await Promise.allSettled([
-  getPageRecordMap(id),
-  getCategories(),
-  post.category ? getPosts() : Promise.resolve([]),
-]);
-const recordMap = recordMapResult.status === "fulfilled" ? recordMapResult.value : null;
-const categories = categoriesResult.status === "fulfilled" ? categoriesResult.value : [];
-const relatedPosts =
-  relatedPostsResult.status === "fulfilled"
-    ? relatedPostsResult.value.filter((p) => p.category === post.category && p.id !== post.id)
-    : [];
+try {
+  recordMap = await getPageRecordMap(id);
+  categories = await getCategories();
+  if (post.category) {
+    const allPosts = await getPosts();
+    relatedPosts = allPosts.filter(p => p.category === post.category);
+  }
+} catch (error) {
+  console.error("[PostPage] Failed to fetch page recordMap or categories:", error);
+  recordMap = null;
+  categories = [];
+  relatedPosts = [];
+}
 ```
+The visitor sees "ERR: Content could not be loaded." for a post whose content actually loaded fine,
+purely because an unrelated categories/related-posts fetch failed afterward.
+**Fix:** Fetch independently so one failure doesn't blank data that already succeeded, e.g. via
+`Promise.allSettled` and per-result fallbacks.
 
 ### WR-03: Unhandled `RangeError` if `post.createDate` is missing or malformed
 
@@ -158,10 +161,9 @@ const relatedPosts =
 </time>
 ```
 `new Date(x).toISOString()` throws `RangeError: Invalid time value` for any non-parseable or empty
-`createDate`. This is a Client Component render path with no surrounding error boundary in this
-file — an invalid date value here throws during render and takes down the whole post page, rather
-than degrading gracefully the way this same component does for `recordMap`
-(`recordMap ? <NotionPageRenderer /> : <p>ERR: ...</p>`).
+`createDate`. This is a Client Component render path with no error boundary in this file — an invalid
+date value throws during render and takes down the whole post page, unlike this same component's
+graceful handling for a missing `recordMap` (`recordMap ? <NotionPageRenderer /> : <p>ERR: ...</p>`).
 **Fix:**
 ```tsx
 const created = new Date(post.createDate);
@@ -172,55 +174,93 @@ const createdLabel = Number.isNaN(created.getTime())
 {createdLabel && <time dateTime={post.createDate}>created: {createdLabel}</time>}
 ```
 
-### WR-04: Duplicate DOM `id`/`data-testid` from responsive dual-render of SubscribeForm
+### WR-04: Duplicate DOM `id`/`data-testid` from dual-rendering `SubscribeForm` in the default layout
 
 **File:** `apps/web/src/templates/default/Layout.tsx:31,57` and
-`apps/web/src/components/subscribe/SubscribeForm.tsx:145,180,191,252,260`
+`apps/web/src/components/subscribe/SubscribeForm.tsx:145,252,260`
 **Issue:** `DefaultLayout` renders `<SubscribeSection variant="default" />` twice — once inside the
-`md:hidden` mobile block (line 31) and once inside the desktop `aside` (line 57). Both instances are
-always present in the DOM simultaneously; Tailwind's `md:hidden` / `hidden md:block` only toggles
-`display`, it does not unmount either instance. Each `SubscribeForm` render hard-codes
-`id="subscribe-email"` (line 260), `id="company"` (line 145), and `data-testid="subscribe-form"`
-(line 252) — so the rendered page ends up with two elements sharing each identifier. This is invalid
-HTML (duplicate IDs), creates `label htmlFor="subscribe-email"` association ambiguity, and breaks
-any test selector expecting a single match for `data-testid="subscribe-form"` or `#subscribe-email`
-(e.g. Playwright's `getByTestId` throws in strict mode on multiple matches).
-**Fix:** Derive a unique `id` per rendered instance — e.g. accept an `idPrefix`/`instanceId` prop
-threaded from `SubscribeSection` into `SubscribeForm` (`subscribe-email-mobile` /
-`subscribe-email-desktop`), or generate ids with `React.useId()` instead of string literals.
+`md:hidden` mobile block (line 31) and once inside the `hidden md:block` desktop `aside` (line 57).
+Both instances are always present in the DOM simultaneously; Tailwind's responsive classes only
+toggle `display`, they don't unmount either instance. Each `SubscribeForm` render hard-codes
+`id="subscribe-email"` (line 260), `id="company"` on the honeypot input (line 145), and
+`data-testid="subscribe-form"` on the `<form>` (line 252) — so the rendered page ends up with two
+elements sharing each identifier. This is invalid HTML, creates `label htmlFor="subscribe-email"`
+association ambiguity (screen readers and native label-click resolve to the *first* matching element
+only), and breaks any test selector expecting a single match, e.g. testing-library's `getByTestId`
+throws on multiple matches for `data-testid="subscribe-form"`.
+**Fix:** Derive a unique id per rendered instance, e.g. via `React.useId()`, or thread an
+`idPrefix`/`instanceId` prop from `SubscribeSection` down into `SubscribeForm`
+(`subscribe-email-mobile` / `subscribe-email-desktop`).
 
-### WR-05: Resend error messages logged without redaction, risking a PII leak that contradicts the file's own stated guarantee
+### WR-05: Resend SDK error messages logged unsanitized — possible PII leak contradicting the file's own no-logging guarantee
 
-**File:** `apps/web/src/app/api/subscribe/route.ts:244,262`
-**Issue:** The comment at lines 222-225 states: "D-24's no-logging guarantee is asserted against
-this identifier [`normalizedEmail`] specifically" — the code claims the submitted email address is
-never logged. That guarantee is only enforced at the direct `normalizedEmail` call sites;
-`console.error(\`[Subscribe] Resend contact create failed: ${createError.message}\`)` (line 244)
-and the equivalent for `updateError.message` (line 262) log whatever string the Resend SDK returns,
-verbatim. If Resend's validation error text ever echoes the offending address (a common pattern for
-"invalid email: X" style API errors), the email reaches the logs through this path despite the
-stated guarantee being technically unbroken at its own call site.
-**Fix:** Log a fixed, generic message plus an error name/code only, not the raw SDK message:
+**File:** `apps/web/src/app/api/subscribe/route.ts:403,421`
+**Issue:**
+```ts
+if (createError) {
+  console.error(`[Subscribe] Resend contact create failed: ${createError.message}`);
+}
+...
+if (updateError) {
+  console.error(`[Subscribe] Resend contact update (post-create) failed: ${updateError.message}`);
+}
+```
+`createError.message`/`updateError.message` are logged verbatim. The module's own comment on
+`normalizedEmail` (route.ts:381-384) states D-24's no-logging guarantee is "asserted against this
+identifier specifically" — implying the submitted email is never logged elsewhere in the file — but
+that guarantee is only enforced at the direct `normalizedEmail` call sites, not at these two. Contact
+APIs commonly echo the offending address back in validation/duplicate errors (e.g. "Contact with
+email X already exists"); if Resend does this, the subscriber's email reaches the operator's logs
+through this path despite the stated guarantee.
+**Fix:** Log a bounded, non-identifying summary instead of the raw SDK message:
 ```ts
 console.error(`[Subscribe] Resend contact create failed: ${createError.name ?? "unknown_error"}`);
 ```
 
-### WR-06: `x-real-ip` trust assumption is asserted but not verified/cited
+### WR-06: Error-logging deviates from project convention; outer `catch` is fully silent
 
-**File:** `apps/web/src/app/api/subscribe/route.ts:66-85`
-**Issue:** The rate-limit key derivation treats `x-real-ip` as a "documented platform-injected
-equivalent" to `x-vercel-forwarded-for` (line 67) and trusts it identically. The comment cites no
-source for this specific claim, unlike `x-vercel-forwarded-for`, a well-known Vercel-proprietary
-header explicitly designed to be edge-set. `x-real-ip` is a generic reverse-proxy convention header
-(popularized by nginx) rather than a Vercel-specific one; if Vercel's edge does not unconditionally
-overwrite a client-supplied `x-real-ip` value before it reaches the function, an attacker can set
-`x-real-ip` directly and regain the exact bypass this tier system was built to close, just under a
-different header name.
-**Fix:** Verify directly against Vercel's current documentation/dashboard — the same standard this
-project already applies to other unconfirmed platform facts (e.g. `maxDuration` per
-`.claude/CLAUDE.md`) — that `x-real-ip` is edge-overwritten and not client-passthrough on Vercel,
-and record that verification inline next to the trust claim. If it cannot be confirmed, drop
-`x-real-ip` from the trusted tier and rely on `x-vercel-forwarded-for` only.
+**File:** `apps/web/src/app/api/subscribe/route.ts:402-404,416-422,426-429`
+**Issue:** `.claude/CLAUDE.md` (Error Handling / Logging) states: "Log error objects directly, not
+just strings, to preserve stack traces" and "Include error message and relevant context." Two
+deviations here: (1) lines 403 and 421 log only `createError.message`/`updateError.message` — a
+string — discarding the error object and any stack trace; (2) the outer `catch` around both Resend
+calls binds and logs nothing at all:
+```ts
+} catch {
+  // A thrown SDK/network error reaches the same generic branch instead of
+  // escaping as an unhandled 500 with a stack trace.
+  return Response.json({ ok: false, code: "server_error" }, { status: 500 });
+}
+```
+The comment explains why the *client* shouldn't see a stack trace but says nothing about server-side
+visibility — there is none. A thrown SDK/network exception (timeout, malformed response, auth
+failure) leaves the operator with a generic 500 and zero log line to diagnose it.
+**Fix:** Bind and log the caught error, subject to the same redaction caution as WR-05:
+```ts
+} catch (error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[Subscribe] Unexpected error during Resend contact sync: ${message}`);
+  return Response.json({ ok: false, code: "server_error" }, { status: 500 });
+}
+```
+
+### WR-07: `x-real-ip` trust claim is asserted without citation, unlike its sibling header
+
+**File:** `apps/web/src/app/api/subscribe/route.ts:63-85`
+**Issue:** `getRateLimitKey`'s tier system trusts `x-real-ip` as "the documented platform-injected
+equivalent" to `x-vercel-forwarded-for` (line 90 / doc comment lines 67-68) and treats it identically
+as trusted. The comment cites no source for this specific claim, unlike `x-vercel-forwarded-for`,
+which is a well-known Vercel-proprietary, edge-set header. `x-real-ip` is a generic reverse-proxy
+convention (popularized by nginx), not a Vercel-specific one; if Vercel's edge does not
+unconditionally overwrite a client-supplied `x-real-ip` before the function sees it, an attacker can
+set `x-real-ip` directly and regain the exact rate-limit-key-spoofing bypass this tier system exists
+to close, just under a different header name. Impact is bounded by the rate limiter's own stated
+"bulk-abuse dampener, not deterministic gate" posture (D-09), but the asymmetry in evidentiary rigor
+between the two "trusted" headers is worth closing.
+**Fix:** Verify directly against Vercel's current documentation/dashboard (the same standard already
+applied elsewhere in this project, e.g. `maxDuration` per `.claude/CLAUDE.md`) that `x-real-ip` is
+edge-overwritten and not client-passthrough on Vercel, and record that verification inline next to
+the trust claim. If it can't be confirmed, drop `x-real-ip` from the trusted tier.
 
 ## Info
 
@@ -228,57 +268,52 @@ and record that verification inline next to the trust claim. If it cannot be con
 
 **File:** `apps/web/src/templates/terminal/PostPage.tsx:15`
 **Issue:** `TerminalPostPageProps.recordMap` is typed `any`, opting out of type checking for a value
-threaded from `getPageRecordMap` through the post route into this component, and defeating the
-compiler's ability to catch a shape mismatch at the null-guard just below it
-(`recordMap ? <NotionPageRenderer recordMap={recordMap} /> : ...`).
-**Fix:** Use the real `ExtendedRecordMap | null` type instead of `any`.
+threaded from `getPageRecordMap` through the post route into this component and defeating the
+compiler's ability to catch a shape mismatch at the null-guard just below it.
+**Fix:** Use the real `ExtendedRecordMap | null` type (from `notion-types`) instead of `any`.
 
 ### IN-02: Category-slug derivation duplicated in the same file
 
 **File:** `apps/web/src/templates/terminal/PostPage.tsx:36,106`
-**Issue:** `post.category.toLowerCase().replace(/\s+/g, "-")` is written out independently at line
-36 (category link href) and line 106 (terminal console starting path). Any future change to slug
-rules has to be applied in both places, and it's easy to miss one.
-**Fix:** Extract a small shared `categoryToSlug(category: string): string` helper and use it at
-both call sites.
+**Issue:** `post.category.toLowerCase().replace(/\s+/g, "-")` is written out independently at line 36
+(category link href) and line 106 (terminal console starting path). A future change to slug rules has
+to be applied in both places.
+**Fix:** Extract a shared `categoryToSlug(category: string): string` helper and use it at both call
+sites.
 
 ### IN-03: Inconsistent JSX indentation in `DefaultLayout`
 
 **File:** `apps/web/src/templates/default/Layout.tsx:26-61`
-**Issue:** Lines 20-24 (theme toggle block) sit at the component's base indentation, but the
-mobile-layout and desktop-layout `div`s starting at lines 27/41 are indented one extra level with no
-corresponding change in JSX nesting, and the closing `</div>` (line 61) sits at yet another
-indentation level relative to its opening tag (line 20). This doesn't break the build, but it's
-inconsistent with the project's stated 2-space indentation convention and makes the tag structure
-harder to scan.
+**Issue:** The mobile-layout and desktop-layout `div`s (lines 27, 41) are indented one extra level
+relative to the theme-toggle block (lines 20-24) with no corresponding JSX nesting change, and the
+closing `</div>` (line 61) sits at a different indentation level than its opening tag (line 20).
+Doesn't break the build but is inconsistent with the project's stated 2-space indentation convention.
 **Fix:** Re-indent lines 26-61 to align with the sibling block at lines 20-24.
 
-### IN-04: `getPosts()`/`relatedPosts` computed unconditionally, unused by the default template
+### IN-04: `relatedPosts` computed unconditionally, unused by the default template
 
 **File:** `apps/web/src/app/post/[id]/page.tsx:71-74`
 **Issue:** The `getPosts()` call and `relatedPosts` filter run whenever `post.category` is set,
 regardless of `CONFIG.template`. For `CONFIG.template === "default"`, `relatedPosts` is computed and
-then never passed to `DefaultPostPage` — it's simply discarded. Not a correctness bug, but dead work
-every default-template request pays for.
+then never passed to `DefaultPostPage` — the work is discarded every default-template request.
 **Fix:** Move the `relatedPosts` computation inside the `CONFIG.template === "terminal"` branch.
 
-### IN-05: No `aria-live` region for subscribe form status changes
+### IN-05: No `aria-live` region for subscribe-form status changes
 
 **File:** `apps/web/src/components/subscribe/SubscribeForm.tsx:158-166,222-226,233-241,286-288`
-**Issue:** The success message and the `errorMessage(...)` paragraph both appear by conditionally
-rendering new DOM after the async submit resolves, with no `aria-live` (or `role="status"` /
-`role="alert"`) on the containing element. Screen reader users submitting the form get no
-announcement that the outcome changed.
-**Fix:** Add `role="status"` (success) / `role="alert"` (error) to the two result blocks, or wrap
-both in a shared `aria-live="polite"` region.
+**Issue:** The success message and the `errorMessage(...)` paragraph both appear via conditional
+render after the async submit resolves, with no `aria-live`/`role="status"`/`role="alert"` on the
+containing element. Screen-reader users get no announcement that the submit outcome changed.
+**Fix:** Add `role="status"` (success) / `role="alert"` (error) to the two result blocks, or wrap both
+in a shared `aria-live="polite"` region.
 
-### IN-06: No unmount/cancellation guard around the async fetch in `SubscribeForm.handleSubmit`
+### IN-06: No unmount/cancellation guard around the async fetch in `handleSubmit`
 
 **File:** `apps/web/src/components/subscribe/SubscribeForm.tsx:88-120`
 **Issue:** If the component unmounts while `fetch("/api/subscribe")` is in flight (e.g. the visitor
 navigates away right after submitting), the resolved promise still calls `setStatus`/`setErrorCode`
-on an unmounted component. This project's own stated conventions call for cancelling async work in
-cleanup (`const cancelled = useRef(false)`), a pattern not applied here.
+on an unmounted component. Project convention calls for cancelling async work in cleanup
+(`const cancelled = useRef(false)`), a pattern not applied here.
 **Fix:**
 ```ts
 const cancelledRef = useRef(false);
