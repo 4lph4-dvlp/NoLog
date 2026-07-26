@@ -2,6 +2,7 @@ import { Profile } from "@/components/Profile";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryList } from "@/components/CategoryList";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SubscribeSection } from "@/components/subscribe/SubscribeSection";
 
 interface DefaultLayoutProps {
   children: React.ReactNode;
@@ -27,6 +28,8 @@ export default function DefaultLayout({ children, categories }: DefaultLayoutPro
           {/* 1. Profile */}
           <Profile />
 
+          <SubscribeSection variant="default" />
+
           {/* 2. Search */}
           <SearchBar />
 
@@ -50,6 +53,9 @@ export default function DefaultLayout({ children, categories }: DefaultLayoutPro
           {/* Right: Profile Sidebar */}
           <aside className="hidden md:block sticky top-8 self-start">
             <Profile />
+            <div className="mt-4">
+              <SubscribeSection variant="default" />
+            </div>
           </aside>
         </div>
       </div>
