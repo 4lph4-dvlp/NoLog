@@ -104,6 +104,23 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, code: "invalid_email" }, { status: 400 });
   }
 
+  // D-23 stage 3 — after the rate limit (so a bot still spends its own
+  // quota; the counter measures attempts, not subscriptions) and before
+  // validation/Resend (so a trapped submission never reaches either). A
+  // populated honeypot returns the exact same 200/{ok:true} a real success
+  // produces — byte-identical, so a bot operator learns nothing — and the
+  // submission is dropped without ever calling Resend. No 400, no distinct
+  // response of any kind: revealing detection would teach an operator to
+  // route around the trap. Logs nothing (D-25).
+  const honeypotValue =
+    typeof body === "object" && body !== null && "company" in body
+      ? String((body as { company?: unknown }).company ?? "").trim()
+      : "";
+
+  if (honeypotValue.length > 0) {
+    return Response.json({ ok: true }, { status: 200 });
+  }
+
   const rawEmail =
     typeof body === "object" && body !== null && "email" in body
       ? (body as { email?: unknown }).email
