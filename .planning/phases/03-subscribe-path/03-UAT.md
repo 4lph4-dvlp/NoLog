@@ -1,18 +1,14 @@
 ---
-status: testing
+status: complete
 phase: 03-subscribe-path
 source: [03-VERIFICATION.md]
 started: 2026-07-27T00:00:00Z
-updated: 2026-07-27T02:45:00Z
+updated: 2026-07-27T03:00:00Z
 ---
 
 ## Current Test
 
-number: 3
-name: Post-partial-failure convergence — after a state where contacts.create succeeds but contacts.update fails, does a visitor's retry of the same address converge to unsubscribed:false in a live Audience?
-expected: |
-  The retried submission results in the contact present with unsubscribed:false, with no in-route retry loop involved
-awaiting: user response (deliberately skipped for now per operator decision — see result below)
+[testing complete]
 
 ## Tests
 
@@ -32,7 +28,8 @@ result: PASSED — tested live (2026-07-27) with `CONFIG.template` temporarily s
 
 ### 3. Post-partial-failure convergence: after a state where contacts.create succeeds but contacts.update fails, does a visitor's retry of the same address converge to unsubscribed:false in a live Audience?
 expected: The retried submission results in the contact present with unsubscribed:false, with no in-route retry loop involved
-result: SKIPPED (operator decision, 2026-07-27) — forcing a live partial-failure state (create succeeds, update fails) against a real Resend account is impractical to trigger deliberately without an unsupported/unreliable technique (e.g. racing a network interruption between the two calls). Remains a backstop truth per `03-01-PLAN.md`'s `verification: backstop` marker — the code path (unconditional create→update pair, D-17/D-18) was already verified structurally and the executor's static-analysis gates confirmed no branch exists that could skip the recovery-by-retry behavior. Left open as a `human_needed` item for whenever the operator has a concrete way to reproduce a live partial failure; not blocking phase completion.
+result: skipped
+reason: "Operator decision (2026-07-27): forcing a live partial-failure state (create succeeds, update fails) against a real Resend account is impractical to trigger deliberately without an unsupported/unreliable technique (e.g. racing a network interruption between the two calls). Remains a backstop truth per 03-01-PLAN.md's `verification: backstop` marker — the code path (unconditional create→update pair, D-17/D-18) was already verified structurally, and the executor's static-analysis gates confirmed no branch exists that could skip the recovery-by-retry behavior. Left open for whenever the operator has a concrete way to reproduce a live partial failure; operator has explicitly chosen to close the phase without it."
 
 ## Summary
 
