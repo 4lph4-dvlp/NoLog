@@ -74,7 +74,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 03-01-PLAN.md — Tracer: end-to-end subscribe on the default template — Resend SDK + `lib/email.ts`, the single Server-Component env gate, the client form, and the Node route through the unconditional `contacts.create`+`update` pair; then the fail-closed 404 boundary that closes SC#2 and SC#5
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 03-02-PLAN.md — Abuse resistance: per-IP in-memory rate limit (5 per 10 min, `"unknown"` bucket) and the server-side honeypot fake-success, inserted in D-23 order so no path bypasses the counter
 - [ ] 03-03-PLAN.md — Terminal template: CLI-prompt visual variant behind the same `variant` prop, placed below the post via a Server-rendered `subscribeSlot` because that template's post page is a client module
 
