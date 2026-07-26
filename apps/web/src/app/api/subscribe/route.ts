@@ -7,16 +7,37 @@ export const runtime = "nodejs";
 // locals — Resend is the final authority on address validity.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// D-10: five attempts per IP per fixed ten-minute window. A legitimate
+// D-10: five attempts per key per fixed ten-minute window. A legitimate
 // visitor subscribes once and retries at most once or twice; the window
-// keeps the counter map bounded and lets a shared-office/NAT false positive
-// clear itself quickly.
+// lets a shared-key false positive clear itself quickly. It does NOT bound
+// the counter map's size — ATTEMPTS_MAX_KEYS below is what does that.
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
-// Bound on the counter map's growth — swept on write once this many keys
-// exist, rather than on a timer, so there is no background work in this
-// serverless path.
+// Expiry-based sweep, run on write once this many keys exist rather than on
+// a timer (no background work in this serverless path). This sweep alone
+// does not bound the map either — it only evicts entries whose window has
+// ELAPSED, so a high-cardinality burst of fresh keys is un-sweepable for a
+// full window. ATTEMPTS_MAX_KEYS below is the actual, expiry-independent
+// bound.
 const ATTEMPTS_SWEEP_THRESHOLD = 1000;
+// Hard ceiling on distinct keys `attempts` can hold, enforced independent of
+// expiry (CR-01 secondary defect). Sized to the quantity it bounds: distinct
+// rate-limit keys observed within one ten-minute window on a personal
+// blog's email signup form — only an actual submission creates a key, so
+// real peak traffic sits orders of magnitude below this even for a
+// front-page-of-an-aggregator moment. Unreachable by real use, cheap in
+// memory. It also bounds the sweep's per-request iteration cost above,
+// which was previously unbounded along with the map. See isRateLimited for
+// how the ceiling is enforced and why collapse (not rejection) is chosen.
+const ATTEMPTS_MAX_KEYS = 2000;
+// Shared bucket a new key collapses into once ATTEMPTS_MAX_KEYS distinct
+// keys already exist. Collapse over rejection: rejecting a new key would
+// hand an attacker a global lockout lever (fill the map, refuse every new
+// visitor); collapsing means overflow traffic shares one bucket at the same
+// five-per-ten-minutes limit, so a rotating attacker is refused on their
+// sixth attempt too, at the cost of a legitimate late arrival occasionally
+// sharing that bucket's genuine 429 (D-11) until the window clears.
+const ATTEMPTS_OVERFLOW_KEY = "overflow";
 
 // D-09: this counter lives in ONE serverless instance's memory. It is NOT
 // shared across instances and it resets on every cold start, so it is a
@@ -90,26 +111,39 @@ function getRateLimitKey(request: Request): string {
 }
 
 /**
- * Records this attempt for `ip` and reports whether it now exceeds
+ * Records this attempt for `key` and reports whether it now exceeds
  * `RATE_LIMIT_MAX` within the current fixed window (D-10). The boundary
  * comparison is strictly greater-than, so a request arriving at exactly the
  * window length still belongs to the old window.
  */
-function isRateLimited(ip: string): boolean {
+function isRateLimited(key: string): boolean {
   const now = Date.now();
 
   if (attempts.size > ATTEMPTS_SWEEP_THRESHOLD) {
-    for (const [key, value] of attempts) {
+    for (const [k, value] of attempts) {
       if (now - value.windowStart > RATE_LIMIT_WINDOW_MS) {
-        attempts.delete(key);
+        attempts.delete(k);
       }
     }
   }
 
-  const entry = attempts.get(ip);
+  // Expiry-independent hard ceiling (CR-01 secondary defect): the sweep
+  // above only evicts entries whose window has ELAPSED, so a high-
+  // cardinality burst of distinct keys keeps every entry fresh and
+  // un-sweepable for a full window, growing the map by roughly one entry
+  // per request. This collapse bounds that growth regardless of expiry.
+  // The `attempts.has` check runs first so a visitor who already holds a
+  // bucket never loses it once the map fills — otherwise a flood would
+  // become a total outage for everyone, not just new arrivals.
+  const effectiveKey =
+    !attempts.has(key) && attempts.size >= ATTEMPTS_MAX_KEYS
+      ? ATTEMPTS_OVERFLOW_KEY
+      : key;
+
+  const entry = attempts.get(effectiveKey);
 
   if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    attempts.set(ip, { count: 1, windowStart: now });
+    attempts.set(effectiveKey, { count: 1, windowStart: now });
     return false;
   }
 
