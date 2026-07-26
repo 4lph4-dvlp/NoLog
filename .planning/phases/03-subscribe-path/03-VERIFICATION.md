@@ -1,10 +1,10 @@
 ---
 phase: 03-subscribe-path
 verified: 2026-07-27T02:20:00Z
-status: human_needed
-score: 5/5 roadmap success criteria verified; 3 items remain human-verification-only (unchanged, credential-dependent)
+status: passed
+score: 5/5 roadmap success criteria verified; 2/3 human-verification items confirmed live by the operator (2026-07-27); 1/3 explicitly waived by operator decision (recorded override)
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 1
 re_verification:
   previous_status: gaps_found
   previous_score: 3/5 roadmap success criteria verified (1 failed, 1 requires live credentials)
@@ -12,16 +12,20 @@ re_verification:
     - "SC#4 rate-limit half (CR-01): rate-limit key spoofing via fabricated x-forwarded-for — independently reproduced as FIXED in this pass"
   gaps_remaining: []
   regressions: []
+uat_closure:
+  source: 03-UAT.md
+  closed_at: 2026-07-27T03:00:00Z
+  confirmed_live:
+    - "SC#1 (address lands in a real Resend Audience) and SC#3 live half (byte-identical duplicate-submission response) — confirmed 2026-07-27 against the operator's own Resend account. See 03-UAT.md test #1."
+    - "Terminal-template SSR probe against a real Notion post id (SUB-01/SUB-02 terminal half) — confirmed 2026-07-27. See 03-UAT.md test #2."
+  waived_by_operator:
+    - test: "Post-partial-failure convergence (D-18 backstop)"
+      reason: "Forcing a live create-succeeds/update-fails state against a real Resend account is impractical to trigger deliberately. Operator explicitly chose to close the phase without live-exercising this backstop truth, accepting the residual risk on the strength of the existing structural/static-analysis verification (unconditional create->update pair, D-17/D-18)."
+      waived_at: 2026-07-27T03:00:00Z
 human_verification:
-  - test: "Confirm a real submitted email address actually lands in the configured Resend Audience (SC#1) and that two live submissions of the same address produce a byte-identical response from an operator's own account (SC#3 live half)"
-    expected: "Address appears in the Resend dashboard's Audience list after one submission; a second submission of the same address returns the identical 200 {\"ok\":true} body with no dashboard-visible duplicate error"
-    why_human: "Requires a real RESEND_API_KEY and RESEND_AUDIENCE_ID; none exist in this execution environment. Carried to the operator checklist per D-26 in 03-01-SUMMARY.md — not claimed as passed."
-  - test: "Terminal-template SSR probe: with CONFIG.template set to \"terminal\" and a real Notion post id, build+serve once with placeholder Resend credentials and once with them unset; curl the post URL both times"
-    expected: "The marker data-testid=\"subscribe-form\" appears at least once when configured and exactly zero times when unset, positioned between the article and the terminal console"
-    why_human: "Requires NOTION_TOKEN/NOTION_DATABASE_ID to resolve a real post id; both are absent in this execution environment. The credential-free static boundary gates (no client-directive module imports SubscribeSection; SC#5 bundle grep with both template code paths present) were independently re-run in this verification and passed — that is what actually protects SEC-03/SUB-02 here — but the live differential itself has never been executed."
   - test: "Post-partial-failure convergence: after a state where contacts.create succeeds but contacts.update fails, does a visitor's retry of the same address converge to unsubscribed:false in a live Audience?"
     expected: "The retried submission results in the contact present with unsubscribed:false, with no in-route retry loop involved"
-    why_human: "Authored as a `verification: backstop` truth in 03-01-PLAN.md; requires a live Audience and a way to force a partial failure, neither available here. Abstains per backstop protocol rather than being claimed as passed."
+    why_human: "Authored as a `verification: backstop` truth in 03-01-PLAN.md; requires a live Audience and a way to force a partial failure. Operator has explicitly waived live-exercising this item (see uat_closure.waived_by_operator above) rather than resolving it — it remains open for whenever the operator has a concrete way to reproduce a live partial failure."
 ---
 
 # Phase 3: Subscribe Path Verification Report
@@ -30,7 +34,7 @@ human_verification:
 server-side, resistant to bot/enumeration abuse, and absent entirely when unconfigured.
 
 **Verified:** 2026-07-27T02:20:00Z
-**Status:** human_needed
+**Status:** passed (closed 2026-07-27T03:00:00Z after operator UAT — see `## UAT Closure` below)
 **Re-verification:** Yes — after two rounds of gap closure (03-04 CR-01 rate-limit key; 03-05 CR-01
 origin/content-type; 03-06 CR-01 unconfigured-log volume), all independently re-run against the
 current code, not assumed fixed from prior SUMMARYs.
@@ -41,7 +45,7 @@ current code, not assumed fixed from prior SUMMARYs.
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Valid email submit -> added to Resend Audience | ? human_needed | Structurally proven up to the Resend API boundary: independently rebuilt with placeholder credentials, POST reaches `resend.contacts.create`/`.update` (confirmed via `[Subscribe] Resend contact create failed: API key is invalid` log line, freshly reproduced in this pass). Live Audience confirmation remains an operator-checklist item, unchanged from prior rounds. |
+| 1 | Valid email submit -> added to Resend Audience | ✓ VERIFIED | Structurally proven up to the Resend API boundary in this verification pass, AND subsequently confirmed live by the operator (2026-07-27, 03-UAT.md test #1): a real test address submitted against the operator's actual Resend account was confirmed present in the Audience via direct Resend API query, with `unsubscribed: false`. |
 | 2 | Unset env vars -> `SubscribeSection` renders no form in SSR HTML | ✓ VERIFIED | Independently rebuilt `apps/web` from scratch with both `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` unset: `grep -c 'data-testid="subscribe-form"' .next/server/app/index.html` = 0. Rebuilt again with placeholder credentials: same grep = 1. Additionally, live-served the unconfigured build and confirmed the `/api/subscribe` route itself returns HTTP 404 on **every** POST (tested 4 consecutive requests across two separate server processes), not just the first — the `unconfiguredLogged` latch added in 03-06 gates only the log line (confirmed exactly 1 log line across those requests), never the 404 response itself, which sits outside the latch block. The "indistinguishable from a route that never existed" contract holds. |
 | 3 | Duplicate submission -> identical response (status + body) | ✓ VERIFIED | Live-reproduced: two POSTs of the identical address against a running server (placeholder credentials, same trusted rate-limit key) returned byte-identical `{"ok":false,"code":"server_error"}` / HTTP 500 both times. **Regression check on the new 03-05 same-origin/content-type checks (per this re-verification's specific brief):** a cross-origin-rejected request and a wrong-media-type-rejected request both return the pre-existing `{"ok":false,"code":"invalid_email"}` / HTTP 400 — the exact same status and machine code an ordinary malformed-address rejection already produced before this phase. Live-verified in this pass: no new status code, no new `code` value, no response-shape difference introduced by either new check. No enumeration signal added. |
 | 4 | Honeypot populated OR past per-IP rate limit -> rejected/dropped | ✓ VERIFIED (both halves) | **Honeypot half:** live-verified — a populated `company` field returns `{"ok":true}`/200 (byte-identical to real success) with zero corresponding Resend log lines, confirmed via server-log diff before/after the honeypot POST. **Rate-limit half (CR-01, previously FAILED):** independently re-ran the identical bypass reproduction from the original verification against the *current* `route.ts`, from a clean process with no prior state — 8 POSTs, each with a distinct fabricated `x-forwarded-for` value: exactly 5 reached the Resend stage (HTTP 500), and 429/`rate_limited` returned starting at request 6, reproduced identically across two separate clean server processes. This is a complete reversal of the original 0-of-8-blocked finding. Additionally verified per-visitor isolation is preserved on the *trusted* tier: two distinct `x-vercel-forwarded-for` values are tracked as two independent counters (visitor A throttled after 5, visitor B — a different simulated IP — unaffected), confirming the fix collapses only the untrusted (spoofable) tier into a shared bucket rather than breaking real per-visitor limiting. |
@@ -49,9 +53,10 @@ current code, not assumed fixed from prior SUMMARYs.
 
 **Score:** 5/5 roadmap success criteria hold up under independent, adversarial re-verification
 (rebuilt from scratch, exercised live against a running server, not read from source alone or
-trusted from a prior artifact). 3 items remain genuinely un-verifiable in this environment
-(real Resend Audience, real Notion post id, forced partial-failure state) — unchanged in nature
-from the original verification, not new gaps introduced by this round's fixes.
+trusted from a prior artifact). Of the 3 items originally requiring credentials this execution
+environment lacked, 2 were subsequently confirmed live by the operator against their real Resend
+and Notion accounts (2026-07-27, `03-UAT.md`); the third (post-partial-failure convergence) was
+explicitly waived by the operator rather than resolved — see `## UAT Closure` below.
 
 ### CR-01 Gap Closure Verification (this round's focus)
 
@@ -132,15 +137,35 @@ correctly declare no new requirement IDs). No orphaned requirements found.
 No `TBD`/`FIXME`/`XXX`/`TODO`/`HACK`/`PLACEHOLDER` markers found in any of the 7 phase-modified
 files (re-confirmed by direct grep in this pass).
 
-### Human Verification Required
+### UAT Closure (2026-07-27)
 
-See `human_verification` in the frontmatter. Three items, unchanged in substance from the prior
-verification round — all three require credentials (a real Resend account, a real Notion post id)
-that do not exist in this execution environment, and none are claimed as passed:
+The operator obtained real Resend and Notion credentials and personally ran the human-verification
+items via `03-UAT.md`, with this session assisting mechanically (starting/stopping local servers,
+issuing HTTP probes, querying the Resend API directly for confirmation) but never handling secrets
+outside files the operator controlled.
 
-1. Live Resend Audience confirmation for a real submitted address (SC#1) and a live duplicate-submission round trip (SC#3's live half).
-2. Terminal-template SSR differential probe against a real Notion post id (SUB-01/SUB-02 terminal half) — the credential-free static boundary checks that stand in for this were independently re-run and passed in this verification.
-3. Post-partial-failure convergence via visitor retry (D-18 backstop) — requires forcing a live partial-failure state against a real Audience.
+1. **SC#1 + SC#3 live half — PASSED.** A test address was submitted twice against the operator's real
+   Resend account. Both responses were `200 {"ok":true}`, byte-for-byte identical. A direct Resend API
+   query confirmed the address was present in the Audience with `unsubscribed: false`. No log line
+   referenced the address on either request. The test contact was deleted afterward to leave the
+   operator's Audience clean. Two environment-configuration issues were found and fixed along the way
+   (not code defects): an API key issued with `sending_access`-only permission (Resend's two tiers are
+   `full_access`/`sending_access`, confirmed via Resend's own docs) needed reissuing as `full_access`;
+   and an initially-configured `RESEND_AUDIENCE_ID` didn't match any audience under the account, resolved
+   by querying `GET /audiences` directly.
+2. **Terminal-template SSR probe — PASSED.** With `CONFIG.template` temporarily set to `"terminal"` and a
+   real Notion post id (resolved from the operator's own database, not fabricated), the marker appeared
+   exactly once when configured — positioned after `</article>` and before the terminal console block —
+   and exactly zero times with Resend unconfigured. `site.config.ts`'s temporary edit was reverted;
+   `git diff` on that file is empty.
+3. **Post-partial-failure convergence — WAIVED, not verified.** The operator explicitly decided not to
+   attempt forcing a live create-succeeds/update-fails state, judging it impractical to trigger
+   deliberately, and chose to close the phase accepting this residual. This remains an open backstop
+   truth (D-18) for whenever a concrete reproduction path exists — see `overrides_applied`/
+   `uat_closure.waived_by_operator` in the frontmatter. It is recorded as a knowing operator decision,
+   not a silent pass.
+
+Full detail, timestamps, and exact commands: `03-UAT.md`.
 
 ### Gaps Summary
 
@@ -173,13 +198,15 @@ holds (one pre-existing unused import predates the phase; the duplicate-DOM-id d
 current but does not block form submission; the `x-forwarded-host` trust asymmetry is a documented,
 currently-non-exploitable residual). None rise to a phase-goal blocker.
 
-**Status is `human_needed`, not `passed`,** solely because three items genuinely require
-credentials/environment this execution context does not have (a real Resend account, a real Notion
-post id, a forced partial-failure state) — the same three items carried since the original
-verification, none of which are phase-3 implementation gaps. All five ROADMAP success criteria are
-independently verified to hold in every way testable without those external dependencies.
+**Status is `passed`.** All five ROADMAP success criteria are independently verified to hold, and of
+the three items that originally required credentials/environment this execution context lacked, two
+were subsequently confirmed live by the operator against their own Resend and Notion accounts, and
+the third was explicitly waived by operator decision rather than left silently unresolved (see
+`## UAT Closure` above and `overrides_applied: 1` in the frontmatter). The phase is closed with one
+knowingly-accepted residual: the D-18 partial-failure backstop truth remains unexercised in a live
+environment.
 
 ---
 
-_Verified: 2026-07-27T02:20:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verified: 2026-07-27T02:20:00Z (re-verification); UAT closed 2026-07-27T03:00:00Z_
+_Verifier: Claude (gsd-verifier); UAT closure: operator + Claude (gsd-code)_
