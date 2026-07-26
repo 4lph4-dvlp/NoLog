@@ -1,4 +1,4 @@
-import { resend } from "@/lib/email";
+import { getResend } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -8,7 +8,24 @@ export const runtime = "nodejs";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
+  const apiKey = process.env.RESEND_API_KEY;
   const audienceId = process.env.RESEND_AUDIENCE_ID ?? "";
+
+  // D-23 stage 1, first pipeline stage. External response is a 404 —
+  // indistinguishable from a deployment that never had this route, matching
+  // SubscribeSection's render-time posture (SUB-02, SEC-03). Per D-22, this
+  // is deliberately not a status that would confirm feature existence to a
+  // scanner, and deliberately not a fake success for a half-configured
+  // forker. The operator log below is the one place the missing detail
+  // is spelled out.
+  if (!apiKey || !audienceId) {
+    const missing = [
+      !apiKey ? "RESEND_API_KEY" : null,
+      !audienceId ? "RESEND_AUDIENCE_ID" : null,
+    ].filter(Boolean);
+    console.error(`[Subscribe] Route called while unconfigured — missing: ${missing.join(", ")}`);
+    return new Response(null, { status: 404 });
+  }
 
   let body: unknown;
   try {
@@ -32,6 +49,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    const resend = getResend();
     const { error: createError } = await resend.contacts.create({
       email: normalizedEmail,
       audienceId,
