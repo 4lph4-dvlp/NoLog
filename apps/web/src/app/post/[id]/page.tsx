@@ -6,6 +6,7 @@ import { CONFIG } from "@/site.config";
 import type { Post } from "@/types";
 import DefaultPostPage from "@/templates/default/PostPage";
 import TerminalPostPage from "@/templates/terminal/PostPage";
+import { SubscribeSection } from "@/components/subscribe/SubscribeSection";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -81,7 +82,18 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   if (CONFIG.template === "default") {
     return <DefaultPostPage post={post} recordMap={recordMap} />;
   } else if (CONFIG.template === "terminal") {
-    return <TerminalPostPage post={post} recordMap={recordMap} categories={categories} relatedPosts={relatedPosts} />;
+    // The gate is constructed here, in a Server Component, and passed down as
+    // an already-rendered element — never as a direct import inside the
+    // client-directive terminal template (D-01, D-04, SEC-03).
+    return (
+      <TerminalPostPage
+        post={post}
+        recordMap={recordMap}
+        categories={categories}
+        relatedPosts={relatedPosts}
+        subscribeSlot={<SubscribeSection variant="terminal" />}
+      />
+    );
   }
 
   // Default fallback

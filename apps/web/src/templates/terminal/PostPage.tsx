@@ -15,9 +15,10 @@ interface TerminalPostPageProps {
   recordMap: any;
   categories: string[];
   relatedPosts: Post[];
+  subscribeSlot?: React.ReactNode;
 }
 
-export default function TerminalPostPage({ post, recordMap, categories, relatedPosts }: TerminalPostPageProps) {
+export default function TerminalPostPage({ post, recordMap, categories, relatedPosts, subscribeSlot }: TerminalPostPageProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -90,6 +91,14 @@ export default function TerminalPostPage({ post, recordMap, categories, relatedP
            <CommentSection postId={post.id} postTitle={post.title} />
         </div>
       </article>
+
+      {/* Subscribe form (D-01 terminal placement): a Server-rendered slot
+          constructed by the post route and handed down as a prop. This file
+          must never import the subscribe component directory or read any
+          environment variable itself — see the "Architectural constraint"
+          section of 03-03-PLAN.md for why a direct import here would evaluate
+          the gate in client code, where the secret resolves to undefined. */}
+      <div className="w-full">{subscribeSlot}</div>
 
       {/* Terminal Area (Below the post) */}
       <div className="w-full h-[50vh] flex border-t border-terminal-border pt-8">
