@@ -1,6 +1,7 @@
 # Phase 3: Subscribe Path - Context
 
 **Gathered:** 2026-07-26
+**Updated:** 2026-07-26 — second discussion pass added D-17 through D-26 (Resend contact semantics, SDK choice, route response contract, logging/PII policy, verification split)
 **Status:** Ready for planning
 
 <domain>
@@ -48,14 +49,42 @@ This phase adds the subscribe path only: the `SubscribeSection`/`SubscribeForm` 
 - **D-15:** Email validation is **browser `<input type="email" required>` on the client plus a deliberately loose regex on the server** (presence of a local part, `@`, and a dotted domain) as a bypass guard. Strict RFC-style validation is explicitly rejected — over-blocking valid addresses (plus tags, new TLDs, unicode locals) is the classic bug of that approach. Final authority on address validity is Resend.
 - **D-16:** The server **normalizes** the submitted address with `trim()` + lowercase before doing anything with it, so `" A@B.com "` and `a@b.com` resolve to the same contact and cannot create duplicate Audience entries. Accepted trade-off: RFC permits case-sensitive local parts, but effectively no real mail server honors that, and duplicate subscribers are the more likely real-world harm.
 
+### Resend contact semantics (SUB-01, SUB-03)
+
+- **D-17:** On every accepted submission the route calls `contacts.create` and then **always** calls `contacts.update({ unsubscribed: false })` — unconditionally, without first reading the Audience. This makes the outcome independent of the `resend/resend-node#458` behavior recorded in `PITFALLS.md` (a `create` on a previously-unsubscribed address may silently recreate them as still-unsubscribed): whatever the SDK version does on create, the second call fixes the state. Rationale: the alternative — branching on the create response — puts the correctness of the feature on a response shape that is undocumented and version-dependent, and the cost of being wrong is the project's worst failure mode (the visitor sees "subscribed" and never receives mail). Cost is one extra API call per subscription, at a volume where that is free. Submitting the form is itself the opt-in signal that justifies clearing a prior unsubscribe. — **Reversibility:** reversible — deleting the second call is a one-line change behind `lib/email.ts`.
+- **D-18:** When `create` succeeds but the follow-up `update` fails, the visitor gets the **D-07 generic error** (form stays mounted, value preserved, no cause disclosed) rather than a success. Rationale: the requested end state (subscribed *and* receiving) was not reached, so reporting success would be the silent failure D-17 exists to prevent; the whole path is idempotent, so the visitor's retry is safe and is the recovery mechanism. Accepted trade-off: a brand-new subscriber whose `create` already succeeded sees an error despite being registered — harmless, because their retry converges to the same state. No retry loop is added inside the route (D-18 deliberately does not adopt Phase 2's fixed-backoff retry — that would make a visitor-facing serverless request wait on a second failure).
+- **D-17/D-18 consequence for SC#3:** because the create+update pair runs identically for a first-time address and a resubscribing one, the response for both is produced by the same code path — the enumeration-safety criterion is satisfied structurally, not by after-the-fact response matching.
+
+### Resend client & dependency (SUB-01)
+
+- **D-19:** `/api/subscribe` uses the **official `resend` SDK**, added as a dependency of `apps/web` (currently installed nowhere in the monorepo). `packages/core` stays Notion-only. The route is therefore Node runtime, not Edge. Rationale: `NologClient`'s hand-rolled Notion REST calls are a documented *workaround for SDK bugs on inline databases*, not a house preference — the repo still depends on `@notionhq/client`. Phase 4 needs the Broadcast API, where `PITFALLS.md` Pitfall 1 shows the expensive mistake (a per-subscriber `emails.send()` loop instead of one `broadcasts.send()`) is exactly the kind of thing a hand-rolled client invites. — **Reversibility:** reversible — D-20 confines the SDK to one module, so swapping to raw `fetch` later touches one file.
+- **D-20:** The Resend client is constructed in **`apps/web/src/lib/email.ts`**, which holds client construction only — no broadcast helpers, no email templates, nothing Phase 4-shaped. Phase 4 imports it rather than building its own. Rationale: this is not speculative generality (it is where the client would live anyway), and it gives Phase 4 a single seam without Phase 3 depending on Phase 4 in any way — Phase 3 remains independently shippable.
+
+### Route response contract (SUB-03, SUB-04, SEC-03)
+
+- **D-21:** `/api/subscribe` returns `{ ok: true }` on success and `{ ok: false, code: "invalid_email" | "rate_limited" | "server_error" }` on failure — **machine codes, never display prose**. The form maps `code` to a message through D-06's `CONFIG.site.locale` ternaries. Rationale: if the server returned user-facing sentences, locale branching would exist in two places and D-06's convention would break at the first error message. The codes disclose nothing about whether an address is already subscribed, so the enumeration contract is untouched. — **Reversibility:** reversible — adding codes is additive; the client's fallback for an unknown code is the generic error.
+- **D-22:** When `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` are unset and the route is called directly (the form is absent, so this is only ever a scanner or a half-configured forker), it returns **404** — externally indistinguishable from a deployment that never had the route — **plus a distinguishable server log line** naming the missing vars. Rationale: 404 matches the off-by-default narrative and leaks nothing, while the log line is what stops a forker who set one var and not the other from landing in `PITFALLS.md` Pitfall 2's silent-configuration-failure trap. Chosen over 503 (tells a scanner the feature exists but is unconfigured) and over a fake 200 (the worst outcome for the person actually trying to set it up).
+- **D-23:** Request pipeline order is **env check → rate limit → honeypot → validation → Resend**. This fixes the one position `.planning/research/ARCHITECTURE.md`'s Subscribe Flow left unspecified. Honeypot-tripped requests **do** consume the submitting IP's budget, so no path — including the bot path — bypasses the limit, and a bot exhausts its own quota within 5 requests. A legitimate visitor never populates the honeypot, so this costs them nothing. Note this means D-10's counter measures *attempts*, not *subscriptions*.
+
+### Logging & PII (SUB-04, SEC-03)
+
+- **D-24:** The submitted email address is **never written to any log**, on any path — not on success, not on Resend failure, not domain-only, not hashed. Rationale: Vercel runtime logs are visible to anyone with dashboard access, and a forker who never thought about it would otherwise be accumulating a plaintext subscriber list there as a side effect of running the template. What debugging actually needs is *which stage failed*, not *who*. Consequence: log lines identify the stage and the Resend error, never the contact. (D-09's in-memory `Map` keys on the client IP; that stays in process memory and is likewise never logged.) — **Reversibility:** reversible in code, but note that anything already logged cannot be un-logged, which is why the strict direction is the default.
+- **D-25:** Only **failure and configuration** events are logged: Resend errors, D-18's partial failure, and D-22's unconfigured call. **Honeypot drops and 429s are not logged at all** — they are high-frequency and low-information, and logging them would let a bot drive a forker's log volume. Successful subscriptions are not logged either (with D-24 in force, such a line could only say "one happened", which Vercel's short log retention makes useless for analytics anyway).
+
+### Verification split (roadmap success criteria)
+
+- **D-26:** Success criteria are split by what a live Resend account is needed for. **Closed inside this phase, no credentials required:** SC#2 (unset env → no form in server-rendered HTML), SC#4 (honeypot / over-limit submissions rejected, exercised against the route directly), SC#5 (grep the built client bundle for `RESEND_API_KEY`). **Carried to an operator checklist:** SC#1 (address actually lands in the Audience) and the live half of SC#3 (two real submissions diffed). Rationale: Phases 1 and 2 both deferred their *entire* live-verification set for want of credentials; this phase deliberately closes everything that a local build can prove rather than repeating that. The carried items go in the phase's validation document with the same operator-confirmation shape Phase 2 used.
+
 ### Claude's Discretion
 
-- Exact copy wording for every string in both locales (D-06 fixes only the mechanism, not the text).
+- Exact copy wording for every string in both locales (D-06 fixes only the mechanism, not the text), including the `code` → message mapping introduced by D-21.
 - Pending/in-flight submit affordance — disabled button, spinner, or label swap — no preference expressed.
 - Field layout within each variant (input and button on one row vs. stacked), heading presence, and whether an explanatory one-liner sits above the input.
 - The honeypot field's name and hiding technique.
 - Cleanup strategy for expired entries in D-09's `Map` (sweep on write, lazy expiry on read, etc.).
-- Exact file/module names beyond the `components/subscribe/` directory implied by the `components/comments/` convention, and where the Resend client is instantiated (research suggests `apps/web/src/lib/email.ts`).
+- Exact file/module names beyond the `components/subscribe/` directory implied by the `components/comments/` convention. (`apps/web/src/lib/email.ts` is now fixed by D-20, no longer discretionary.)
+- Exact log-line wording and level for the D-25 events, following the repo's `[Context] message` prefix convention.
+- Whether the D-22 404 is produced via `new Response(null, { status: 404 })` or Next's `notFound()` equivalent in a route handler.
 
 </decisions>
 
@@ -75,7 +104,9 @@ This phase adds the subscribe path only: the `SubscribeSection`/`SubscribeForm` 
 - `.planning/research/ARCHITECTURE.md` §"Subscribe Flow (visitor-facing, low trust)" — the request-path ordering (env check → honeypot → validation → Resend) this route should follow
 - `.planning/research/ARCHITECTURE.md` §"Bundle-cost note" — why a `null`-returning Server Component means the form's JS chunk is never referenced on that deployment
 - `.planning/research/FEATURES.md` §"Table stakes" rows on bot mitigation and per-IP rate limiting — establishes that honeypot + rate limit + enumeration-safe response is *the* compensating layer for skipping double opt-in, not an optional add-on
-- `.planning/research/PITFALLS.md` §"Integration Gotchas" → Resend (Audiences) row — re-adding a previously unsubscribed contact via `create` may silently recreate them as unsubscribed (`resend/resend-node#458`); verify against the actual SDK version rather than assuming a plain create resubscribes
+- `.planning/research/PITFALLS.md` §"Integration Gotchas" → Resend (Audiences) row — re-adding a previously unsubscribed contact via `create` may silently recreate them as unsubscribed (`resend/resend-node#458`). **D-17 neutralizes this** by always following `create` with an explicit `update({ unsubscribed: false })`; read the row anyway so the reason for the second call is not "optimized away" during planning or review
+- `.planning/research/PITFALLS.md` §"Pitfall 1: Wrong Resend product quota" — why D-19 picks the official SDK: the expensive mistake it describes (a per-subscriber `emails.send()` loop instead of one `broadcasts.send()`) is Phase 4's, but the client this phase establishes is what Phase 4 will reach for
+- `.planning/research/PITFALLS.md` §"Pitfall 2: Domain verification" — the silent-configuration-failure class D-22's server log line exists to interrupt; the full fix is Phase 6's README work, not this phase's
 
 ### Existing Codebase
 - `apps/web/src/components/comments/CommentSection.tsx` — the convention this phase mirrors and deliberately diverges from: the env-absent `if (!appId) return null` gate (lines 284–288), and the `CONFIG.site.locale === "ko"` copy ternaries D-06 adopts
@@ -108,8 +139,9 @@ This phase adds the subscribe path only: the `SubscribeSection`/`SubscribeForm` 
 ### Integration Points
 - `apps/web/src/templates/default/Layout.tsx` — two insertion points (mobile block after `<Profile />`, desktop right `<aside>` after `<Profile />`), per D-01 and D-03.
 - `apps/web/src/templates/terminal/PostPage.tsx` — one insertion point below the article, per D-01.
-- `apps/web/src/app/api/subscribe/route.ts` — new file; the repo's first non-Edge route handler.
-- `apps/web/package.json` — the `resend` SDK is not currently a dependency anywhere in the monorepo (grep-confirmed) and must be added here, not to `packages/core`; `packages/core` stays Notion-only.
+- `apps/web/src/app/api/subscribe/route.ts` — new file; the repo's first non-Edge route handler, and the first to do input validation or return a structured error body (D-21).
+- `apps/web/src/lib/email.ts` — new file per D-20; Resend client construction only. Phase 4 imports it; nothing else in Phase 3 depends on it beyond the route.
+- `apps/web/package.json` — the `resend` SDK is not currently a dependency anywhere in the monorepo (grep-confirmed) and must be added here, not to `packages/core`; `packages/core` stays Notion-only (D-19).
 - Nothing in `packages/core` changes in this phase.
 
 </code_context>
@@ -120,6 +152,10 @@ This phase adds the subscribe path only: the `SubscribeSection`/`SubscribeForm` 
 The user reversed their own first answer on placement mid-discussion, and the reason is the most important signal in this document: NoLog is a **template other people fork and extend**, so the question is not only "where does the form look best" but "what will a third-party developer building a new template copy from what they see here". That drove D-01 and D-02 (per-template placement and a per-template visual variant, rather than one shared component reused verbatim as `CommentSection` does), and it is why D-04 keeps the env gate singular — the variation should live in presentation, never in the security boundary.
 
 The second consistent thread: prefer honest signals to a visitor (D-07's inline error, D-11's real 429) but opaque signals to an attacker (D-13's fake-success honeypot). The dividing line the user drew is whether the response teaches an adversary something actionable, not whether it is "quiet".
+
+The second pass (D-17 through D-26) extended that same dividing line to a third audience — **the forker operating the deployment**. D-22 is the clearest case: the *external* response is the maximally opaque 404, while the *server log* says exactly which env var is missing. D-24/D-25 are the mirror image: the log is where honesty is owed, so it must not be diluted with bot noise (D-25) or contaminated with subscriber addresses the forker never agreed to collect (D-24). Where the earlier pass asked "does this teach an attacker anything", this pass asked "does the person who has to run this deployment learn what they need, and nothing they shouldn't be holding".
+
+The third thread is a preference for **structural correctness over verified correctness** when a third-party behavior is undocumented. D-17 does not test what `resend-node` does on a re-create; it makes the answer not matter. D-17/D-18's shared code path makes SC#3's enumeration-safety a property of the implementation rather than something to confirm by diffing responses afterward. D-26 continues the same instinct from the opposite side — close everything a local build can prove now, and stop carrying whole verification sets forward the way Phases 1 and 2 both had to.
 
 </specifics>
 
