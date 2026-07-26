@@ -112,7 +112,20 @@ Plans:
   5. If the digest send itself fails outright (not a per-post content issue), no posts from that run are marked `emailed`, so all of them are picked up again by the next cron run.
   6. With `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` unset, `/api/notify-subscribers` no-ops immediately with no Notion query or send attempted — and `/api/subscribe` (Phase 3) is reconfirmed to exhibit the same no-op contract for its own required env vars.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Tracer: the whole authenticated path end to end — timing-safe `CRON_SECRET` gate as the first statement (SEC-01/D-14/D-15/D-16/D-17), fail-closed config gate covering the new `CONFIG.notify` block (SEC-02/D-06/D-09), capped query, one digest with a CAN-SPAM footer carrying a visible unsubscribe link (D-01..D-08, D-08 revised under its own escape hatch), exactly one `broadcasts.create` (NOTIFY-03), mark-after-send only (NOTIFY-05); then per-post-section isolation (NOTIFY-04), capability-aware marking, and the `NOTIFY_BATCH_SIZE` cap (D-10..D-13)
+
+**Wave 2** *(blocked on Wave 1 — same route file)*
+
+- [ ] 04-02-PLAN.md — Thumbnails that survive delivery latency: expose Notion's `file` vs `external` discriminator as `Post.thumbnailType` via a new `getFileType()` extractor, then embed an `<img>` only for permanent external URLs and render Notion-hosted (1-hour presigned) thumbnails text-only like D-05's no-thumbnail case, with a per-run operator signal (04-RESEARCH.md Pitfall 1)
+
+**Wave 3** *(blocked on Wave 2 — blocking operator checkpoint)*
+
+- [ ] 04-03-PLAN.md — Operator verification against live Resend + Notion: closes SC#1, SC#2, SC#4, SC#5 by observed outcome (one broadcast in the send log, one email received, a malformed post dropped while the rest send and mark, a failed send marking nothing) and discharges D-08's must-be-revisited clause by clicking the unsubscribe link in a delivered message
 
 ### Phase 5: Production Cutover
 
@@ -152,6 +165,6 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | 1. Notion Data Layer | 2/2 | Complete    | 2026-07-25 |
 | 2. Backfill Script | 2/2 | Complete    | 2026-07-26 |
 | 3. Subscribe Path | 6/6 | Complete    | 2026-07-27 |
-| 4. Notify Route | 0/TBD | Not started | - |
+| 4. Notify Route | 0/3 | Not started | - |
 | 5. Production Cutover | 0/TBD | Not started | - |
 | 6. Documentation | 0/TBD | Not started | - |
