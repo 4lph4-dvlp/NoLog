@@ -19,7 +19,7 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 - [x] **SUB-01**: A visitor can submit their email to subscribe to new-post notifications via a form on the blog
 - [x] **SUB-02**: The subscribe form is fully absent/inert when Resend env vars are unset — same fail-closed contract as the existing Cusdis comment integration
 - [x] **SUB-03**: Submitting an already-subscribed email returns the identical success response as a new subscription (no enumeration oracle for testing third-party addresses)
-- [ ] **SUB-04**: The subscribe endpoint blocks bot submissions via a honeypot field and per-IP rate limiting
+- [x] **SUB-04**: The subscribe endpoint blocks bot submissions via a honeypot field and per-IP rate limiting
 
 ### Notification (NOTIFY)
 
@@ -86,7 +86,7 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | SUB-01 | Phase 3: Subscribe Path | Complete |
 | SUB-02 | Phase 3: Subscribe Path | Complete |
 | SUB-03 | Phase 3: Subscribe Path | Complete |
-| SUB-04 | Phase 3: Subscribe Path | Pending |
+| SUB-04 | Phase 3: Subscribe Path | Complete |
 | NOTIFY-01 | Phase 4: Notify Route | Pending |
 | NOTIFY-02 | Phase 4: Notify Route | Pending |
 | NOTIFY-03 | Phase 4: Notify Route | Pending |
