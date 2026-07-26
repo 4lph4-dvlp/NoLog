@@ -71,7 +71,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A submission with the honeypot field populated, or one submitted past the per-IP rate limit, is rejected/dropped rather than added to the Audience.
   5. Inspecting the built client-side JS bundle confirms `RESEND_API_KEY` never appears in it, verified via grep against build output rather than visual absence of the form alone.
 
-**Plans**: 6 plans (5/6 executed)
+**Plans**: 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -93,7 +93,7 @@ Plans:
 
 **Wave 5** *(gap closure — blocked on Wave 4 completion)*
 
-- [ ] 03-06-PLAN.md — Gap closure (CR-01, Critical — the sole blocker from the 2026-07-26 review): the configuration gate at D-23 stage 1 wrote an unlatched `console.error` on every request when the route is unconfigured. That branch runs before the origin check and before the rate limiter, and — since the subscribe feature is off-by-default — is the path every fresh fork actually executes, so a trivial anonymous request loop drove unbounded operator-log volume and cost. Adds `unconfiguredLogged`, a module-scope boolean latch identical in shape to `03-05`'s `originRejectionLogged` (D-25), bounding the log to one line per serverless instance while leaving the bare `404` **outside** the latch so SUB-02's indistinguishable-from-undeployed contract is byte-for-byte unchanged; the message keeps its missing-variable diagnostic and gains a "further occurrences are not logged" note. Adds no console call site (the module holds exactly four, unchanged). Closes no REQUIREMENTS.md ID (none covers operator-log-volume containment) and protects SUB-02 + SUB-03 as non-regression
+- [x] 03-06-PLAN.md — Gap closure (CR-01, Critical — the sole blocker from the 2026-07-26 review): the configuration gate at D-23 stage 1 wrote an unlatched `console.error` on every request when the route is unconfigured. That branch runs before the origin check and before the rate limiter, and — since the subscribe feature is off-by-default — is the path every fresh fork actually executes, so a trivial anonymous request loop drove unbounded operator-log volume and cost. Adds `unconfiguredLogged`, a module-scope boolean latch identical in shape to `03-05`'s `originRejectionLogged` (D-25), bounding the log to one line per serverless instance while leaving the bare `404` **outside** the latch so SUB-02's indistinguishable-from-undeployed contract is byte-for-byte unchanged; the message keeps its missing-variable diagnostic and gains a "further occurrences are not logged" note. Adds no console call site (the module holds exactly four, unchanged). Closes no REQUIREMENTS.md ID (none covers operator-log-volume containment) and protects SUB-02 + SUB-03 as non-regression
 
 **UI hint**: yes
 
@@ -151,7 +151,7 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 |-------|-----------------|--------|-----------|
 | 1. Notion Data Layer | 2/2 | Complete    | 2026-07-25 |
 | 2. Backfill Script | 2/2 | Complete    | 2026-07-26 |
-| 3. Subscribe Path | 5/5 | In Progress|  |
+| 3. Subscribe Path | 6/6 | In Progress|  |
 | 4. Notify Route | 0/TBD | Not started | - |
 | 5. Production Cutover | 0/TBD | Not started | - |
 | 6. Documentation | 0/TBD | Not started | - |
