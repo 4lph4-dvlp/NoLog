@@ -7,6 +7,64 @@ export const runtime = "nodejs";
 // locals — Resend is the final authority on address validity.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// D-10: five attempts per IP per fixed ten-minute window. A legitimate
+// visitor subscribes once and retries at most once or twice; the window
+// keeps the counter map bounded and lets a shared-office/NAT false positive
+// clear itself quickly.
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX = 5;
+// Bound on the counter map's growth — swept on write once this many keys
+// exist, rather than on a timer, so there is no background work in this
+// serverless path.
+const ATTEMPTS_SWEEP_THRESHOLD = 1000;
+
+// D-09: this counter lives in ONE serverless instance's memory. It is NOT
+// shared across instances and it resets on every cold start, so it is a
+// bulk-abuse dampener rather than a deterministic gate — that limitation is
+// accepted and recorded here rather than glossed over.
+const attempts = new Map<string, { count: number; windowStart: number }>();
+
+/**
+ * Extracts the client IP from `x-forwarded-for` (D-12): first
+ * comma-separated entry, trimmed, since intermediary proxies append hops to
+ * that header. Falls back to the single shared literal `"unknown"` when the
+ * header is absent, empty, or whitespace-only, so stripping the header is
+ * never a bypass and local development still works against one shared key.
+ */
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const ip = forwarded?.split(",")[0]?.trim();
+  return ip && ip.length > 0 ? ip : "unknown";
+}
+
+/**
+ * Records this attempt for `ip` and reports whether it now exceeds
+ * `RATE_LIMIT_MAX` within the current fixed window (D-10). The boundary
+ * comparison is strictly greater-than, so a request arriving at exactly the
+ * window length still belongs to the old window.
+ */
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+
+  if (attempts.size > ATTEMPTS_SWEEP_THRESHOLD) {
+    for (const [key, value] of attempts) {
+      if (now - value.windowStart > RATE_LIMIT_WINDOW_MS) {
+        attempts.delete(key);
+      }
+    }
+  }
+
+  const entry = attempts.get(ip);
+
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    attempts.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  entry.count += 1;
+  return entry.count > RATE_LIMIT_MAX;
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.RESEND_API_KEY;
   const audienceId = process.env.RESEND_AUDIENCE_ID ?? "";
@@ -25,6 +83,18 @@ export async function POST(request: Request) {
     ].filter(Boolean);
     console.error(`[Subscribe] Route called while unconfigured — missing: ${missing.join(", ")}`);
     return new Response(null, { status: 404 });
+  }
+
+  // D-23 stage 2 — ahead of every other request stage, including body
+  // parsing, so a flood of malformed bodies costs the same budget as
+  // well-formed submissions. A genuine 429 rather than a silent fake success
+  // (D-11): a real person caught by a shared-IP false positive would
+  // otherwise walk away believing they subscribed. The body carries only the
+  // machine code — nothing here varies with Audience membership (SUB-03).
+  // Logs nothing (D-25); the IP key never reaches a log (D-24).
+  const clientIp = getClientIp(request);
+  if (isRateLimited(clientIp)) {
+    return Response.json({ ok: false, code: "rate_limited" }, { status: 429 });
   }
 
   let body: unknown;
