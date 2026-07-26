@@ -109,7 +109,9 @@ grep -rl "RESEND_API_KEY" apps/web/.next/static/ ; echo "exit: $?"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| _pending_ | — | — | — | — | — | — | — | — | ⬜ pending |
+| 03-01-T0 | 03-01 | 1 | — | T-03-05 | Human confirms `resend` package legitimacy before install (SUS/too-new false positive) | checkpoint | manual approval | n/a | ✅ green (approved) |
+| 03-01-T1 | 03-01 | 1 | SUB-01, SUB-03, SEC-03 | T-03-01, T-03-02 | Configured build renders form marker; POST reaches Resend SDK and returns `server_error` against placeholder creds; create+update pair structurally unconditional | build+curl, code inspection | see `03-01-PLAN.md` `<verify>` T1 block | ✅ | ✅ green |
+| 03-01-T2 | 03-01 | 1 | SUB-02, SEC-03 (SC#2, SC#5) | T-03-04, T-03-01 | Unconfigured build/serve: 0 form markers, direct POST returns 404, one `[Subscribe]` log naming missing vars; `RESEND_API_KEY` absent from `.next/static/` | build+curl+grep | see `03-01-PLAN.md` `<verify>` T2 block | ✅ | ✅ green |
 
 *Populated by `/gsd-validate-phase` once PLAN.md task IDs exist. Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

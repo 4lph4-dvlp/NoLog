@@ -16,9 +16,9 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Subscribe (SUB)
 
-- [ ] **SUB-01**: A visitor can submit their email to subscribe to new-post notifications via a form on the blog
-- [ ] **SUB-02**: The subscribe form is fully absent/inert when Resend env vars are unset — same fail-closed contract as the existing Cusdis comment integration
-- [ ] **SUB-03**: Submitting an already-subscribed email returns the identical success response as a new subscription (no enumeration oracle for testing third-party addresses)
+- [x] **SUB-01**: A visitor can submit their email to subscribe to new-post notifications via a form on the blog
+- [x] **SUB-02**: The subscribe form is fully absent/inert when Resend env vars are unset — same fail-closed contract as the existing Cusdis comment integration
+- [x] **SUB-03**: Submitting an already-subscribed email returns the identical success response as a new subscription (no enumeration oracle for testing third-party addresses)
 - [ ] **SUB-04**: The subscribe endpoint blocks bot submissions via a honeypot field and per-IP rate limiting
 
 ### Notification (NOTIFY)
@@ -33,7 +33,7 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 - [ ] **SEC-01**: `/api/notify-subscribers` rejects any request without a valid `CRON_SECRET`, checked first via a timing-safe comparison, before any other work runs
 - [ ] **SEC-02**: `/api/notify-subscribers` and `/api/subscribe` both fail closed (no-op) if their required env vars are unset
-- [ ] **SEC-03**: The subscribe form is gated server-side (a Server Component reads the secret env vars and conditionally renders the client form) — `RESEND_API_KEY` never reaches the client bundle, unlike Cusdis's public app ID pattern
+- [x] **SEC-03**: The subscribe form is gated server-side (a Server Component reads the secret env vars and conditionally renders the client form) — `RESEND_API_KEY` never reaches the client bundle, unlike Cusdis's public app ID pattern
 
 ### Deployment & Ops (OPS)
 
@@ -83,9 +83,9 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | DATA-02 | Phase 1: Notion Data Layer | Gaps Found |
 | DATA-03 | Phase 2: Backfill Script | Complete |
 | DATA-04 | Phase 1: Notion Data Layer | Gaps Found |
-| SUB-01 | Phase 3: Subscribe Path | Pending |
-| SUB-02 | Phase 3: Subscribe Path | Pending |
-| SUB-03 | Phase 3: Subscribe Path | Pending |
+| SUB-01 | Phase 3: Subscribe Path | Complete |
+| SUB-02 | Phase 3: Subscribe Path | Complete |
+| SUB-03 | Phase 3: Subscribe Path | Complete |
 | SUB-04 | Phase 3: Subscribe Path | Pending |
 | NOTIFY-01 | Phase 4: Notify Route | Pending |
 | NOTIFY-02 | Phase 4: Notify Route | Pending |
@@ -94,7 +94,7 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | NOTIFY-05 | Phase 4: Notify Route | Pending |
 | SEC-01 | Phase 4: Notify Route | Pending |
 | SEC-02 | Phase 4: Notify Route | Pending |
-| SEC-03 | Phase 3: Subscribe Path | Pending |
+| SEC-03 | Phase 3: Subscribe Path | Complete |
 | OPS-01 | Phase 5: Production Cutover | Pending |
 | DOCS-01 | Phase 6: Documentation | Pending |
 | DOCS-02 | Phase 6: Documentation | Pending |

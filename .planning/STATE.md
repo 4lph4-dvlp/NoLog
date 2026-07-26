@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 3
-current_phase_name: Subscribe Path
+current_phase: 03
+current_phase_name: subscribe-path
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-07-26T03:00:06.310Z"
+stopped_at: Completed 03-01-PLAN.md (Task T0 checkpoint resolved; T1/T2 executed)
+last_updated: "2026-07-26T06:47:39.887Z"
 last_activity: 2026-07-26
-last_activity_desc: Phase 02 complete, transitioned to Phase 3
+last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-24)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 02 — backfill-script
+**Current focus:** Phase 03 — subscribe-path
 
 ## Current Position
 
-Phase: 3 — Subscribe Path
-Plan: Not started
+Phase: 03 (subscribe-path) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-26 — Phase 02 complete, transitioned to Phase 3
+Last activity: 2026-07-26 — Phase 03 execution started
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [██████████] 100%
 | Phase 01 P02 | 15 | 1 tasks | 1 files |
 | Phase 02 P01 | 12 | 3 tasks | 2 files |
 | Phase 02 P02 | 4min | 2 tasks | 2 files |
+| Phase 03 P01 | ~2h | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 2 Plan 01: live-database human-check verification (DATA-03 SC#1-3, D-04, D-05) deferred — no Notion credentials in this execution environment, matching Phase 1's identical carried-forward blocker
 - [Phase ?]: isSystemicAbort() classifies purely on instanceof identity (never message text); branch order isSystemicAbort -> isRateLimited -> generic is load-bearing and automated-line-asserted
 - [Phase ?]: COVERAGE.md row 0/row 9 cells rebalanced (not truncated) to satisfy the api-coverage length validator; all 18 rows and 9/9 INTEGRATE/OPT-OUT decisions preserved
+- [Phase ?]: Phase 3 Plan 01: resend npm package SUS/too-new verdict approved as confirmed false positive (seam read latest-version publish date, not package's 2017 creation date); user approved npm install resend --workspace=apps/web
+- [Phase ?]: Phase 3 Plan 01: lib/email.ts switched from eager to lazy Resend client construction (getResend() accessor) after discovering the installed SDK's constructor throws when RESEND_API_KEY is unresolvable, which crashed next build for unconfigured forks; D-20's no-default/no-fallback constraint preserved
 
 ### Pending Todos
 
@@ -106,6 +109,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T01:38:31.559Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-subscribe-path/03-CONTEXT.md
+Last session: 2026-07-26T06:47:39.869Z
+Stopped at: Completed 03-01-PLAN.md (Task T0 checkpoint resolved; T1/T2 executed)
+Resume file: None
