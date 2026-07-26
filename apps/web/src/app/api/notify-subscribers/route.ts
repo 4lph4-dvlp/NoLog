@@ -56,27 +56,64 @@ function escapeHtml(value: string): string {
 }
 
 /**
- * Renders one digest section: escaped title as a link to the post, the
- * escaped summary below it, nothing else. Text-only for this task — no
- * thumbnail is embedded here at all; the thumbnail branch is plan 04-02's
- * slice, and D-05 already fixes the no-thumbnail case as text-only. Inline
- * styles only, no external stylesheet, no table layout — a plain list of
- * sections is the ceiling REQUIREMENTS.md sets for v1.
+ * Whether `post`'s thumbnail is safe to embed as an `<img>` in an outbound
+ * email. Requires BOTH: thumbnailType is "external" (a pasted public URL,
+ * per 04-RESEARCH.md Pitfall 1 — "file" is a Notion-hosted presigned URL that
+ * expires one hour after the page is fetched, with no revalidation for an
+ * email already sitting in an inbox) AND the URL parses as absolute https.
+ * A malformed or non-https value degrades to text-only rather than emitting
+ * a broken or unsafe src.
  */
-function buildSectionHtml(post: Post): string {
+function getEmbeddableThumbnailUrl(post: Post): string | null {
+  if (post.thumbnailType !== "external" || !post.thumbnail) {
+    return null;
+  }
+  try {
+    const parsed = new URL(post.thumbnail);
+    if (parsed.protocol !== "https:") {
+      return null;
+    }
+    return post.thumbnail;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Renders one digest section: an optional thumbnail image, the escaped title
+ * as a link to the post, and the escaped summary below it. The image is
+ * emitted only when getEmbeddableThumbnailUrl() confirms it will still
+ * resolve when the mail is opened; otherwise the section is text-only — no
+ * placeholder, no site-wide fallback image, no empty src (D-05, now covering
+ * the Notion-hosted case too). Returns the section HTML plus whether this
+ * section was downgraded from a Notion-hosted thumbnail, so the caller can
+ * report a single run-level summary. Inline styles only, no external
+ * stylesheet, no table layout — a plain list of sections is the ceiling
+ * REQUIREMENTS.md sets for v1.
+ */
+function buildSectionHtml(post: Post): { html: string; downgraded: boolean } {
   const siteUrl = CONFIG.site.url.replace(/\/$/, "");
   const title = escapeHtml(post.title);
   const summary = escapeHtml(post.summary);
   const href = `${siteUrl}/post/${post.id}`;
 
-  return `
+  const embeddableThumbnail = getEmbeddableThumbnailUrl(post);
+  const downgraded = embeddableThumbnail === null && post.thumbnailType === "file";
+  const imgHtml = embeddableThumbnail
+    ? `<img src="${embeddableThumbnail}" alt="${title}" style="max-width: 100%; display: block; margin: 0 0 12px 0;" />`
+    : "";
+
+  const html = `
     <div style="margin: 0 0 24px 0; padding-bottom: 24px; border-bottom: 1px solid #e5e5e5;">
+      ${imgHtml}
       <h2 style="margin: 0 0 8px 0; font-size: 18px; line-height: 1.4;">
         <a href="${href}" style="color: #111; text-decoration: none;">${title}</a>
       </h2>
       <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #444;">${summary}</p>
     </div>
   `;
+
+  return { html, downgraded };
 }
 
 /**
@@ -201,13 +238,24 @@ export async function GET(request: Request) {
   // created_time ascending. Per-post isolation (NOTIFY-04): a bad section is
   // dropped, never fatal to the rest of the digest.
   const sections: { post: Post; html: string }[] = [];
+  let downgradedThumbnailCount = 0;
   for (const post of batch) {
     try {
-      sections.push({ post, html: buildSectionHtml(post) });
+      const { html, downgraded } = buildSectionHtml(post);
+      sections.push({ post, html });
+      if (downgraded) {
+        downgradedThumbnailCount += 1;
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`[Notify] Failed to build section for post ${post.id}: ${message}`);
     }
+  }
+
+  if (downgradedThumbnailCount > 0) {
+    console.log(
+      `[Notify] ${downgradedThumbnailCount} post(s) rendered without a thumbnail: the image is stored in Notion and its URL expires within the hour. Paste a public image URL into the thumbnail property to include it.`,
+    );
   }
 
   if (sections.length === 0) {
