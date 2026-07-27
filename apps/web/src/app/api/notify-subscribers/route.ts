@@ -81,21 +81,26 @@ function getEmbeddableThumbnailUrl(post: Post): string | null {
 
 /**
  * Renders one digest section: an optional thumbnail image, the escaped title
- * as a link to the post, and the escaped summary below it. The image is
- * emitted only when getEmbeddableThumbnailUrl() confirms it will still
- * resolve when the mail is opened; otherwise the section is text-only — no
- * placeholder, no site-wide fallback image, no empty src (D-05, now covering
- * the Notion-hosted case too). Returns the section HTML plus whether this
+ * as a link to the post, the escaped summary below it, and a second, visible
+ * "read more" link under the summary (post-execution polish, requested during
+ * 04-03's live review — the title link alone left no visible URL text in the
+ * section body). Both links point at the same href. The image is emitted
+ * only when getEmbeddableThumbnailUrl() confirms it will still resolve when
+ * the mail is opened; otherwise the section is text-only — no placeholder,
+ * no site-wide fallback image, no empty src (D-05, now covering the
+ * Notion-hosted case too). Returns the section HTML plus whether this
  * section was downgraded from a Notion-hosted thumbnail, so the caller can
  * report a single run-level summary. Inline styles only, no external
  * stylesheet, no table layout — a plain list of sections is the ceiling
  * REQUIREMENTS.md sets for v1.
  */
 function buildSectionHtml(post: Post): { html: string; downgraded: boolean } {
+  const isKorean = CONFIG.site.locale === "ko";
   const siteUrl = CONFIG.site.url.replace(/\/$/, "");
   const title = escapeHtml(post.title);
   const summary = escapeHtml(post.summary);
   const href = `${siteUrl}/post/${post.id}`;
+  const readMoreLabel = isKorean ? "자세히 보기 →" : "Read more →";
 
   const embeddableThumbnail = getEmbeddableThumbnailUrl(post);
   const downgraded = embeddableThumbnail === null && post.thumbnailType === "file";
@@ -110,6 +115,9 @@ function buildSectionHtml(post: Post): { html: string; downgraded: boolean } {
         <a href="${href}" style="color: #111; text-decoration: none;">${title}</a>
       </h2>
       <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #444;">${summary}</p>
+      <p style="margin: 8px 0 0 0; font-size: 13px;">
+        <a href="${href}" style="color: #0066cc; text-decoration: none;">${readMoreLabel}</a>
+      </p>
     </div>
   `;
 
