@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Notion Data Layer** - `NologClient` can query unemailed public posts and durably mark a post as emailed, with clear diagnostics when write access is missing (completed 2026-07-25)
 - [x] **Phase 2: Backfill Script** - A one-time, throttled, resumable script marks every pre-existing public post as `emailed` before the cron path ever runs (completed 2026-07-26)
 - [x] **Phase 3: Subscribe Path** - A visitor can subscribe via a form that's fully gated, abuse-resistant, and enumeration-safe (completed 2026-07-27)
-- [ ] **Phase 4: Notify Route** - The cron-only notify route sends one digest email per run listing every newly-public post, isolated per-post-section and compliant
+- [x] **Phase 4: Notify Route** - The cron-only notify route sends one digest email per run listing every newly-public post, isolated per-post-section and compliant (completed 2026-07-27)
 - [ ] **Phase 5: Production Cutover** - The cron entry goes live only after the backfill is confirmed complete in production, as its own deliberate deploy step
 - [ ] **Phase 6: Documentation** - README.md/README_KR.md close every silent-failure gap a forker could hit configuring this feature
 
@@ -165,6 +165,6 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | 1. Notion Data Layer | 2/2 | Complete    | 2026-07-25 |
 | 2. Backfill Script | 2/2 | Complete    | 2026-07-26 |
 | 3. Subscribe Path | 6/6 | Complete    | 2026-07-27 |
-| 4. Notify Route | 3/3 | In Progress|  |
+| 4. Notify Route | 3/3 | Complete    | 2026-07-27 |
 | 5. Production Cutover | 0/TBD | Not started | - |
 | 6. Documentation | 0/TBD | Not started | - |
