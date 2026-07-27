@@ -73,7 +73,11 @@ function getEmbeddableThumbnailUrl(post: Post): string | null {
     if (parsed.protocol !== "https:") {
       return null;
     }
-    return post.thumbnail;
+    // Return the normalized href, not the raw input — new URL() does not
+    // reject a literal `"` in the path/query, only percent-encodes it when
+    // serialized. Returning the raw string would let a Notion editor break
+    // out of the `src="..."` attribute in the outbound HTML (CR-01).
+    return parsed.href;
   } catch {
     return null;
   }
@@ -88,13 +92,15 @@ function getEmbeddableThumbnailUrl(post: Post): string | null {
  * only when getEmbeddableThumbnailUrl() confirms it will still resolve when
  * the mail is opened; otherwise the section is text-only — no placeholder,
  * no site-wide fallback image, no empty src (D-05, now covering the
- * Notion-hosted case too). Returns the section HTML plus whether this
- * section was downgraded from a Notion-hosted thumbnail, so the caller can
- * report a single run-level summary. Inline styles only, no external
- * stylesheet, no table layout — a plain list of sections is the ceiling
- * REQUIREMENTS.md sets for v1.
+ * Notion-hosted case too). Returns the section HTML plus two independent
+ * downgrade signals — `downgraded` for the documented "file expires" case
+ * and `invalidExternal` for an `external`-type thumbnail whose URL is
+ * malformed or non-https (WR-03: previously silently dropped with no
+ * operator-visible signal) — so the caller can report distinct per-run
+ * summaries. Inline styles only, no external stylesheet, no table layout —
+ * a plain list of sections is the ceiling REQUIREMENTS.md sets for v1.
  */
-function buildSectionHtml(post: Post): { html: string; downgraded: boolean } {
+function buildSectionHtml(post: Post): { html: string; downgraded: boolean; invalidExternal: boolean } {
   const isKorean = CONFIG.site.locale === "ko";
   const siteUrl = CONFIG.site.url.replace(/\/$/, "");
   const title = escapeHtml(post.title);
@@ -104,8 +110,9 @@ function buildSectionHtml(post: Post): { html: string; downgraded: boolean } {
 
   const embeddableThumbnail = getEmbeddableThumbnailUrl(post);
   const downgraded = embeddableThumbnail === null && post.thumbnailType === "file";
+  const invalidExternal = embeddableThumbnail === null && post.thumbnailType === "external";
   const imgHtml = embeddableThumbnail
-    ? `<img src="${embeddableThumbnail}" alt="${title}" style="max-width: 100%; display: block; margin: 0 0 12px 0;" />`
+    ? `<img src="${escapeHtml(embeddableThumbnail)}" alt="${title}" style="max-width: 100%; display: block; margin: 0 0 12px 0;" />`
     : "";
 
   const html = `
@@ -121,7 +128,7 @@ function buildSectionHtml(post: Post): { html: string; downgraded: boolean } {
     </div>
   `;
 
-  return { html, downgraded };
+  return { html, downgraded, invalidExternal };
 }
 
 /**
@@ -250,12 +257,16 @@ export async function GET(request: Request) {
   // dropped, never fatal to the rest of the digest.
   const sections: { post: Post; html: string }[] = [];
   let downgradedThumbnailCount = 0;
+  let invalidExternalThumbnailCount = 0;
   for (const post of batch) {
     try {
-      const { html, downgraded } = buildSectionHtml(post);
+      const { html, downgraded, invalidExternal } = buildSectionHtml(post);
       sections.push({ post, html });
       if (downgraded) {
         downgradedThumbnailCount += 1;
+      }
+      if (invalidExternal) {
+        invalidExternalThumbnailCount += 1;
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -266,6 +277,15 @@ export async function GET(request: Request) {
   if (downgradedThumbnailCount > 0) {
     console.log(
       `[Notify] ${downgradedThumbnailCount} post(s) rendered without a thumbnail: the image is stored in Notion and its URL expires within the hour. Paste a public image URL into the thumbnail property to include it.`,
+    );
+  }
+
+  if (invalidExternalThumbnailCount > 0) {
+    // WR-03: distinct from the expiring-URL case above — this is a thumbnail
+    // property value that isn't a valid https URL at all (malformed, wrong
+    // protocol, etc.), previously dropped with no operator-visible signal.
+    console.log(
+      `[Notify] ${invalidExternalThumbnailCount} post(s) rendered without a thumbnail: the thumbnail property value is not a valid https URL. Check the thumbnail property.`,
     );
   }
 
@@ -281,17 +301,29 @@ export async function GET(request: Request) {
       ? `${CONFIG.site.title}에 새 글 ${sections.length}개가 올라왔습니다`
       : `${sections.length} new post${sections.length === 1 ? "" : "s"} on ${CONFIG.site.title}`;
 
-  const { error: sendError } = await resend.broadcasts.create({
-    audienceId,
-    from: fromAddress,
-    subject,
-    html: buildDigestHtml(
-      sections.map((section) => section.html),
-      physicalAddress,
-    ),
-    send: true,
-  });
+  // WR-01: the Resend SDK is not guaranteed to always resolve with a
+  // `{ data, error }` shape — a thrown network/DNS/timeout error must be
+  // caught here too, or it escapes GET() uncaught and bypasses this route's
+  // controlled JSON error contract (and its [Notify]-prefixed logging).
+  let broadcastResult: Awaited<ReturnType<typeof resend.broadcasts.create>>;
+  try {
+    broadcastResult = await resend.broadcasts.create({
+      audienceId,
+      from: fromAddress,
+      subject,
+      html: buildDigestHtml(
+        sections.map((section) => section.html),
+        physicalAddress,
+      ),
+      send: true,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[Notify] Broadcast send threw: ${message}`);
+    return Response.json({ ok: false, code: "send_failed" }, { status: 500 });
+  }
 
+  const { error: sendError } = broadcastResult;
   if (sendError) {
     console.error(`[Notify] Broadcast send failed: ${sendError.message}`);
     return Response.json({ ok: false, code: "send_failed" }, { status: 500 });
