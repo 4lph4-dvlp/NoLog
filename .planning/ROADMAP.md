@@ -112,7 +112,7 @@ Plans:
   5. If the digest send itself fails outright (not a per-post content issue), no posts from that run are marked `emailed`, so all of them are picked up again by the next cron run.
   6. With `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` unset, `/api/notify-subscribers` no-ops immediately with no Notion query or send attempted — and `/api/subscribe` (Phase 3) is reconfirmed to exhibit the same no-op contract for its own required env vars.
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -125,7 +125,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 — blocking operator checkpoint)*
 
-- [ ] 04-03-PLAN.md — Operator verification against live Resend + Notion: closes SC#1, SC#2, SC#4, SC#5 by observed outcome (one broadcast in the send log, one email received, a malformed post dropped while the rest send and mark, a failed send marking nothing) and discharges D-08's must-be-revisited clause by clicking the unsubscribe link in a delivered message
+- [x] 04-03-PLAN.md — Operator verification against live Resend + Notion: closes SC#1, SC#2, SC#4, SC#5 by observed outcome (one broadcast in the send log, one email received, a malformed post dropped while the rest send and mark, a failed send marking nothing) and discharges D-08's must-be-revisited clause by clicking the unsubscribe link in a delivered message
 
 ### Phase 5: Production Cutover
 
@@ -165,6 +165,6 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | 1. Notion Data Layer | 2/2 | Complete    | 2026-07-25 |
 | 2. Backfill Script | 2/2 | Complete    | 2026-07-26 |
 | 3. Subscribe Path | 6/6 | Complete    | 2026-07-27 |
-| 4. Notify Route | 2/3 | In Progress|  |
+| 4. Notify Route | 3/3 | In Progress|  |
 | 5. Production Cutover | 0/TBD | Not started | - |
 | 6. Documentation | 0/TBD | Not started | - |
