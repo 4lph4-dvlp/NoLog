@@ -130,10 +130,10 @@ function buildSectionHtml(post: Post): { html: string; downgraded: boolean } {
  * with certainty under either interpretation, costs one line in a footer
  * that already needed two, and is strictly additive.
  */
-function buildFooterHtml(): string {
+function buildFooterHtml(physicalAddress: string): string {
   const isKorean = CONFIG.site.locale === "ko";
   const siteTitle = escapeHtml(CONFIG.site.title);
-  const address = escapeHtml(CONFIG.notify.physicalAddress);
+  const address = escapeHtml(physicalAddress);
 
   const whyLine = isKorean
     ? `${siteTitle}의 새 글 알림을 구독하셨기 때문에 이 메일을 받고 계십니다.`
@@ -153,13 +153,13 @@ function buildFooterHtml(): string {
 }
 
 /** A minimal HTML document wrapping the joined sections followed by the footer. No greeting and no intro paragraph above the first section (D-04). */
-function buildDigestHtml(sections: string[]): string {
+function buildDigestHtml(sections: string[], physicalAddress: string): string {
   return `
     <!DOCTYPE html>
     <html>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #111;">
         ${sections.join("")}
-        ${buildFooterHtml()}
+        ${buildFooterHtml(physicalAddress)}
       </body>
     </html>
   `;
@@ -186,7 +186,10 @@ export async function GET(request: Request) {
   // as a missing API key (D-09).
   const apiKey = process.env.RESEND_API_KEY;
   const audienceId = process.env.RESEND_AUDIENCE_ID;
-  const physicalAddress = CONFIG.notify.physicalAddress.trim();
+  // D-06 revised: physical address moved to an env var so a forker's real
+  // mailing address is never committed to a (likely public) git repo — see
+  // site.config.ts's `notify` block comment.
+  const physicalAddress = (process.env.NOTIFY_PHYSICAL_ADDRESS ?? "").trim();
   const fromAddress = CONFIG.notify.fromAddress.trim();
   if (!apiKey || !audienceId || !physicalAddress || !fromAddress) {
     if (!unconfiguredLogged) {
@@ -194,7 +197,7 @@ export async function GET(request: Request) {
       const missing = [
         !apiKey ? "RESEND_API_KEY" : null,
         !audienceId ? "RESEND_AUDIENCE_ID" : null,
-        !physicalAddress ? "CONFIG.notify.physicalAddress" : null,
+        !physicalAddress ? "NOTIFY_PHYSICAL_ADDRESS" : null,
         !fromAddress ? "CONFIG.notify.fromAddress" : null,
       ].filter(Boolean);
       console.error(
@@ -274,7 +277,10 @@ export async function GET(request: Request) {
     audienceId,
     from: fromAddress,
     subject,
-    html: buildDigestHtml(sections.map((section) => section.html)),
+    html: buildDigestHtml(
+      sections.map((section) => section.html),
+      physicalAddress,
+    ),
     send: true,
   });
 

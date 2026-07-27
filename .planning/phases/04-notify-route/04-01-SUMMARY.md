@@ -14,7 +14,7 @@ requires:
     provides: "getResend() lazy singleton (lib/email.ts), [Context]-prefixed logging convention, unconfiguredLogged latch idiom"
 provides:
   - "GET /api/notify-subscribers: timing-safe CRON_SECRET auth gate, fail-closed SEC-02 config gate, capped digest query, per-post-isolated section assembly, single Resend broadcast send, mark-after-send-only write-back"
-  - "CONFIG.notify (physicalAddress, fromAddress) in site.config.ts"
+  - "CONFIG.notify.fromAddress in site.config.ts; NOTIFY_PHYSICAL_ADDRESS env var (D-06 revised 2026-07-27 — see Post-Execution Revision section below)"
   - "getUnemailedPublicPosts/markEmailed pass-throughs in lib/notion.ts"
 affects: [04-02-thumbnails, 04-03-live-verification, 05-production-cutover]
 
@@ -124,7 +124,7 @@ Each task was committed atomically:
 - **D-08 revised** (under D-08's own escape hatch): renders `{{{RESEND_UNSUBSCRIBE_URL}}}` as a visible footer link rather than relying purely on Resend's automatic header injection, because 04-RESEARCH.md's Open Question 1 could not confirm unconditional RFC 8058 header injection from any quotable official Resend page — only the suppression-list half of the behavior is confirmed. This is strictly additive and satisfies NOTIFY-02 under either interpretation.
 - **D-11's env var name resolved to `NOTIFY_BATCH_SIZE`** (integer, default 50) — a reasoned figure against Vercel Hobby's confirmed 300s `maxDuration`, tunable without a code change once Phase 5 confirms the live project's actual duration budget.
 - **Open Question 2 resolved in favor of short-circuiting**: the mark loop stops attempting further `markEmailed` calls in the same run after the first `NotionCapabilityError`, since a missing "Update content" grant 403s identically for every post in the batch — N further doomed PATCH calls buy nothing and bury the one line the operator needs.
-- **`fromAddress` placed in `site.config.ts` alongside `physicalAddress`**, not as an env var, under D-06's public-value rationale: it is forker-visible sender branding, not a secret.
+- **`fromAddress` placed in `site.config.ts`**, not as an env var, under D-06's public-value rationale: it is forker-visible sender branding, not a secret. (`physicalAddress` was originally placed alongside it here too; see Post-Execution Revision below — it was later moved to an env var.)
 
 ## Deviations from Plan
 
@@ -137,7 +137,17 @@ None — plan executed exactly as written. Both tasks' acceptance criteria, stru
 
 ## User Setup Required
 
-None — no external service configuration required by this plan. `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `CONFIG.notify.physicalAddress`/`fromAddress` all remain unset in this repo by design; the route no-ops until an operator configures them (Phase 5/6 concern).
+None — no external service configuration required by this plan. `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `NOTIFY_PHYSICAL_ADDRESS` (env var, D-06 revised) and `CONFIG.notify.fromAddress` all remain unset in this repo by design; the route no-ops until an operator configures them (Phase 5/6 concern).
+
+## Post-Execution Revision (2026-07-27)
+
+After this plan executed and was committed, the user reviewing `04-03-PLAN.md`'s operator checkpoint raised a concern: `site.config.ts` is committed to git, and NoLog forks are typically public repos, so a config-file `physicalAddress` field means a forker's real mailing address is permanently visible to anyone browsing the source — not just to people who subscribed and received it in an email. This was accepted as a valid correction to D-06 (which had already recorded itself as reversible for exactly this reason).
+
+**Change made:** `CONFIG.notify.physicalAddress` removed from `site.config.ts`; the notify route now reads the address from a new `NOTIFY_PHYSICAL_ADDRESS` env var instead, threaded as a parameter through `buildDigestHtml()` → `buildFooterHtml()` rather than read a second time inside the footer helper. `fromAddress` was left in `site.config.ts` — it appears in every email's From header regardless of storage location, and its domain is already public via DNS, so moving it would not reduce any exposure.
+
+**Files touched by this revision:** `apps/web/src/site.config.ts`, `apps/web/src/app/api/notify-subscribers/route.ts`, `.planning/phases/04-notify-route/04-CONTEXT.md` (D-06 revision note), `.planning/phases/04-notify-route/04-03-PLAN.md` (precondition/user_setup/verification steps updated to the env var). `04-01-PLAN.md`, `04-RESEARCH.md` and `04-PATTERNS.md` are left as the historical record of what was originally planned and are not retroactively edited.
+
+Verified after the change: `npx tsc --noEmit` passed for `apps/web`; no other change to the route's control flow, response codes, or logging.
 
 ## Next Phase Readiness
 

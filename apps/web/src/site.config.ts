@@ -36,15 +36,19 @@ export const CONFIG = {
   },
 
   /**
-   * Digest notification email config. Leaving EITHER field "" disables notify
+   * Digest notification sender identity. Leaving this "" disables notify
    * sends entirely (fail-closed, D-09) — the notify route no-ops rather than
-   * risk sending a CAN-SPAM-noncompliant email. Both values are public,
-   * forker-visible branding/legal info, not secrets, which is why they live
-   * here instead of an env var.
+   * risk sending a CAN-SPAM-noncompliant email. This value is public,
+   * forker-visible branding info, not a secret, which is why it lives here
+   * instead of an env var.
+   *
+   * D-06 revised: the CAN-SPAM-required physical mailing address is
+   * deliberately NOT a field here — it lives in the NOTIFY_PHYSICAL_ADDRESS
+   * env var instead, so a forker's home/business address is never committed
+   * to a (likely public) git repo. It still appears in every digest email's
+   * footer either way; the env var only keeps it out of source control.
    */
   notify: {
-    /** CAN-SPAM required physical mailing address, rendered in every digest footer. */
-    physicalAddress: "",
     /** Digest sender identity in Resend's "Name <user@verified-domain>" form. */
     fromAddress: "",
   },
