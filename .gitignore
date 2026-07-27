@@ -47,3 +47,4 @@ GEMINI.md
 
 # build outputs
 **/dist
+.gstack/

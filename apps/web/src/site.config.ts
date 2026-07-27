@@ -50,7 +50,7 @@ export const CONFIG = {
    */
   notify: {
     /** Digest sender identity in Resend's "Name <user@verified-domain>" form. */
-    fromAddress: "",
+    fromAddress: "4lph4 <no-reply@4lph4-bl0g.kro.kr>",
   },
 
   /** ISR revalidation interval in seconds (30 mins to prevent image expiration) */
