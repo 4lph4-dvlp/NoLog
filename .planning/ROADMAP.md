@@ -139,12 +139,12 @@ Plans:
   2. `vercel.json`'s cron entry is added and deployed as its own separate commit, created only after criterion 1 is confirmed — verified by checking the commit history shows the cron-entry commit strictly after the backfill-confirmation step, not bundled with the notify route's own deploy.
   3. The actual Vercel Hobby `maxDuration` limit for the target project has been verified directly against the deployed project's settings (not assumed from docs), and the notify route's batch size is confirmed to fit within it.
 
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Precondition: operator probes production (backfill dry-run → live → confirmed zero unemailed posts) and reads four settings off the deployed Vercel project (function maxDuration, Root Directory, Production env-var presence, deployment branch/status); commits the operator-verification record (commit 1, D-04) and confirms-or-retunes `NOTIFY_BATCH_SIZE_DEFAULT` against the figure actually read (D-01, D-05, SC#1, SC#3)
+- [x] 05-01-PLAN.md — Precondition: operator probes production (backfill dry-run → live → confirmed zero unemailed posts) and reads four settings off the deployed Vercel project (function maxDuration, Root Directory, Production env-var presence, deployment branch/status); commits the operator-verification record (commit 1, D-04) and confirms-or-retunes `NOTIFY_BATCH_SIZE_DEFAULT` against the figure actually read (D-01, D-05, SC#1, SC#3)
 
 **Wave 2** *(blocked on Wave 1 — the cron entry may not exist before the confirmation commit does)*
 
@@ -175,5 +175,5 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | 2. Backfill Script | 2/2 | Complete    | 2026-07-26 |
 | 3. Subscribe Path | 6/6 | Complete    | 2026-07-27 |
 | 4. Notify Route | 3/3 | Complete    | 2026-07-27 |
-| 5. Production Cutover | 0/2 | Planned | - |
+| 5. Production Cutover | 1/2 | In Progress|  |
 | 6. Documentation | 0/TBD | Not started | - |

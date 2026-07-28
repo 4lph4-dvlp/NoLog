@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 5
-current_phase_name: Production Cutover
+current_phase: 05
+current_phase_name: production-cutover
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-07-27T08:43:16.697Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-07-28T16:24:59.669Z"
 last_activity: 2026-07-27
-last_activity_desc: Phase 04 complete, transitioned to Phase 5
+last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-24)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 04 — Notify Route
+**Current focus:** Phase 05 — production-cutover
 
 ## Current Position
 
-Phase: 5 — Production Cutover
-Plan: Not started
+Phase: 05 (production-cutover) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-27 — Phase 04 complete, transitioned to Phase 5
+Last activity: 2026-07-27 — Phase 05 execution started
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Progress: [█████████░] 92%
 | Phase 03 P06 | 25min | 1 tasks | 1 files |
 | Phase 04 P01 | ~25min | 2 tasks | 3 files |
 | Phase 04 P02 | ~10min | 2 tasks | 3 files |
+| Phase 05 P01 | ~10min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 4 Plan 03 (operator verification): live run against real Resend + Notion fully confirmed SC#1/SC#2/SC#3/SC#5/SC#6 — single broadcast, one email received, working unsubscribe (visible link AND List-Unsubscribe/List-Unsubscribe-Post headers both confirmed present, closing 04-RESEARCH.md Open Question 1), failed-send-marks-nothing, fail-closed on missing config, /api/subscribe regression clean. 4lph4-bl0g.kro.kr confirmed as a valid Resend sending domain (DKIM/SPF/DMARC all pass on the delivered message)
 - [Phase ?]: Phase 4 Plan 03, post-execution UX addition: buildSectionHtml() now also renders a visible "read more"/"자세히 보기 →" link under each section's summary (same href as the title link), requested after live review of the actual delivered digest
 - [Phase ?]: Phase 4 Plan 03: NOTIFY-04's live malformed-post test NOT demonstrated — see Blockers/Concerns below for full detail; recorded as an open gap, not silently passed
+- [Phase ?]: Phase 5 Plan 1: production backfill confirmed zero unemailed posts against live Notion DB (ROADMAP SC#1 closed); Vercel dashboard maxDuration=300s/Root Directory=apps/web/all 6 Production env vars present recorded (SC#3 measurement half closed).
+- [Phase ?]: Phase 5 Plan 1: NOTIFY_BATCH_SIZE_DEFAULT confirmed unchanged (50) against the real 300s maxDuration reading (N_max=110); comment rewritten to cite 05-01-VERIFICATION.md row P2 and the sizing arithmetic (SC#3 batch-size half closed).
+- [Phase ?]: Phase 5 Plan 1: OPS-01 intentionally NOT marked complete in REQUIREMENTS.md by this plan — its text describes the cron-entry deployment (Plan 05-02's deliverable), not the backfill-confirmation record produced here.
 
 ### Pending Todos
 
@@ -137,6 +141,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-27T07:57:46.894Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-production-cutover/05-CONTEXT.md
+Last session: 2026-07-28T16:24:59.646Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
