@@ -37,7 +37,7 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Deployment & Ops (OPS)
 
-- [ ] **OPS-01**: `vercel.json`'s cron entry is added and deployed only after the backfill script has run and `getUnemailedPublicPosts()` is confirmed empty against production — a separate, deliberate commit, not bundled with the notify route's own deploy
+- [x] **OPS-01**: `vercel.json`'s cron entry is added and deployed only after the backfill script has run and `getUnemailedPublicPosts()` is confirmed empty against production — a separate, deliberate commit, not bundled with the notify route's own deploy
 
 ### Documentation (DOCS)
 
@@ -95,7 +95,7 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | SEC-01 | Phase 4: Notify Route | Complete |
 | SEC-02 | Phase 4: Notify Route | Complete |
 | SEC-03 | Phase 3: Subscribe Path | Complete |
-| OPS-01 | Phase 5: Production Cutover | Pending |
+| OPS-01 | Phase 5: Production Cutover | Complete |
 | DOCS-01 | Phase 6: Documentation | Pending |
 | DOCS-02 | Phase 6: Documentation | Pending |
 | DOCS-03 | Phase 6: Documentation | Pending |

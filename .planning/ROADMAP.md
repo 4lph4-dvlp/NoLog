@@ -139,7 +139,7 @@ Plans:
   2. `vercel.json`'s cron entry is added and deployed as its own separate commit, created only after criterion 1 is confirmed — verified by checking the commit history shows the cron-entry commit strictly after the backfill-confirmation step, not bundled with the notify route's own deploy.
   3. The actual Vercel Hobby `maxDuration` limit for the target project has been verified directly against the deployed project's settings (not assumed from docs), and the notify route's batch size is confirmed to fit within it.
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans executed
 
 Plans:
 **Wave 1**
@@ -148,7 +148,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 — the cron entry may not exist before the confirmation commit does)*
 
-- [ ] 05-02-PLAN.md — Go-live: blocking `checkpoint:decision` reversibility gate on D-04's costly cutover, then the tracer slice — `vercel.json`'s single `crons` entry (`/api/notify-subscribers`, `0 11 * * *` = 20:00 KST per D-03) committed alone and pushed to `main`, gated by a commit-ancestry check that proves it is a strict descendant of the confirmation commit; closed by observing the job registered in the dashboard and one zero-risk manual trigger returning the no-eligible-posts response (SC#2, OPS-01)
+- [x] 05-02-PLAN.md — Go-live: blocking `checkpoint:decision` reversibility gate on D-04's costly cutover, then the tracer slice — `vercel.json`'s single `crons` entry (`/api/notify-subscribers`, `0 11 * * *` = 20:00 KST per D-03) committed alone and pushed to `main`, gated by a commit-ancestry check that proves it is a strict descendant of the confirmation commit; closed by observing the job registered in the dashboard and one zero-risk manual trigger returning the no-eligible-posts response (SC#2, OPS-01)
 
 ### Phase 6: Documentation
 
@@ -175,5 +175,5 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | 2. Backfill Script | 2/2 | Complete    | 2026-07-26 |
 | 3. Subscribe Path | 6/6 | Complete    | 2026-07-27 |
 | 4. Notify Route | 3/3 | Complete    | 2026-07-27 |
-| 5. Production Cutover | 1/2 | In Progress|  |
+| 5. Production Cutover | 2/2 | In Progress|  |
 | 6. Documentation | 0/TBD | Not started | - |
