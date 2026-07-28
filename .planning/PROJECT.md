@@ -18,19 +18,19 @@ A forker can go from "empty Notion database" to "live, working blog" using only 
 - ✓ Optional Cusdis comment integration, off-by-default via `NEXT_PUBLIC_CUSDIS_APP_ID` — existing (fail-open bug in `CommentSection.tsx` found and fixed this session, commit `7d657c9`)
 - ✓ OG image generation via `/api/og` (edge runtime) — existing
 - ✓ `NologClient.getUnemailedPublicPosts()` / `markEmailed(pageId)`, typed `NotionCapabilityError`/`MissingEmailedPropertyError` — Phase 1 (live-verified against production Notion DB 2026-07-25)
+- ✓ One-time backfill script (`packages/core/scripts/backfill.ts`): throttled, resumable, dry-run-first, marks all pre-existing public posts `emailed` before cron ever runs — Phase 2 (live-verified against production 2026-07-26), and re-run against production immediately before cutover — Phase 5 (2026-07-29, confirmed `getUnemailedPublicPosts()` returns zero)
+- ✓ `/api/subscribe` route + subscribe form component: honeypot + validation, fail-closed if Resend env vars unset, idempotent on duplicate submission, server-gated (not `NEXT_PUBLIC_*`, since `RESEND_API_KEY` is a secret) — Phase 3 (live-verified against operator's own Resend account 2026-07-27)
+- ✓ `/api/notify-subscribers` route: fail-closed on missing `CRON_SECRET` (checked before anything else), same-day digest (one email per cron run listing every newly-public post, per-post-section isolation so one bad post doesn't block the rest), no-op if Resend env vars unset — Phase 4 (live-verified against Resend + Notion 2026-07-27)
+- ✓ Production cutover (OPS-01): `vercel.json` cron entry (`0 11 * * *`, once/day, Hobby-tier compatible) added and deployed as its own commit, strictly after the backfill was confirmed complete in production — Phase 5 (2026-07-29; live dashboard maxDuration confirmed 300s, batch size 50 validated against it, manual cron trigger returned 200 with no email sent)
 
 ### Active
 
-**Email subscription for new posts** — fully designed and approved via `/autoplan` on 2026-07-24 (see `.gstack/projects/4lph4-dvlp-NoLog/alpha-pi-main-design-20260724-161749.md` for the full design doc, status APPROVED). Summary:
+**Documentation (Phase 6)** — the email subscription feature (Phases 1-5) is fully shipped and live in production; the one remaining piece is closing the forker-facing documentation gap:
 
-- [ ] One-time backfill script/step: mark all pre-existing public posts as `emailed` before first cron run, so enabling the feature never blasts the back catalog
-- [ ] `/api/notify-subscribers` route: fail-closed on missing `CRON_SECRET`, checks the secret before doing anything else, no-ops immediately if Resend env vars are unset
-- [ ] **Same-day digest**: one cron run finds *all* unemailed public posts and sends **one email listing every post from that run** (title/summary/link/thumbnail per post), not one email per post — pulled forward into v1 scope during roadmap review on 2026-07-24 (was originally deferred to `TODOS.md`, relevant once Resend's 100/day cap became a real concern, but the user wants it now rather than waiting). A problem building one post's section of the digest must not prevent the other posts from being included and sent (isolation moves from per-post-email to per-post-section-within-the-digest).
-- [ ] `vercel.json`: once/day cron entry targeting the notify route (Hobby-tier compatible)
-- [ ] `/api/subscribe` route: adds a contact to a Resend Audience, honeypot + validation, fail-closed if env vars unset, idempotent on duplicate submission
-- [ ] Subscribe form component: gated server-side (not via `NEXT_PUBLIC_*`, since `RESEND_API_KEY` is a secret) so it renders only when configured — same user-facing behavior as the Cusdis pattern, different mechanism
-- [ ] Email template: title, summary, link, OG-image thumbnail as header (reusing `/api/og` via `<img src>`, since that route is edge runtime and can't be server-fetched) — now a per-post section repeated within a single digest email, not a standalone template
-- [ ] Document new Notion property (`emailed`, checkbox) and new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`) in `README.md` and `README_KR.md`, including the *correct* Resend free-tier send ceiling (Broadcast/Audience: up to 1,000 contacts/month, not the 100/day transactional figure — corrected during research) and the "update content" Notion integration capability now required
+- [ ] Document the `emailed` Notion property (checkbox) and new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`, `NOTIFY_PHYSICAL_ADDRESS`) in `README.md` and `README_KR.md`
+- [ ] Document the correct Resend free-tier send ceiling (Broadcast/Audience: up to 1,000 contacts/month, not the 100/day transactional figure)
+- [ ] Document the "Update content" Notion integration capability requirement
+- [ ] Close every silent-failure gap a forker could hit configuring this feature (per ROADMAP Phase 6 goal)
 
 These are hypotheses until shipped and validated.
 
@@ -67,15 +67,15 @@ These are hypotheses until shipped and validated.
 - **Off-by-default, config-gated, exactly like Cusdis**: A forker who sets no env vars sees no subscribe form and has no active email logic.
 - **Generic for any forker's own Notion workspace + their own Resend account**: not hardcoded to the template author's instance.
 - **Minimal**: Plain email (title, summary, link, thumbnail). No confirmation/double-opt-in flow, no preference center.
-- **Vercel Hobby tier limits**: cron frequency capped at once/day, ±59min scheduling precision, UTC-only. Function `maxDuration` is contested between research sources (10s per one source, 300s under Fluid Compute per another) — **unconfirmed, must be verified directly against the target Vercel project's dashboard** before finalizing notify-route batch size; regardless, the backfill must run standalone, never through that route.
+- **Vercel Hobby tier limits**: cron frequency capped at once/day, ±59min scheduling precision, UTC-only. Function `maxDuration` — confirmed **300s** directly against the deployed project's dashboard (Phase 5, 2026-07-29; Fluid Compute enabled), matching the documentation-derived figure; `NOTIFY_BATCH_SIZE_DEFAULT` (50) validated against it (`N_max = floor((0.6*300-15)/1.5) = 110`). The backfill runs standalone, never through the cron route.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Approach B: dedicated `/api/notify-subscribers` route + Vercel Cron (once/day), webhook as documented-only fast path | Only option that doesn't depend on visitor traffic, doesn't couple email side-effects to page render, and works on every forker's Notion plan tier | — Pending |
-| Resend (Audiences + Broadcast API) over Buttondown | Buttondown caps free tier at 100 subscribers and gates API access behind $29/mo; Resend's free tier supports the full flow for free | — Pending |
-| One digest email per cron run (not one email per post), pulled forward into v1 | User asked how multi-post-per-day was handled during roadmap review; decided not to wait for the "Resend 100/day cap becomes a problem" trigger originally planned in `TODOS.md` — wanted it now | — Pending |
+| Approach B: dedicated `/api/notify-subscribers` route + Vercel Cron (once/day), webhook as documented-only fast path | Only option that doesn't depend on visitor traffic, doesn't couple email side-effects to page render, and works on every forker's Notion plan tier | ✓ Good — live in production since Phase 5 |
+| Resend (Audiences + Broadcast API) over Buttondown | Buttondown caps free tier at 100 subscribers and gates API access behind $29/mo; Resend's free tier supports the full flow for free | ✓ Good — live-verified end to end (Phases 3-5) |
+| One digest email per cron run (not one email per post), pulled forward into v1 | User asked how multi-post-per-day was handled during roadmap review; decided not to wait for the "Resend 100/day cap becomes a problem" trigger originally planned in `TODOS.md` — wanted it now | ✓ Good — shipped and live-verified in Phase 4 |
 | RSS deferred rather than bundled into this pass | User's explicit choice at the final `/autoplan` approval gate, re-confirmed after the CEO review's dual-voice subagent argued for bundling it | ✓ Good |
 | Server-component env-var gating (not `NEXT_PUBLIC_*`) for the subscribe form | `RESEND_API_KEY` is a secret, unlike Cusdis's public app ID — found by the DX review's dual-voice subagent as the most significant architectural gap of the session | ✓ Good |
 | Concurrency/distributed-lock gap on the notify route accepted as a limitation, not fixed | A real fix needs new infrastructure (Vercel KV/Redis), which conflicts with the explicit "no new infrastructure" constraint | — Pending |
@@ -101,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-25 after Phase 1*
+*Last updated: 2026-07-29 after Phase 5*
