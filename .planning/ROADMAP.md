@@ -162,7 +162,16 @@ Plans:
   2. README.md and README_KR.md instruct forkers to complete Resend domain/SPF/DKIM verification as a mandatory step, and state the correct quota (up to 1,000 contacts/month via Broadcast/Audience, not the 100/day transactional figure).
   3. README.md and README_KR.md state that the cron only fires on Production deployments and is evaluated in UTC.
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — Tracer: the complete `## Email Notifications (Optional)` / `## 이메일 알림 (선택)` setup section in both READMEs — 7 numbered steps (D-01/D-02), the 4-var fenced block kept out of the existing env block (D-03), then failure-mode hardening: inline warnings at each trap (D-04/D-05/D-06/D-07) and the both-figures free-tier quota note ruling out the transactional cap (D-09). Closes DOCS-01, DOCS-02, DOCS-03
+
+**Wave 2** *(blocked on Wave 1 — same two files)*
+
+- [ ] 06-02-PLAN.md — Discoverability: the separate `Notifications`/`알림` mermaid subgraph reusing the shared Notion node (D-11), plus the `**Resend**` Core Services row and the optional email-digest Features bullet in both files, extending the Cusdis four-touchpoint precedent (D-10)
 
 ## Progress
 
@@ -176,4 +185,4 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | 3. Subscribe Path | 6/6 | Complete    | 2026-07-27 |
 | 4. Notify Route | 3/3 | Complete    | 2026-07-27 |
 | 5. Production Cutover | 2/2 | Complete    | 2026-07-29 |
-| 6. Documentation | 0/TBD | Not started | - |
+| 6. Documentation | 0/2 | Planned | - |
