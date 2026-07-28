@@ -6,12 +6,20 @@ import { NotionCapabilityError, type Post } from "@4lph4/nolog-core";
 
 export const runtime = "nodejs";
 
-// D-10/D-11/D-12: a reasoned default, not an authoritative one, against
-// Vercel Hobby's confirmed 300s maxDuration (04-RESEARCH.md Pitfall 3) — the
-// realistic bottleneck is Notion's own per-request latency, not the 300s
-// ceiling, and 50 new posts in one digest is already a generous upper bound
-// for a personal blog. NOTIFY_BATCH_SIZE exists precisely so Phase 5's live
-// duration check can retune this without a code change.
+// D-10/D-11/D-12, confirmed per Phase 5 SC#3: the deployed Vercel project's
+// actual Function Max Duration was read from the project's own dashboard on
+// 2026-07-29 (05-01-VERIFICATION.md row P2) — 300s, Fluid Compute enabled —
+// rather than assumed from 04-RESEARCH.md's documentation-derived figure.
+// Sizing model, kept inspectable rather than folklore: fixed overhead F=15s
+// (cold start + the paginated Notion query + the single broadcasts.create
+// round trip), per-post marking cost M=1.5s (one sequential Notion PATCH per
+// post in the mark loop below, a conservative upper bound against Phase 2's
+// ~3 req/s throttle ceiling), headroom factor 0.6 (never plan to consume
+// more than 60% of the ceiling). N_max = floor((0.6 * 300 - 15) / 1.5) = 110.
+// Since N_max >= 50, the confirmed dashboard reading validates rather than
+// changes the existing default — the literal stays 50. NOTIFY_BATCH_SIZE
+// still exists as the env-var override for a future retune without a code
+// change.
 const NOTIFY_BATCH_SIZE_DEFAULT = 50;
 
 // SEC-02 operator signal (same shape as the sibling subscribe route's
