@@ -94,7 +94,7 @@ NoLog can email subscribers a daily digest whenever new posts go public. This fe
    **Verification is mandatory: an unverified sending domain can accept a send request and report success while the email never reaches an inbox.** Verification is asynchronous — it can complete in minutes, but Resend marks a domain failed if it cannot detect the records within 72 hours.
 4. Create an **Audience** in the Resend dashboard and copy its Audience ID.
 5. Set `CONFIG.notify.fromAddress` in `apps/web/src/site.config.ts` to a `Name <user@your-verified-domain>` address on the domain verified in step 3. It lives in a committed config file, not an env var, because a sender identity is public branding that already appears in every message's From header — see that file's own comment for the full rationale.
-   **Leaving the template author's default sender identity here, or blanking it, makes the notify route no-op — the fail-closed gate treats an unset sender as unconfigured, and nothing sends.**
+   **This field has no fail-closed check against the shipped default — the gate only rejects a blank value. Leave the template author's default sender identity here and the notify route still sends, using an identity/domain you don't control, instead of stopping.**
 6. Add the four environment variables listed below to the Vercel project.
 7. Deploy. The daily digest cron is declared by the `crons` entry in `apps/web/vercel.json`; the shipped schedule is `0 11 * * *` (11:00 UTC / 8 PM KST) — edit that entry's `schedule` field to retime it for your own audience.
    **The cron fires only on Production deployments — a Preview or branch deployment never triggers it — and every schedule is evaluated in UTC, with no timezone or DST support.**
