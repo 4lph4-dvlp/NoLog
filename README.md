@@ -73,6 +73,27 @@ graph TD
 7. Import your forked repository in Vercel.
 8. Add the required environment variables in Vercel, then deploy.
 
+## Email Notifications (Optional)
+
+NoLog can email subscribers a daily digest whenever new posts go public. This feature is off by default — leave `RESEND_API_KEY` unset and nothing in this section applies.
+
+1. Add a Checkbox property named exactly `emailed` (lowercase) to the Notion database, via Notion's new-property menu.
+2. Open the same integration's settings at [notion.so/my-integrations](https://www.notion.so/my-integrations) and enable the **Update content** capability — this is in addition to the read access granted in step 4 of Vercel Deployment above, not a re-do of that step.
+3. Create a Resend account and verify a sending domain by adding the SPF and DKIM DNS records Resend issues, under **Domains** in the Resend dashboard. See [Resend's domain verification guide](https://resend.com/docs/dashboard/domains/introduction).
+4. Create an **Audience** in the Resend dashboard and copy its Audience ID.
+5. Set `CONFIG.notify.fromAddress` in `apps/web/src/site.config.ts` to a `Name <user@your-verified-domain>` address on the domain verified in step 3. It lives in a committed config file, not an env var, because a sender identity is public branding that already appears in every message's From header — see that file's own comment for the full rationale.
+6. Add the four environment variables listed below to the Vercel project.
+7. Deploy. The daily digest cron is declared by the `crons` entry in `apps/web/vercel.json`; the shipped schedule is `0 11 * * *` (11:00 UTC / 8 PM KST) — edit that entry's `schedule` field to retime it for your own audience.
+
+```bash
+RESEND_API_KEY="re_your_resend_api_key"
+RESEND_AUDIENCE_ID="your_resend_audience_id"
+CRON_SECRET="your_generated_random_secret"
+NOTIFY_PHYSICAL_ADDRESS="Your Name, 123 Example St, Your City, Your Country"
+```
+
+Leave these four unset and the notify route no-ops — nothing is sent; set all four to enable the daily digest. `NOTIFY_PHYSICAL_ADDRESS` is an env var, not a config field, precisely so a forker's real mailing address never enters a public fork's git history.
+
 ## Environment Variables
 
 ```bash

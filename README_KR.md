@@ -73,6 +73,27 @@ graph TD
 7. Vercel에서 fork한 저장소를 import합니다.
 8. Vercel 환경 변수에 필요한 값을 추가한 뒤 배포합니다.
 
+## 이메일 알림 (선택)
+
+NoLog는 새 게시글이 공개될 때마다 구독자에게 일일 다이제스트 이메일을 보낼 수 있습니다. 이 기능은 기본적으로 꺼져 있습니다 — `RESEND_API_KEY`를 설정하지 않으면 이 섹션의 어떤 내용도 적용되지 않습니다.
+
+1. Notion 데이터베이스의 새 속성 메뉴에서 정확히 `emailed`(소문자)라는 이름의 Checkbox 속성을 추가합니다.
+2. 동일한 integration의 설정 페이지([notion.so/my-integrations](https://www.notion.so/my-integrations))에서 **Update content** capability를 활성화합니다 — 이는 위 Vercel 배포 4단계에서 부여한 읽기 권한과는 별개로 추가해야 하는 설정이며, 그 단계를 다시 하는 것이 아닙니다.
+3. Resend 계정을 만들고, Resend 대시보드의 **Domains**에서 Resend가 발급하는 SPF와 DKIM DNS 레코드를 추가하여 발신 도메인을 인증합니다. 자세한 절차는 [Resend의 도메인 인증 가이드](https://resend.com/docs/dashboard/domains/introduction)를 참고하세요.
+4. Resend 대시보드에서 **Audience**를 생성하고 Audience ID를 복사합니다.
+5. `apps/web/src/site.config.ts`의 `CONFIG.notify.fromAddress`를 3단계에서 인증한 도메인을 사용하는 `이름 <user@your-verified-domain>` 형식의 주소로 설정합니다. 발신자 정보는 모든 메일의 From 헤더에 이미 공개되는 브랜딩 정보이므로 env var가 아니라 커밋되는 설정 파일에 있습니다 — 자세한 이유는 해당 파일의 주석을 참고하세요.
+6. 아래 네 개의 환경 변수를 Vercel 프로젝트에 추가합니다.
+7. 배포합니다. 일일 다이제스트 cron은 `apps/web/vercel.json`의 `crons` 항목에 선언되어 있습니다. 기본 설정값은 `0 11 * * *`(UTC 11:00, 한국시간 오후 8시)이며, 본인의 구독자에 맞게 재설정하려면 해당 항목의 `schedule` 필드를 수정하세요.
+
+```bash
+RESEND_API_KEY="re_your_resend_api_key"
+RESEND_AUDIENCE_ID="your_resend_audience_id"
+CRON_SECRET="your_generated_random_secret"
+NOTIFY_PHYSICAL_ADDRESS="Your Name, 123 Example St, Your City, Your Country"
+```
+
+이 네 값을 설정하지 않으면 notify route는 아무 동작도 하지 않습니다 — 아무것도 발송되지 않습니다. 네 값을 모두 설정하면 일일 다이제스트가 활성화됩니다. `NOTIFY_PHYSICAL_ADDRESS`가 설정 파일이 아니라 env var인 이유는, 실제 주소가 공개 저장소의 git 기록에 절대 남지 않도록 하기 위해서입니다.
+
 ## 환경 변수
 
 ```bash
