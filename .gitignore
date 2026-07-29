@@ -48,3 +48,6 @@ GEMINI.md
 # build outputs
 **/dist
 .gstack/
+
+# GSD research cache
+.planning/research/.cache/
