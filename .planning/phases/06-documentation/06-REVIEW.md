@@ -31,6 +31,8 @@ One claim in both README files misdescribes the actual fail-closed gate implemen
 
 ### CR-01: "Leaving the default sender identity" claim is false — the code does not check for it
 
+**Status: RESOLVED (docs-only fix, 2026-07-29).** The false fail-closed claim was corrected in both `README.md` and `README_KR.md` (commit `6a6a1fa`) to accurately state that the gate only rejects a blank value, not the shipped default — so an unchanged `fromAddress` still results in a live send under an identity/domain the forker doesn't control. The code-side option (making `route.ts` reject the shipped default value) was declined as out of scope for this documentation-only phase; it would require its own GSD code phase.
+
 **File:** `README.md:96-97`, `README_KR.md:96-97`
 
 **Issue:** Both READMEs assert:
