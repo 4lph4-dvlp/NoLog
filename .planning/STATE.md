@@ -23,7 +23,7 @@ current_phase_name: Documentation
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 6 — Documentation
+**Current focus:** Milestone v1.0 complete (all 6 phases shipped) — ready for `/gsd-complete-milestone`
 
 ## Current Position
 
@@ -140,9 +140,11 @@ See TODOS.md (repo root) — 3 items still deferred (RSS feed, on-site new-post 
 - **RESOLVED 2026-07-27:** Both Phase 4 research gaps confirmed against live systems during 04-03's operator verification: (1) Vercel Hobby `maxDuration` confirmed 300s via `04-RESEARCH.md`, batch cap default (50) sized against that figure — Phase 5 SC#3 still owns confirming the specific deployed project's setting; (2) Resend's unsubscribe behavior confirmed fully working live — visible footer link works end-to-end (no login, contact unsubscribes), and raw email source additionally confirmed `List-Unsubscribe`/`List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers ARE present (04-RESEARCH.md Open Question 1 fully resolved).
 - **OPEN — Phase 4:** Notion "Update content" capability revocation did NOT block `markEmailed()`'s PATCH in two independent live tests (including one with a freshly reissued `NOTION_TOKEN`), despite the integration's "콘텐츠 업데이트"/"Update content" checkbox confirmed unchecked in the Notion dashboard (screenshot-verified) both times. `packages/core/src/client.ts`'s `patchPage()` correctly checks `res.status === 403` → `NotionCapabilityError` (confirmed correct by direct code inspection, not just trusted) — this is NOT a code bug. The discrepancy is between Notion's dashboard capability toggle and the live PATCH /v1/pages/{id} response, which returned 200 both times. Root cause unknown: possibly a Notion-side propagation delay, a per-database "connection" override, or an undocumented capability boundary for property-only writes. Re-verify against Notion's actual behavior before Phase 5 ships — do not assume the capability-short-circuit code path is reachable/necessary based on this session's evidence alone.
 - **OPEN — Phase 4:** NOTIFY-04's live "malformed post excluded, others still send" scenario could not be exercised during 04-03. The specified fault-injection method (clearing a post's title in Notion) doesn't trigger a section-build exception — `packages/core/src/client.ts`'s `getTitle()` falls back to the literal string `"Untitled"` for an empty title, so `buildSectionHtml()` never throws for this input, and no other Notion-editable field can trigger a throw given current property-extraction fallbacks. The per-post `try`/`catch` isolation structure is present and confirmed by code review (04-01 plan-checker pass), but its live-behavior half is unverified. See `04-03-SUMMARY.md` coverage item D4. Resolve before Phase 4 is considered fully closed: either accept structural-only coverage, or add a real throwable precondition (e.g. reject the `getTitle()` fallback sentinel) and re-test live.
-- `PROJECT.md`'s Active requirements text has been corrected to state the right Resend quota (up to 1,000 contacts/month via Broadcast/Audience, not the transactional 100/day cap) — consistent with ROADMAP.md Phase 6 / REQUIREMENTS.md DOCS-02.
-- [Phase 2] `apps/web/src/app/post/[id]/page.tsx` passes the raw dynamic route segment into `getPost(pageId)`, which interpolates it unvalidated into the Notion API URL (01-REVIEW.md, post-Phase-1 pass) — not part of Phase 1's DATA-01/02/04 scope, needs its own security review (`/gsd-secure-phase` or targeted fix) before considered resolved.
-- Phase 2: six live-database verification scenarios in 02-VALIDATION.md (DATA-03 SC#1-3, D-04, D-05, dry-run listing) require an operator with real NOTION_TOKEN/NOTION_DATABASE_ID before ship; nyquist_compliant stays false until then
+- **RESOLVED 2026-07-29 (Phase 6):** Code review found two documentation gaps, both fixed in the shipped README.md/README_KR.md: (1) CR-01 — a false claim that leaving `CONFIG.notify.fromAddress` at its shipped default makes the notify route no-op (it doesn't; the gate only rejects a blank value); (2) WR-01 — the public subscribe form's independent 2-var gate (`RESEND_API_KEY`+`RESEND_AUDIENCE_ID`) was undocumented. Both verified against live code during Phase 6 goal verification (`06-VERIFICATION.md`).
+- [Phase 2] `apps/web/src/app/post/[id]/page.tsx` passes the raw dynamic route segment into `getPost(pageId)`, which interpolates it unvalidated into the Notion API URL (01-REVIEW.md, post-Phase-1 pass) — not part of Phase 1's DATA-01/02/04 scope, needs its own security review (`/gsd-secure-phase` or targeted fix) before considered resolved. Still open at milestone close — carry into `/gsd-complete-milestone` audit or a future milestone.
+- Phase 2: six live-database verification scenarios in 02-VALIDATION.md (DATA-03 SC#1-3, D-04, D-05, dry-run listing) require an operator with real NOTION_TOKEN/NOTION_DATABASE_ID before ship; nyquist_compliant stays false until then. Still open at milestone close.
+- [Phase 4, still open] Notion "Update content" capability revocation did NOT reproduce a 403 in two independent live tests despite the dashboard toggle confirmed unchecked — root cause unknown (see full detail above). Phase 6's README warning was deliberately worded to avoid claiming this project reproduced the failure live. Carry into `/gsd-complete-milestone` audit.
+- [Phase 4, still open] NOTIFY-04's live "malformed post excluded, others still send" scenario was never exercised (see full detail above) — structural code-review coverage only. Carry into `/gsd-complete-milestone` audit.
 
 ## Deferred Items
 
@@ -154,6 +156,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-29T07:38:00.009Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-07-29T10:50:00.000Z
+Stopped at: Phase 6 complete — milestone v1.0 100% shipped (6/6 phases), ready for /gsd-complete-milestone
 Resume file: None
