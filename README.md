@@ -57,6 +57,7 @@ graph TD
 | **Vercel**         | Hosting   | Deploy from a GitHub fork without operating a separate server. |
 | **react-notion-x** | Renderer  | Render rich Notion blocks such as callouts, toggles, tables, and code blocks. |
 | **Cusdis**         | Comments  | Optional embedded comment widget. |
+| **Resend**         | Email     | Optional daily email digest for subscribers. |
 
 ## Features
 
@@ -68,6 +69,7 @@ graph TD
 - **Dark mode:** Built-in light/dark theme support.
 - **Responsive layout:** Desktop sidebars with a compact mobile layout.
 - **Optional comments:** Cusdis comments expand with the page instead of adding a nested scroll area.
+- **Optional email digest:** Subscribers get a daily digest of newly published posts by email.
 
 ## Vercel Deployment
 
