@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Subscribe Path** - A visitor can subscribe via a form that's fully gated, abuse-resistant, and enumeration-safe (completed 2026-07-27)
 - [x] **Phase 4: Notify Route** - The cron-only notify route sends one digest email per run listing every newly-public post, isolated per-post-section and compliant (completed 2026-07-27)
 - [x] **Phase 5: Production Cutover** - The cron entry goes live only after the backfill is confirmed complete in production, as its own deliberate deploy step (completed 2026-07-29)
-- [ ] **Phase 6: Documentation** - README.md/README_KR.md close every silent-failure gap a forker could hit configuring this feature
+- [x] **Phase 6: Documentation** - README.md/README_KR.md close every silent-failure gap a forker could hit configuring this feature (completed 2026-07-29)
 
 ## Phase Details
 
@@ -185,4 +185,4 @@ Phases execute in this dependency order: 1 → 2 → (3 parallel-safe at any poi
 | 3. Subscribe Path | 6/6 | Complete    | 2026-07-27 |
 | 4. Notify Route | 3/3 | Complete    | 2026-07-27 |
 | 5. Production Cutover | 2/2 | Complete    | 2026-07-29 |
-| 6. Documentation | 2/2 | In Progress|  |
+| 6. Documentation | 2/2 | Complete    | 2026-07-29 |
