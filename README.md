@@ -35,6 +35,13 @@ graph TD
         V -->|Optional comments| C[Cusdis]
     end
 
+    subgraph "Notifications"
+        CR[Vercel Cron] -->|Daily trigger| NR[Notify Route]
+        NR -->|Query unemailed posts| N
+        NR -->|Optional digest| RS[Resend]
+        RS -->|Email subscriber| SUB[Subscriber]
+    end
+
     subgraph "Visitors"
         U[Visitor] -->|Read posts| VC
         U -->|Write comments| C

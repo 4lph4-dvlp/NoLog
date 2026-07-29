@@ -35,6 +35,13 @@ graph TD
         V -->|선택 댓글| C[Cusdis]
     end
 
+    subgraph "알림"
+        CR[Vercel Cron] -->|일일 트리거| NR[알림 라우트]
+        NR -->|미발송 게시글 조회| N
+        NR -->|선택 다이제스트| RS[Resend]
+        RS -->|구독자에게 발송| SUB[구독자]
+    end
+
     subgraph "방문자"
         U[방문자] -->|게시글 읽기| VC
         U -->|댓글 작성| C
