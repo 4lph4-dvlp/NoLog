@@ -8,6 +8,22 @@ NoLog is a fork-and-deploy blog template: a Notion database as the sole datastor
 
 A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
 
+## Current State
+
+**Shipped: v1.0 — Email Subscription for New Posts** (2026-07-29). 6 phases, 17 plans, 20/20 v1 requirements complete. Full detail: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/MILESTONES.md`.
+
+Known override at close: Phase 5 (Production Cutover)'s automated verification-status check reported `missing` due to a stray `05-01-VERIFICATION.md` file shadowing the real, passing `05-VERIFICATION.md` in the tool's alphabetical file-picker — confirmed a tooling false-negative, not an actual gap. Full detail in `STATE.md` Deferred Items.
+
+## Next Milestone Goals
+
+Not yet scoped — run `/gsd-new-milestone` to define v1.1/v2.0. Candidates carried from `TODOS.md` and REQUIREMENTS.md's v2 section:
+- RSS feed (`/feed.xml`) as a second, zero-infra notification channel
+- On-site "new post" indicator/badge for return visitors
+- Lightweight non-blocking "you were just subscribed" notice (conditional on real abuse reports)
+- Pre-existing fail-open patterns found during codebase mapping (empty-string env var defaults, silent catch-alls, pagination gap) — unrelated to email feature, still untouched
+- Unvalidated dynamic route segment interpolated into the Notion API URL in `apps/web/src/app/post/[id]/page.tsx` (flagged post-Phase-1, never picked up — needs its own security review)
+- Adding a test framework to the repo (currently zero test infrastructure)
+
 ## Requirements
 
 ### Validated
@@ -98,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-29 after Phase 6 (milestone complete — all 6 phases shipped)*
+*Last updated: 2026-07-29 after v1.0 milestone complete (all 6 phases shipped, archived to `.planning/milestones/`)*

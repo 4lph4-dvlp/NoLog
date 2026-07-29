@@ -1,7 +1,7 @@
 ---
 phase: 04-notify-route
 verified: 2026-07-27T12:00:00Z
-status: overrides_accepted
+status: passed
 score: 13/16 truths verified
 behavior_unverified: 2
 overrides_applied: 2
