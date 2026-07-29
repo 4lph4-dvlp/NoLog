@@ -70,6 +70,8 @@ Apply the equivalent correction to `README_KR.md:96-97`.
 
 ### WR-01: Undocumented second gate — the public subscribe form uses only 2 of the "four" env vars
 
+**Status: RESOLVED (docs-only fix, 2026-07-29).** User chose to document the distinction rather than accept it as out of scope. Both `README.md` and `README_KR.md` now state, directly after the 4-var fenced block, that the public subscribe form activates independently on just `RESEND_API_KEY`+`RESEND_AUDIENCE_ID`, regardless of `CRON_SECRET`/`NOTIFY_PHYSICAL_ADDRESS` (commit `540ae0e`).
+
 **File:** `README.md:87,109`, `README_KR.md:87,109`
 
 **Issue:** The Email Notifications section frames configuration as all-or-nothing around four env vars: "leave `RESEND_API_KEY` unset and nothing in this section applies" (line 87) and "Leave these four unset and the notify route no-ops ... set all four to enable the daily digest" (line 109). In reality there are two independent, differently-scoped gates:
