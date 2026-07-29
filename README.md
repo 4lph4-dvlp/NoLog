@@ -108,6 +108,8 @@ NOTIFY_PHYSICAL_ADDRESS="Your Name, 123 Example St, Your City, Your Country"
 
 Leave these four unset and the notify route no-ops — nothing is sent; set all four to enable the daily digest. `NOTIFY_PHYSICAL_ADDRESS` is an env var, not a config field, precisely so a forker's real mailing address never enters a public fork's git history.
 
+**These four variables gate the digest cron only — the public subscribe form on your site is a separate switch.** The subscribe form goes live as soon as `RESEND_API_KEY` and `RESEND_AUDIENCE_ID` are both set, regardless of whether `CRON_SECRET` and `NOTIFY_PHYSICAL_ADDRESS` are configured. That means setting just two of the four vars already puts a live, public email-collecting form on your site, even though the daily digest itself stays off until all four are set.
+
 **Free-tier quota:** Resend's free plan includes up to 1,000 contacts/month for Audiences and Broadcasts, which is what this feature uses — that contact-list size is the actual ceiling on this feature. This is separate from the transactional Send API's 100 emails/day and 3,000/month allowance, which does not apply here, since the digest goes out through the Broadcast API against an Audience. See [Resend's pricing page](https://resend.com/docs/knowledge-base/what-is-resend-pricing) for current figures, since these are commercial terms that can change.
 
 ## Environment Variables

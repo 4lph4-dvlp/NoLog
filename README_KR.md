@@ -108,6 +108,8 @@ NOTIFY_PHYSICAL_ADDRESS="Your Name, 123 Example St, Your City, Your Country"
 
 이 네 값을 설정하지 않으면 notify route는 아무 동작도 하지 않습니다 — 아무것도 발송되지 않습니다. 네 값을 모두 설정하면 일일 다이제스트가 활성화됩니다. `NOTIFY_PHYSICAL_ADDRESS`가 설정 파일이 아니라 env var인 이유는, 실제 주소가 공개 저장소의 git 기록에 절대 남지 않도록 하기 위해서입니다.
 
+**이 네 변수는 다이제스트 cron만 제어하며, 사이트의 공개 구독 폼은 별개의 스위치입니다.** 구독 폼은 `RESEND_API_KEY`와 `RESEND_AUDIENCE_ID` 두 값만 설정되면 `CRON_SECRET`, `NOTIFY_PHYSICAL_ADDRESS` 설정 여부와 무관하게 즉시 활성화됩니다. 즉, 네 값 중 두 개만 설정해도 일일 다이제스트는 꺼진 상태 그대로지만, 사이트에는 이미 실제로 동작하는 공개 이메일 수집 폼이 노출됩니다.
+
 **무료 요금제 한도:** Resend 무료 플랜은 이 기능이 사용하는 Audience/Broadcast 기준으로 월 최대 1,000 contacts를 제공합니다 — 이 연락처 수가 이 기능의 실제 한도입니다. 이는 트랜잭션용 Send API의 하루 100통·월 3,000통 한도와는 별개이며, 이 다이제스트는 Audience 대상 Broadcast API로 발송되므로 해당 한도는 적용되지 않습니다. 최신 수치는 [Resend 요금제 안내](https://resend.com/docs/knowledge-base/what-is-resend-pricing)를 참고하세요.
 
 ## 환경 변수
