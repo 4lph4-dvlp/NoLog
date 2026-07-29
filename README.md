@@ -78,12 +78,17 @@ graph TD
 NoLog can email subscribers a daily digest whenever new posts go public. This feature is off by default — leave `RESEND_API_KEY` unset and nothing in this section applies.
 
 1. Add a Checkbox property named exactly `emailed` (lowercase) to the Notion database, via Notion's new-property menu.
+   **The name is case-sensitive and has no fallback key — plausible guesses like `Emailed` or `Email Sent` will not work, and the failure surfaces as `MissingEmailedPropertyError`.**
 2. Open the same integration's settings at [notion.so/my-integrations](https://www.notion.so/my-integrations) and enable the **Update content** capability — this is in addition to the read access granted in step 4 of Vercel Deployment above, not a re-do of that step.
+   **Skipping this does not turn the feature off — it fails silently: `markEmailed()` receives a 403 (`NotionCapabilityError`), the post is never marked as sent, and every subsequent cron run re-emails the same post to the entire audience.** This is the documented, expected failure mode per Notion's own capability model and this project's `NotionCapabilityError` class, not a claim this project has reproduced in live testing.
 3. Create a Resend account and verify a sending domain by adding the SPF and DKIM DNS records Resend issues, under **Domains** in the Resend dashboard. See [Resend's domain verification guide](https://resend.com/docs/dashboard/domains/introduction).
+   **Verification is mandatory: an unverified sending domain can accept a send request and report success while the email never reaches an inbox.** Verification is asynchronous — it can complete in minutes, but Resend marks a domain failed if it cannot detect the records within 72 hours.
 4. Create an **Audience** in the Resend dashboard and copy its Audience ID.
 5. Set `CONFIG.notify.fromAddress` in `apps/web/src/site.config.ts` to a `Name <user@your-verified-domain>` address on the domain verified in step 3. It lives in a committed config file, not an env var, because a sender identity is public branding that already appears in every message's From header — see that file's own comment for the full rationale.
+   **Leaving the template author's default sender identity here, or blanking it, makes the notify route no-op — the fail-closed gate treats an unset sender as unconfigured, and nothing sends.**
 6. Add the four environment variables listed below to the Vercel project.
 7. Deploy. The daily digest cron is declared by the `crons` entry in `apps/web/vercel.json`; the shipped schedule is `0 11 * * *` (11:00 UTC / 8 PM KST) — edit that entry's `schedule` field to retime it for your own audience.
+   **The cron fires only on Production deployments — a Preview or branch deployment never triggers it — and every schedule is evaluated in UTC, with no timezone or DST support.**
 
 ```bash
 RESEND_API_KEY="re_your_resend_api_key"
@@ -93,6 +98,8 @@ NOTIFY_PHYSICAL_ADDRESS="Your Name, 123 Example St, Your City, Your Country"
 ```
 
 Leave these four unset and the notify route no-ops — nothing is sent; set all four to enable the daily digest. `NOTIFY_PHYSICAL_ADDRESS` is an env var, not a config field, precisely so a forker's real mailing address never enters a public fork's git history.
+
+**Free-tier quota:** Resend's free plan includes up to 1,000 contacts/month for Audiences and Broadcasts, which is what this feature uses — that contact-list size is the actual ceiling on this feature. This is separate from the transactional Send API's 100 emails/day and 3,000/month allowance, which does not apply here, since the digest goes out through the Broadcast API against an Audience. See [Resend's pricing page](https://resend.com/docs/knowledge-base/what-is-resend-pricing) for current figures, since these are commercial terms that can change.
 
 ## Environment Variables
 

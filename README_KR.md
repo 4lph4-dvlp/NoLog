@@ -78,12 +78,17 @@ graph TD
 NoLog는 새 게시글이 공개될 때마다 구독자에게 일일 다이제스트 이메일을 보낼 수 있습니다. 이 기능은 기본적으로 꺼져 있습니다 — `RESEND_API_KEY`를 설정하지 않으면 이 섹션의 어떤 내용도 적용되지 않습니다.
 
 1. Notion 데이터베이스의 새 속성 메뉴에서 정확히 `emailed`(소문자)라는 이름의 Checkbox 속성을 추가합니다.
+   **이름은 대소문자를 구분하며 대체 키가 없습니다 — `Emailed`나 `Email Sent`처럼 그럴듯한 다른 이름은 동작하지 않으며, 실패 시 `MissingEmailedPropertyError`가 발생합니다.**
 2. 동일한 integration의 설정 페이지([notion.so/my-integrations](https://www.notion.so/my-integrations))에서 **Update content** capability를 활성화합니다 — 이는 위 Vercel 배포 4단계에서 부여한 읽기 권한과는 별개로 추가해야 하는 설정이며, 그 단계를 다시 하는 것이 아닙니다.
+   **이 단계를 건너뛰어도 기능이 꺼지지 않습니다 — 조용히 실패합니다: `markEmailed()`가 403(`NotionCapabilityError`)을 받고, 게시글이 발송 완료로 표시되지 않아 이후 모든 cron 실행마다 같은 게시글이 전체 구독자에게 반복 발송됩니다.** 이는 Notion의 공식 capability 모델과 이 프로젝트의 `NotionCapabilityError` 클래스에 근거한, 문서화된 예상 실패 모드이며, 이 프로젝트가 실제로 재현해 검증한 사실이라는 뜻은 아닙니다.
 3. Resend 계정을 만들고, Resend 대시보드의 **Domains**에서 Resend가 발급하는 SPF와 DKIM DNS 레코드를 추가하여 발신 도메인을 인증합니다. 자세한 절차는 [Resend의 도메인 인증 가이드](https://resend.com/docs/dashboard/domains/introduction)를 참고하세요.
+   **도메인 인증은 필수입니다 — 인증되지 않은 도메인도 발송 요청을 받아들이고 성공을 반환할 수 있지만, 실제로는 받은편지함에 아무것도 도착하지 않습니다.** 인증은 비동기적으로 진행되며 몇 분 만에 끝날 수도 있지만, Resend는 72시간 내에 레코드를 감지하지 못하면 해당 도메인을 실패로 표시합니다.
 4. Resend 대시보드에서 **Audience**를 생성하고 Audience ID를 복사합니다.
 5. `apps/web/src/site.config.ts`의 `CONFIG.notify.fromAddress`를 3단계에서 인증한 도메인을 사용하는 `이름 <user@your-verified-domain>` 형식의 주소로 설정합니다. 발신자 정보는 모든 메일의 From 헤더에 이미 공개되는 브랜딩 정보이므로 env var가 아니라 커밋되는 설정 파일에 있습니다 — 자세한 이유는 해당 파일의 주석을 참고하세요.
+   **템플릿 제작자의 기본 발신자 값을 그대로 두거나 비워두면 notify route가 아무 동작도 하지 않습니다 — fail-closed 게이트가 발신자가 설정되지 않은 것으로 간주하여 아무것도 발송하지 않습니다.**
 6. 아래 네 개의 환경 변수를 Vercel 프로젝트에 추가합니다.
 7. 배포합니다. 일일 다이제스트 cron은 `apps/web/vercel.json`의 `crons` 항목에 선언되어 있습니다. 기본 설정값은 `0 11 * * *`(UTC 11:00, 한국시간 오후 8시)이며, 본인의 구독자에 맞게 재설정하려면 해당 항목의 `schedule` 필드를 수정하세요.
+   **cron은 Production 배포에서만 실행됩니다 — Preview나 branch 배포에서는 절대 실행되지 않습니다 — 그리고 모든 스케줄은 시간대나 DST 지원 없이 UTC 기준으로 평가됩니다.**
 
 ```bash
 RESEND_API_KEY="re_your_resend_api_key"
@@ -93,6 +98,8 @@ NOTIFY_PHYSICAL_ADDRESS="Your Name, 123 Example St, Your City, Your Country"
 ```
 
 이 네 값을 설정하지 않으면 notify route는 아무 동작도 하지 않습니다 — 아무것도 발송되지 않습니다. 네 값을 모두 설정하면 일일 다이제스트가 활성화됩니다. `NOTIFY_PHYSICAL_ADDRESS`가 설정 파일이 아니라 env var인 이유는, 실제 주소가 공개 저장소의 git 기록에 절대 남지 않도록 하기 위해서입니다.
+
+**무료 요금제 한도:** Resend 무료 플랜은 이 기능이 사용하는 Audience/Broadcast 기준으로 월 최대 1,000 contacts를 제공합니다 — 이 연락처 수가 이 기능의 실제 한도입니다. 이는 트랜잭션용 Send API의 하루 100통·월 3,000통 한도와는 별개이며, 이 다이제스트는 Audience 대상 Broadcast API로 발송되므로 해당 한도는 적용되지 않습니다. 최신 수치는 [Resend 요금제 안내](https://resend.com/docs/knowledge-base/what-is-resend-pricing)를 참고하세요.
 
 ## 환경 변수
 
