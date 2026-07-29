@@ -41,9 +41,9 @@ Requirements for the email subscription feature. Derived from the approved `/aut
 
 ### Documentation (DOCS)
 
-- [ ] **DOCS-01**: README.md and README_KR.md document the new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`), the `emailed` Notion property, and the Notion "Update content" capability grant as its own explicit setup step, separate from setting env vars
-- [ ] **DOCS-02**: README.md and README_KR.md document Resend domain/SPF/DKIM verification as a mandatory setup step (not optional), and state the *correct* Broadcast/Audience quota (up to 1,000 contacts/month on the free tier) rather than the transactional Send API cap
-- [ ] **DOCS-03**: README.md and README_KR.md state that the cron only fires on Production deployments, evaluated in UTC
+- [x] **DOCS-01**: README.md and README_KR.md document the new env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, `CRON_SECRET`), the `emailed` Notion property, and the Notion "Update content" capability grant as its own explicit setup step, separate from setting env vars
+- [x] **DOCS-02**: README.md and README_KR.md document Resend domain/SPF/DKIM verification as a mandatory setup step (not optional), and state the *correct* Broadcast/Audience quota (up to 1,000 contacts/month on the free tier) rather than the transactional Send API cap
+- [x] **DOCS-03**: README.md and README_KR.md state that the cron only fires on Production deployments, evaluated in UTC
 
 ## v2 Requirements
 
@@ -96,9 +96,9 @@ Which phases cover which requirements. Populated from `.planning/research/SUMMAR
 | SEC-02 | Phase 4: Notify Route | Complete |
 | SEC-03 | Phase 3: Subscribe Path | Complete |
 | OPS-01 | Phase 5: Production Cutover | Complete |
-| DOCS-01 | Phase 6: Documentation | Pending |
-| DOCS-02 | Phase 6: Documentation | Pending |
-| DOCS-03 | Phase 6: Documentation | Pending |
+| DOCS-01 | Phase 6: Documentation | Complete |
+| DOCS-02 | Phase 6: Documentation | Complete |
+| DOCS-03 | Phase 6: Documentation | Complete |
 
 **Coverage:**
 

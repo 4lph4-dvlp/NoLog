@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 6
 current_phase_name: Documentation
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-07-28T18:11:33.025Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-07-29T07:31:14.229Z"
 last_activity: 2026-07-29
-last_activity_desc: Phase 05 complete, transitioned to Phase 6
+last_activity_desc: Phase 6 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 17
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 6 — documentation
+**Current focus:** Phase 6 — Documentation
 
 ## Current Position
 
-Phase: 6 — Documentation
-Plan: Not started
+Phase: 6 (Documentation) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-29 — Phase 05 complete, transitioned to Phase 6
+Last activity: 2026-07-29 — Phase 6 execution started
 
-Progress: [██████████] 100%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Progress: [██████████] 100%
 | Phase 04 P02 | ~10min | 2 tasks | 3 files |
 | Phase 05 P01 | ~10min | 2 tasks | 2 files |
 | Phase 05 P02 | ~15min | 3 tasks | 1 files |
+| Phase 06 P01 | 20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 5 Plan 2: Task 1 go-live gate — operator selected proceed with the default 0 11 * * * schedule after all five P1-P5 facts and D-04's costly-undo rating were read back
 - [Phase ?]: Phase 5 Plan 2: Task 3 manual-trigger response body not captured verbatim by operator (only Vercel's trace/metadata view pasted, not literal JSON) — recorded as a coverage status:gap on that specific sub-fact per 05-01-VERIFICATION.md's P5 transparency precedent; overall result (200, authenticated, no email sent) solidly established by corroborating evidence
 - [Phase ?]: Phase 5 Plan 2: OPS-01 fully closed — vercel.json cron entry added, deployed, and dashboard-confirmed registered, strictly after the confirmed-empty backfill (commit 73a4d19, strict descendant of 6200190)
+- [Phase ?]: Phase 6 Plan 1: step-2 Notion capability warning sourced to Notion's documented model and the shipped NotionCapabilityError class, not phrased as a failure this project reproduced live (Phase 4's two revocation tests remain unreproduced, still open in STATE.md)
+- [Phase ?]: Phase 6 Plan 1: CONFIG.notify.fromAddress documented as its own README step despite not being an env var — a forker who sets all 4 env vars but leaves the default fromAddress would otherwise still fail closed with no README explanation
+- [Phase ?]: Phase 6 Plan 1: free-tier quota note avoids the word 'unlimited'/'무제한' entirely, stating the 1,000-contacts/month figure as the actual ceiling rather than any no-ceiling framing
 
 ### Pending Todos
 
@@ -146,6 +150,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-28T17:36:09.136Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-documentation/06-CONTEXT.md
+Last session: 2026-07-29T07:31:14.205Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: None
