@@ -1,11 +1,12 @@
 ---
 phase: 7
 slug: content-failure-isolation-live-diagnosis
-status: draft
+status: complete
 captured_environment: production
-captured_at:
-deployment_id:
-verdict:
+captured_at: 2026-08-09T16:43:00Z/2026-08-09T16:51:26Z
+deployment_id: dpl_DQWk6fxhJDQfUAHA9bTPMcAZ9bMz
+verdict: "Candidate 2 confirmed — notion-client sends no User-Agent, so Node's default `user-agent: node` is answered by Cloudflare with 403 + an HTML challenge page in front of a loadPageChunk endpoint that returns 200 to a browser-shaped request from the same IP. Five other candidates eliminated on pasted observations."
+closeout_redeploy: outstanding
 ---
 
 # Phase 7 — Live Production Evidence
@@ -27,7 +28,7 @@ way is marked `inconclusive` with the missing observation named — never forced
 | Item | Value |
 |------|-------|
 | Vercel environment (must read `Production` — D-09) | `production` (read from every request-log entry's Deployment Information block) |
-| Capture timestamp | 2026-08-10, 16:43–16:51 UTC (01:43–01:51 KST, Aug 11 local) |
+| Capture timestamp | **2026-08-09 16:43–16:51 UTC** = 2026-08-10 01:43–01:51 KST (operator is UTC+9). Both clocks recorded because the Vercel console log stamps UTC while the request-detail view stamps the viewer's local zone — reading one as the other shifts the date by a day |
 | Deployment ID / URL captured against | `dpl_DQWk6fxhJDQfUAHA9bTPMcAZ9bMz` — alias `4lph4-bl0g-6bmp43n1j-4lph4.vercel.app`, domain `4lph4-bl0g.vercel.app`, branch `main` |
 | Git commit SHA deployed | `a6becd8` (`docs(07-03): add 07-EVIDENCE.md skeleton with six-candidate table`) |
 | `NOTION_DEBUG_DIAGNOSTICS` set to `1` at capture time? | Yes — proven behaviourally: the authenticated route call returned a diagnostic payload, which is unreachable unless the gate is open |
@@ -183,12 +184,43 @@ Pasted from the dashboard. These are **request-level** entries, not console outp
 
 ### Vercel Production **console** output — `[DiagnosePage]` / `[PostPage:recordMap]` / `[PostPage:chrome]` / `[PostPage:post]`
 
+Pasted verbatim from Vercel Dashboard → Logs, Environment = production. Timestamps are UTC.
+Repetitive identical lines are elided with an explicit count; no line is paraphrased.
+
 ```
-<paste here>
+2026-08-09 16:51:26.102 [error] [PostPage:recordMap] {"name":"FetchError","message":"[POST] \"https://www.notion.so/api/v3/loadPageChunk\": 403 Forbidden","pageIdShape":"dashed-uuid","pageIdLength":36,"status":403,"contentType":"text/html; charset=UTF-8","bodyExcerpt":"<!DOCTYPE html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 7]>    <html class=\"no-js ie7 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 8]>    <html class=\"no-","viaProbe":false}
+
+  … 5 further byte-identical [PostPage:recordMap] lines at
+    16:51:25.767, 16:51:25.255, 16:51:24.762, 16:51:24.254, 16:51:23.698
+    (6 lines total, one per production render of /post/3702c61e-…)
+
+2026-08-09 16:49:27.094 [error] [DiagnosePage] {"name":"FetchError","message":"[POST] \"https://www.notion.so/api/v3/loadPageChunk\": 403 Forbidden","pageIdShape":"dashed-uuid","pageIdLength":36,"status":403,"contentType":"text/html; charset=UTF-8","bodyExcerpt":"<!DOCTYPE html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 7]>    <html class=\"no-js ie7 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 8]>    <html class=\"no-","viaProbe":false}
+
+  … 2 further byte-identical [DiagnosePage] lines at 16:49:26.767 and 16:49:26.464
+    (3 lines total, one per authenticated debug-route call)
+
+2026-08-09 16:43:05.253 [error] [DiagnosePage] Route called while diagnostics are off, unconfigured, or unauthorized. Further occurrences in this instance are not logged.
 ```
 
-> If a prefix has no matches, record `no matches in the retention window` for it rather than leaving
-> the block empty — an absence is itself an observation.
+**`[PostPage:chrome]` — no matches in the retention window.**
+**`[PostPage:post]` — no matches in the retention window.**
+
+**This block closes ROADMAP SC#1's live half, and it does so in the exact shape SC#1 demands.** A real
+failing request on the deployed site produced a production log line naming **one** of the three fetches —
+`[PostPage:recordMap]` — and the operator can point at exactly that one. The other two legs are absent, not
+merged: `[PostPage:chrome]` and `[PostPage:post]` produced nothing, because those legs did not fail. Before
+this phase, all three shared the single line `"[PostPage] Failed to fetch page recordMap or categories:"`
+and no such distinction was possible.
+
+**Two behaviours confirmed live that were only structural before:**
+
+- **The gate-rejection latch works.** The 16:43 line appears **once** for the **two** unauthorised requests
+  recorded in the request log at 16:43:04.44 and 16:43:05.41. That is `gateRejectionLogged`, the
+  module-scope one-shot latch, bounding log volume exactly as designed — and the 404 response contract was
+  identical for both, since the latch wraps only the log, not the return.
+- **`viaProbe: false` on every diagnostic.** The status, content-type and body excerpt all came off the
+  thrown `FetchError` itself. D-04's raw-fetch fallback probe was implemented, deployed, and never needed —
+  it cost one extra Notion request on exactly zero occasions.
 
 ---
 
@@ -333,12 +365,20 @@ outcome with the reason, rather than closing the phase on a disappearance.
 
 | Step | Done | Timestamp |
 |------|------|-----------|
-| `NOTION_DEBUG_DIAGNOSTICS` removed from Production | _pending_ | _pending_ |
-| `NOTION_DEBUG_ROUTE_SECRET` removed from Production | _pending_ | _pending_ |
-| Production redeployed so running instances lost both vars | _pending_ | _pending_ |
+| `NOTION_DEBUG_DIAGNOSTICS` removed from Production | ✅ yes | 2026-08-10 02:05 KST = **2026-08-09 17:05 UTC** |
+| `NOTION_DEBUG_ROUTE_SECRET` removed from Production | ✅ yes | 2026-08-10 02:05 KST = **2026-08-09 17:05 UTC** |
+| Production redeployed so running instances lost both vars | ⏳ **outstanding** | — |
 
-> The redeploy timestamp above is the point Phase 9's >1h idle verification window must be measured
-> from (ROADMAP parallelization caution).
+> **The redeploy is not optional and is not yet done.** Removing a variable in Vercel's dashboard changes
+> what the *next* deployment receives; the currently-running instances keep the environment they booted
+> with. Until Production is redeployed, `/api/diagnose-page` remains live to anyone holding the (now
+> un-retrievable, but not un-leaked) secret. This is threat **T-07-13**, whose recorded mitigation is
+> precisely "step 9 removes both variables **and redeploys** as a mandatory closeout". Exposure is small —
+> the secret was high-entropy, short-lived, and never committed — but the mitigation is only half-applied
+> until the redeploy lands.
+>
+> **Phase 9 dependency:** the >1h idle verification window must be measured from that redeploy's
+> completion, not from the 17:05 UTC variable removal (ROADMAP parallelization caution).
 
 ---
 
