@@ -116,13 +116,30 @@ export async function describeFetchFailure(
     return JSON.stringify(payload);
   }
 
+  // 07-REVIEW F-01: validate BEFORE any outbound request, and refuse rather
+  // than fall back to the raw value. `describeFetchFailure` is called from
+  // `post/[id]/page.tsx`'s content leg with the unvalidated dynamic route
+  // segment, so a request to `/post/<arbitrary string>` reaches here. A
+  // previous `parsePageId(pageId) ?? pageId` fallback would have placed that
+  // caller-controlled string into the body of a POST to Notion. The
+  // destination URL is a fixed constant so this was never redirectable, but
+  // "validate first, reject on failure" is the rule the sibling
+  // `api/diagnose-page/route.ts` already follows (it answers 400) and this
+  // path must not be the one place that opts out of it.
+  const probePageId = parsePageId(pageId);
+  if (!probePageId) {
+    payload.probeSkipped = "unparseable_page_id";
+    payload.viaProbe = false;
+    return JSON.stringify(payload);
+  }
+
   // D-04 raw-fetch probe: fires exactly once, only for a non-FetchError-shape
-  // failure (an invalid page id, notion-client's own "Notion page not found"
-  // throw, or a FetchError with no attached Response), and only when the
-  // caller opts in via allowProbe. Replicates notion-client's own
-  // loadPageChunk request shape. Never places a request header, cookie, or
-  // env-var value into the returned payload — the excerpt is sourced
-  // exclusively from Notion's own HTTP response body.
+  // failure (notion-client's own "Notion page not found" throw, or a
+  // FetchError with no attached Response), and only when the caller opts in
+  // via allowProbe. Replicates notion-client's own loadPageChunk request
+  // shape. Never places a request header, cookie, or env-var value into the
+  // returned payload — the excerpt is sourced exclusively from Notion's own
+  // HTTP response body.
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (process.env.NOTION_TOKEN_V2) {
@@ -132,7 +149,7 @@ export async function describeFetchFailure(
       method: "POST",
       headers,
       body: JSON.stringify({
-        pageId: parsePageId(pageId) ?? pageId,
+        pageId: probePageId,
         limit: 30,
         chunkNumber: 0,
         cursor: { stack: [] },
