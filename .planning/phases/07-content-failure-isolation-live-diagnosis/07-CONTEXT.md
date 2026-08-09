@@ -23,7 +23,9 @@ Three things are delivered:
 ### Diagnostic Logging
 
 - **D-01:** The leg-naming log is permanent and ungated. Every failure path records which of the fetches failed, using the repo's existing bracket-prefix convention (e.g. `[PostPage:recordMap]`, `[PostPage:chrome]`) so the three legs are never reported by one identical line. This is CONT-01 itself, not a debug aid.
-- **D-02:** The *deep* diagnostics (HTTP status, `content-type`, response-body excerpt) are permanently shipped in the code but **gated behind an explicit debug env var that is unset by default**. Matches the repo's standing "unset env var ⇒ feature inert" convention (Cusdis, Resend). Chosen over a temporary log so the same instrumentation is reusable if the symptom recurs after Phase 8, without a re-deploy to re-add it. Accepted cost: a permanent maintenance surface that is normally dormant. — **Reversibility:** reversible — removing it is a local deletion in `post/[id]/page.tsx` / `lib/notion-x.ts` with no dependent callers.
+- **D-02:** The *deep* diagnostics (HTTP status, `content-type`, response-body excerpt) ship gated behind an explicit debug env var that is unset by default. Matches the repo's standing "unset env var ⇒ feature inert" convention (Cusdis, Resend). — **Reversibility:** reversible — removing it is a local deletion in `post/[id]/page.tsx` / `lib/notion-x.ts` with no dependent callers.
+
+  **⚠ REVISED 2026-08-10 by the operator — permanent ⇒ temporary.** As originally decided, the gated diagnostics were to ship **permanently** (dormant unless enabled), on the rationale that they would be reusable if the symptom recurred. The operator overrode this after weighing it against the project's Core Value: NoLog exists so a forker can go from empty Notion database to live blog with minimal setup, and a permanent pair of diagnostic env vars — which a forker will never knowingly use — is env-var fatigue that a forker pays for and never benefits from. **The diagnostic instrumentation is therefore temporary and MUST be removed once the cause is established.** See D-19 for the exact removal scope. Net new env vars a forker must ever know about after this milestone: **zero**.
 - **D-03:** When the gate is on, the log records: HTTP status, `content-type`, the **first 200 characters** of the response body, the thrown error's `name`/`message`, and the shape of the page id that was passed in. This is the exact combination `PITFALLS.md` Pitfall 5 specifies for discriminating the six candidate causes — `content-type: text/html` points at a Cloudflare/challenge page, a clean JSON `401`/`404` points at sharing state. 1000 characters was considered and rejected (volume + slight chance of incidental personal data); status-and-content-type-only was rejected because it cannot satisfy SC#2's "response-body excerpt" requirement.
 - **D-04:** If the error thrown by `notion-client` does not carry the raw HTTP response, the code falls back to **one** raw `fetch` probe against the same endpoint — but only when the debug gate is on, and only on the failing request. Evidence capture must not depend on what the library happens to surface. Accepted cost: one extra Notion call per failing request while the gate is on.
 - **D-05:** Log format is bracket prefix + single-line JSON payload (`[PostPage:recordMap] {"status":…,"contentType":…,"bodyExcerpt":…}`). Keeps the repo's `[Context]` grep-ability for the Vercel dashboard while staying parseable. Pure JSON and pure prose were both rejected.
@@ -53,6 +55,21 @@ Three things are delivered:
 - **D-16:** **No `error.tsx` is added.** If nothing throws, an error boundary is an unreachable safety net, and `PITFALLS.md` Pitfall 6 warns specifically against adding one that is then trusted without a verified test against a live ISR regeneration failure.
 - **D-17:** The "no leg throws uncaught" guarantee is enforced as an **explicit phase-verification checklist item** — confirm every `await` in `post/[id]/page.tsx` sits inside a catch, with a comment recording why. Matches the repo's existing mechanism (code review + comments); a lint/type rule was rejected because no standard rule targets this and the repo has no lint/test infrastructure for a custom one, and a never-throws wrapper helper was rejected because it would blur the per-leg log distinction D-01 depends on.
 - **D-18:** If the catch decomposition resolves the symptom outright (i.e. the failing leg was categories or related posts), the six-candidate verdict is **still recorded in full** in `07-EVIDENCE.md` before the phase closes. Closing on "the symptom stopped appearing" without a recorded cause is exactly the CR-01 failure mode D-08 exists to prevent, and `PITFALLS.md` Pitfall 15 warns the same disappearance can come from a warm cache or one lucky request.
+
+### Diagnostic Teardown (added 2026-08-10)
+
+- **D-19:** **Every diagnosis-only surface introduced by this phase MUST be removed once the cause is established.** This is a committed deliverable, not a deferred idea — it is the operator's condition for having accepted the instrumentation at all (see D-02's revision note). Removal scope, exhaustively:
+  - The Production env vars `NOTION_DEBUG_DIAGNOSTICS` and `NOTION_DEBUG_ROUTE_SECRET` (already required at capture closeout by D-08's `must_haves`).
+  - `apps/web/src/app/api/diagnose-page/route.ts` — the entire route.
+  - `isDiagnosticsEnabled()` and `describeFetchFailure()` in `apps/web/src/lib/notion-x.ts`, including the D-04 raw-fetch probe, and every call site of them.
+  - Any README / documentation mention of the two env vars, if one was added.
+
+  **Explicitly NOT removed — these are requirements, not diagnostics, and need no env var:**
+  - The leg-naming log lines `[PostPage:recordMap]` / `[PostPage:chrome]` / `[PostPage:post]` (D-01). This is CONT-01 itself, is ungated, and costs a forker nothing.
+  - The per-concern catch decomposition (D-11 / CONT-04).
+  - `classifyMissingPost` + `PostUnavailable` (D-12 / SC#4).
+
+  **Where it lands:** the teardown belongs to Phase 8, whose fix is designed against this phase's evidence — removing the instrumentation in the same pass that ships the fix means one deploy, not two, and the ISR cache is invalidated once. If Phase 8 is deferred, the teardown is NOT deferred with it: it ships on its own. — **Reversibility:** reversible — pure deletion; the git history retains the instrumentation if it is ever needed again, which was the original rationale for keeping it and is preserved without any cost to forkers.
 
 ### Claude's Discretion
 
@@ -131,7 +148,7 @@ The active `default` template's `DefaultPostPage` (`apps/web/src/templates/defau
 - **Wording split for "no content yet" vs "fetch failed"** — CONT-05, Phase 8 (D-14).
 - **Caching / revalidation wrapper for `getPageRecordMap()`** — already tracked as CONT-F02 in REQUIREMENTS.md's v2 section; needs its own design pass since `notion-client` cannot take `next: { revalidate, tags }`.
 - **Validating the dynamic route segment before it reaches the Notion API URL** — long-standing open security item, explicitly declined for this milestone in REQUIREMENTS.md's Out of Scope, still tracked in `PROJECT.md`.
-- **Removing the debug route added by D-06** — planned for a later phase once evidence capture is complete.
+- ~~**Removing the debug route added by D-06** — planned for a later phase once evidence capture is complete.~~ **Promoted out of "deferred" on 2026-08-10 — this is now a committed deliverable, D-19.** A deferred idea can quietly never happen; the operator's objection was specifically that permanent diagnostic env vars tax every forker, so the removal is tracked as a decision, not a wish.
 
 </deferred>
 
