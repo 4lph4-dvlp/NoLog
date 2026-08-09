@@ -48,12 +48,12 @@ Full phase goals, success criteria, and plan-level detail archived to [`mileston
   3. On the deployed site, a post whose categories or related-posts fetch fails still renders its body. The body no longer disappears because of a chrome-level failure.
   4. A post that exists and is public never responds 404 or a full error page as a result of a content-fetch failure — `notFound()` is still reached only for a genuinely missing/non-public post, and no fetch leg is left to throw uncaught out of the render.
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 07-01-PLAN.md — Gated deep diagnostics + secret-gated `/api/diagnose-page` route (tracer), then the per-leg catch decomposition of `post/[id]/page.tsx` (SC#1, SC#3)
+- [x] 07-01-PLAN.md — Gated deep diagnostics + secret-gated `/api/diagnose-page` route (tracer), then the per-leg catch decomposition of `post/[id]/page.tsx` (SC#1, SC#3)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -160,7 +160,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 4. Notify Route | v1.0 | 3/3 | Complete | 2026-07-27 |
 | 5. Production Cutover | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
-| 7. Content Failure Isolation & Live Diagnosis | v1.1 | 0/TBD | Not started | - |
+| 7. Content Failure Isolation & Live Diagnosis | v1.1 | 1/3 | In Progress|  |
 | 8. Content Rendering Fix | v1.1 | 0/TBD | Not started | - |
 | 9. Thumbnail Freshness | v1.1 | 0/TBD | Not started | - |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |

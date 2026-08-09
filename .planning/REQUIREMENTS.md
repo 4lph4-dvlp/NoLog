@@ -24,10 +24,10 @@ Decisions made at requirement-scoping time. Downstream planning must not re-liti
 
 ### Content Rendering (CONT)
 
-- [ ] **CONT-01**: Operator can tell, from production logs, which of the three data fetches in `post/[id]/page.tsx` (`getPageRecordMap`, `getCategories`, related-posts `getPosts`) actually failed — the current single combined try/catch reports all three identically and makes diagnosis impossible
+- [x] **CONT-01**: Operator can tell, from production logs, which of the three data fetches in `post/[id]/page.tsx` (`getPageRecordMap`, `getCategories`, related-posts `getPosts`) actually failed — the current single combined try/catch reports all three identically and makes diagnosis impossible
 - [ ] **CONT-02**: Operator has captured the real failure evidence from the deployed site (HTTP status + response body from the failing call), sufficient to discriminate among the candidate causes in `PITFALLS.md`
 - [ ] **CONT-03**: Reader sees the post's Notion content rendered on first visit, for every post published to the web — the "Content could not be loaded." fallback no longer appears for a healthy post
-- [ ] **CONT-04**: A failure to load categories or related posts no longer prevents the post body from rendering
+- [x] **CONT-04**: A failure to load categories or related posts no longer prevents the post body from rendering
 - [ ] **CONT-05**: Reader sees distinct wording for "this post has no content yet" versus "the content could not be fetched" — the two states are no longer collapsed into one message
 
 ### Thumbnail Freshness (IMG)
@@ -101,10 +101,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONT-01 | Phase 7 | Pending |
+| CONT-01 | Phase 7 | Complete |
 | CONT-02 | Phase 7 | Pending |
 | CONT-03 | Phase 8 | Pending |
-| CONT-04 | Phase 7 | Pending |
+| CONT-04 | Phase 7 | Complete |
 | CONT-05 | Phase 8 | Pending |
 | IMG-01 | Phase 9 | Pending |
 | IMG-02 | Phase 9 | Pending |
@@ -128,6 +128,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | A11Y-05 | Phase 10 | Pending |
 
 **Coverage:**
+
 - v1.1 requirements: 25 total
 - Mapped to phases: 25 ✓
 - Unmapped: 0
