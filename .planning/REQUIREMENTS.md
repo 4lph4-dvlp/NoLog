@@ -101,36 +101,41 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONT-01 | TBD | Pending |
-| CONT-02 | TBD | Pending |
-| CONT-03 | TBD | Pending |
-| CONT-04 | TBD | Pending |
-| CONT-05 | TBD | Pending |
-| IMG-01 | TBD | Pending |
-| IMG-02 | TBD | Pending |
-| IMG-03 | TBD | Pending |
-| IMG-04 | TBD | Pending |
-| IMG-05 | TBD | Pending |
-| SIDE-01 | TBD | Pending |
-| SIDE-02 | TBD | Pending |
-| SIDE-03 | TBD | Pending |
-| SIDE-04 | TBD | Pending |
-| SIDE-05 | TBD | Pending |
-| SIDE-06 | TBD | Pending |
-| SIDE-07 | TBD | Pending |
-| SIDE-08 | TBD | Pending |
-| SIDE-09 | TBD | Pending |
-| SIDE-10 | TBD | Pending |
-| A11Y-01 | TBD | Pending |
-| A11Y-02 | TBD | Pending |
-| A11Y-03 | TBD | Pending |
-| A11Y-04 | TBD | Pending |
-| A11Y-05 | TBD | Pending |
+| CONT-01 | Phase 7 | Pending |
+| CONT-02 | Phase 7 | Pending |
+| CONT-03 | Phase 8 | Pending |
+| CONT-04 | Phase 7 | Pending |
+| CONT-05 | Phase 8 | Pending |
+| IMG-01 | Phase 9 | Pending |
+| IMG-02 | Phase 9 | Pending |
+| IMG-03 | Phase 9 | Pending |
+| IMG-04 | Phase 9 | Pending |
+| IMG-05 | Phase 9 | Pending |
+| SIDE-01 | Phase 10 | Pending |
+| SIDE-02 | Phase 10 | Pending |
+| SIDE-03 | Phase 10 | Pending |
+| SIDE-04 | Phase 10 | Pending |
+| SIDE-05 | Phase 10 | Pending |
+| SIDE-06 | Phase 10 | Pending |
+| SIDE-07 | Phase 10 | Pending |
+| SIDE-08 | Phase 10 | Pending |
+| SIDE-09 | Phase 10 | Pending |
+| SIDE-10 | Phase 10 | Pending |
+| A11Y-01 | Phase 10 | Pending |
+| A11Y-02 | Phase 10 | Pending |
+| A11Y-03 | Phase 10 | Pending |
+| A11Y-04 | Phase 10 | Pending |
+| A11Y-05 | Phase 10 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 25 total
-- Mapped to phases: 0 (roadmap not yet created)
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25 ✓
+- Unmapped: 0
+- No requirement is mapped to more than one phase.
+
+Per-phase totals: Phase 7 → 3 (CONT-01/02/04), Phase 8 → 2 (CONT-03/05), Phase 9 → 5 (IMG-01…05), Phase 10 → 15 (SIDE-01…10, A11Y-01…05).
+
+**Phase-boundary note (D-08):** CONT-01/CONT-02 sit in Phase 7 and CONT-03 sits in Phase 8 deliberately — Phase 8 cannot be planned until Phase 7's live production evidence exists. CONT-04 is mapped to Phase 7 rather than Phase 8 because the try/catch decomposition that satisfies CONT-01 is the same code change that satisfies CONT-04.
 
 ## Verification Notes
 
@@ -143,4 +148,4 @@ Carried from `PITFALLS.md` — two of the three defects reproduce **only on the 
 
 ---
 *Requirements defined: 2026-08-09*
-*Last updated: 2026-08-09 after initial definition*
+*Last updated: 2026-08-09 after roadmap creation (Phases 7-10)*

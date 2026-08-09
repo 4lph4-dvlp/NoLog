@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
 status: planning
-last_updated: "2026-08-09T06:06:12.109Z"
+last_updated: "2026-08-09T18:15:00.000Z"
 last_activity: 2026-08-09
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Milestone v1.0 complete (all 6 phases shipped) — ready for `/gsd-complete-milestone`
+**Current focus:** Milestone v1.1 roadmapped — 4 phases (7-10), 25/25 requirements mapped. Next: plan Phase 7.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 7 — Content Failure Isolation & Live Diagnosis (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-08-09 — Milestone v1.1 started
+Status: Roadmap complete, phase not yet planned
+Progress: [----------] 0% (0/4 v1.1 phases)
+Last activity: 2026-08-09 — v1.1 roadmap created (Phases 7-10)
 
 ## Performance Metrics
 
@@ -82,6 +83,13 @@ Last activity: 2026-08-09 — Milestone v1.1 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [v1.1 roadmap] Phase numbering continues from v1.0 (which ended at Phase 6) — v1.1 is Phases 7-10, never restarted at 1.
+- [v1.1 roadmap] The content-rendering defect is split across TWO phases, against research's 3-phase suggestion. Phase 7 (CONT-01/02/04) delivers failure isolation + live production evidence; Phase 8 (CONT-03/05) delivers the fix. Rationale: `/gsd-plan-phase` plans a whole phase up front, so a single combined phase would produce a PLAN.md that pre-commits to the MEDIUM-confidence react-notion-x #710 / `User-Agent` hypothesis before any evidence exists — exactly the CR-01 failure mode D-08 exists to prevent. The phase boundary is the D-08 gate; it is structural, not developer discipline. Precedent: v1.0's Phase 5 was kept standalone for the same reason (backfill-before-cron ordering).
+- [v1.1 roadmap] CONT-04 mapped to Phase 7, not Phase 8: the try/catch decomposition satisfying CONT-01 is the same code change that satisfies CONT-04. Consequence — Phase 7 may resolve the reported symptom outright if the real failing leg is categories or related-posts. That is a legitimate phase outcome, not scope leak.
+- [v1.1 roadmap] Sidebar work kept as ONE phase (Phase 10, 15 requirements) rather than split into collapse-mechanism + auto-collapse/persistence, or into sidebar + a11y. D-02's tri-state (`null | true | false`) is a single atomic state model — a boolean-first split would mean designing it twice — and the a11y requirements live inside the same components and transition CSS, so a follow-on a11y phase would be pure rework on a knowingly-inaccessible ship.
+- [v1.1 roadmap] Ordering (7 → 8 → 9 → 10) is by risk and user impact, NOT dependency: ARCHITECTURE.md verified the three defects are file-disjoint. Only 8-depends-on-7 is a real gate. Phase 9 is safely concurrent with 7-8; Phase 10 with all. Caution recorded in ROADMAP: every deploy invalidates the ISR cache, so parallel phases reset each other's verification windows (Phase 9 needs an uninterrupted >1h idle gap; Phase 7 needs a non-freshly-warmed cache).
+- [v1.1 roadmap] D-03's 1280px threshold measurement (real content-column width at 1024/1152/1280/1366) is a planning-step activity inside Phase 10, not its own phase.
+- [v1.1 roadmap] D-06 / SIDE-10 recorded as an explicit stop-ship success criterion on Phase 10, not a review note: making `Layout.tsx` a client component while it still renders `SubscribeSection` moves a SECRET env gate (`RESEND_API_KEY`) into client code and silently disables the subscribe form for every configured forker.
 - Roadmap: Approach B (`/api/notify-subscribers` + Vercel Cron once/day) locked in; Resend (Audiences + Broadcast API) chosen over Buttondown.
 - Roadmap: Phase 5 (Production Cutover) kept as its own phase despite mapping to a single requirement (OPS-01) — deliberate, per research: enforces backfill-before-cron ordering via phase/deploy structure rather than developer discipline.
 - Roadmap: SEC-02 (fail-closed for both `/api/subscribe` and `/api/notify-subscribers`) assigned solely to Phase 4, since that's the first point both routes exist to jointly verify the requirement — avoids a two-phase requirement mapping.
@@ -151,10 +159,12 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-29T10:50:00.000Z
-Stopped at: Phase 6 complete — milestone v1.0 100% shipped (6/6 phases), ready for /gsd-complete-milestone
+Last session: 2026-08-09T18:15:00.000Z
+Stopped at: v1.1 roadmap created — Phases 7-10 written to ROADMAP.md, 25/25 requirements mapped in REQUIREMENTS.md traceability. No phase planned or executed yet.
 Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first v1.1 phase with `/gsd-plan-phase 7`
+- Phase 7 is a diagnostic phase: its real deliverable is captured live production evidence (CONT-02). Phase 8 must not be planned before that evidence exists (D-08).
+- Two v1.1 phases cannot be verified locally: `next dev` has no ISR, so Phases 8 and 9 sign off only against the deployed site (PITFALLS 12/13).
