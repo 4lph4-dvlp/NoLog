@@ -48,7 +48,7 @@ Full phase goals, success criteria, and plan-level detail archived to [`mileston
   3. On the deployed site, a post whose categories or related-posts fetch fails still renders its body. The body no longer disappears because of a chrome-level failure.
   4. A post that exists and is public never responds 404 or a full error page as a result of a content-fetch failure — `notFound()` is still reached only for a genuinely missing/non-public post, and no fetch leg is left to throw uncaught out of the render.
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -61,7 +61,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 07-03-PLAN.md — Operator-driven live Production capture into `07-EVIDENCE.md`: six-candidate table filled, raw log lines pasted, named verdict (SC#2)
+- [x] 07-03-PLAN.md — Operator-driven live Production capture into `07-EVIDENCE.md`: six-candidate table filled, raw log lines pasted, named verdict (SC#2)
 
 Notes for planning:
 
@@ -160,7 +160,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 4. Notify Route | v1.0 | 3/3 | Complete | 2026-07-27 |
 | 5. Production Cutover | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
-| 7. Content Failure Isolation & Live Diagnosis | v1.1 | 2/3 | In Progress|  |
+| 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | In Progress|  |
 | 8. Content Rendering Fix | v1.1 | 0/TBD | Not started | - |
 | 9. Thumbnail Freshness | v1.1 | 0/TBD | Not started | - |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
