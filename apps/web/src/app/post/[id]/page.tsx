@@ -1,11 +1,13 @@
 import { getPost, getCategories, getPosts } from "@/lib/notion";
 import { getPageRecordMap, describeFetchFailure } from "@/lib/notion-x";
+import { classifyMissingPost } from "@/lib/post-availability";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
 import type { Post } from "@/types";
 import DefaultPostPage from "@/templates/default/PostPage";
 import TerminalPostPage from "@/templates/terminal/PostPage";
+import PostUnavailable from "@/components/PostUnavailable";
 import { SubscribeSection } from "@/components/subscribe/SubscribeSection";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -13,7 +15,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const post = await getPost(id);
 
   if (!post) {
-    return { title: "Post Not Found" };
+    // The soft-200 mitigation for the discriminator this plan adds below:
+    // an unavailable page must never be indexed in place of a real post.
+    // Title left unchanged — copywriting for the not-found/unavailable
+    // split is out of scope here (D-14).
+    return { title: "Post Not Found", robots: { index: false, follow: false } };
   }
 
   const ogUrl = new URL("/api/og", CONFIG.site.url);
@@ -57,6 +63,29 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const post = await getPost(id);
 
   if (!post) {
+    // 07-02: getPost() never throws (it swallows to null), so a null result
+    // here is indistinguishable between a genuine 404 and a transient
+    // Notion failure. classifyMissingPost() (apps/web/src/lib/
+    // post-availability.ts) resolves that ambiguity with one extra request,
+    // on this already-failed path only — a successful post render never
+    // reaches this branch.
+    const { verdict, detail } = await classifyMissingPost(id);
+
+    if (verdict === "unavailable") {
+      console.error(`[PostPage:post] ${detail}`);
+      return <PostUnavailable />;
+    }
+
+    // Reached only when Notion authoritatively answered about the page (an
+    // HTTP 404, an invalid page id, or a page Notion returned but getPost()
+    // still declined) — a genuinely missing post is not a leg failure, so
+    // no log line is emitted here. This is the sole call in the file, and
+    // it stays outside every try block: it throws a Next.js control-flow
+    // Error whose `digest` field is a sentinel Next reads to render the 404
+    // boundary, and an ordinary catch would silently swallow it. If a
+    // future edit ever needs to place this call inside a try, the required
+    // guard is unstable_rethrow from next/navigation, which rethrows that
+    // sentinel unchanged before any other catch logic runs.
     notFound();
   }
 
@@ -68,6 +97,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   //     `packages/core/src/client.ts:311-338` wraps this method's entire
   //     body in `try { ... } catch { return null }`, so it cannot throw to
   //     a caller.
+  //   - `await classifyMissingPost(id)` (this function, `!post` branch):
+  //     not inside a try at this call site — its own contract, stated and
+  //     enforced in apps/web/src/lib/post-availability.ts, is that it never
+  //     throws to its caller (every branch, including a thrown fetch,
+  //     resolves to a verdict).
   //   - `await getPageRecordMap(id)`: content leg `try`, below.
   //   - `await getCategories()` / `await getPosts()`: chrome leg `try`,
   //     below.
