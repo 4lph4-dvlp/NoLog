@@ -61,8 +61,25 @@ Three things are delivered:
 - **D-19:** **Every diagnosis-only surface introduced by this phase MUST be removed once the cause is established.** This is a committed deliverable, not a deferred idea — it is the operator's condition for having accepted the instrumentation at all (see D-02's revision note). Removal scope, exhaustively:
   - The Production env vars `NOTION_DEBUG_DIAGNOSTICS` and `NOTION_DEBUG_ROUTE_SECRET` (already required at capture closeout by D-08's `must_haves`).
   - `apps/web/src/app/api/diagnose-page/route.ts` — the entire route.
-  - `isDiagnosticsEnabled()` and `describeFetchFailure()` in `apps/web/src/lib/notion-x.ts`, including the D-04 raw-fetch probe, and every call site of them.
+  - `describeFetchFailure()` in `apps/web/src/lib/notion-x.ts`, including the D-04 raw-fetch probe, and every call site of it (`post/[id]/page.tsx`'s two catch blocks and the debug route).
   - Any README / documentation mention of the two env vars, if one was added.
+
+  **⚠ Cross-file coupling — do not delete `isDiagnosticsEnabled()` blindly (found by 07-REVIEW F-02).** As
+  first written, D-19 listed `isDiagnosticsEnabled()` for deletion alongside `describeFetchFailure()`. That
+  is wrong and would break the build: `apps/web/src/lib/post-availability.ts` — a file this same decision
+  says to **keep** — imports it at line 2 and calls it at line 116 to decide whether
+  `classifyMissingPost`'s log detail carries the richer response fields. Deleting the export while keeping
+  the importer is a compile error; deleting only the import while keeping the branch silently changes
+  behaviour. The teardown must instead do **one** of:
+  - **(a)** keep `isDiagnosticsEnabled()` — it is a three-line `process.env` truthiness check that costs a
+    forker nothing when the variable is unset, and the "zero net new env vars a forker must know about"
+    goal is met by removing the *route*, the *deep diagnostics* and the *documentation*, not by removing
+    an internal predicate; or
+  - **(b)** collapse `buildResponseDetail()` in `post-availability.ts` to always return
+    `buildBasicDetail()`, delete its gated branch, and then remove `isDiagnosticsEnabled()`.
+
+  Either is defensible; **(a) is the smaller and safer change**. What is not acceptable is discovering this
+  at build time. Phase 8 must pick one deliberately and say which.
 
   **Explicitly NOT removed — these are requirements, not diagnostics, and need no env var:**
   - The leg-naming log lines `[PostPage:recordMap]` / `[PostPage:chrome]` / `[PostPage:post]` (D-01). This is CONT-01 itself, is ungated, and costs a forker nothing.
