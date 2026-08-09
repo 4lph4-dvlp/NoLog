@@ -52,8 +52,8 @@ way is marked `inconclusive` with the missing observation named — never forced
 
 | Question | How it was checked | Answer | Observed at |
 |----------|--------------------|--------|-------------|
-| Is `NOTION_TOKEN_V2` set for the **Production** environment? | Operator read Vercel Dashboard → Settings → Environment Variables, filtered to Production | **Absent.** `NOTION_TOKEN` exists; `NOTION_TOKEN_V2` does not exist at all | 2026-08-10, during capture |
-| Does the failing Notion page load in a **logged-out incognito** browser tab? | **Not performed as a browser session.** Superseded by a stronger observation: a fully unauthenticated `POST https://www.notion.so/api/v3/loadPageChunk` carrying a browser `User-Agent` returned **HTTP 200 with a complete `recordMap`** for page `3702c61e-…`. No session, no cookie — strictly less access than an incognito tab has | **Yes — the page is publicly shared.** A non-public page cannot return a `recordMap` to an unauthenticated caller | 2026-08-10 16:5x UTC |
+| Is `NOTION_TOKEN_V2` set for the **Production** environment? | Operator read Vercel Dashboard → Settings → Environment Variables, filtered to Production | **Absent.** `NOTION_TOKEN` exists; `NOTION_TOKEN_V2` does not exist at all | 2026-08-09, during capture (2026-08-10 KST) |
+| Does the failing Notion page load in a **logged-out incognito** browser tab? | **Not performed as a browser session.** Superseded by a stronger observation: a fully unauthenticated `POST https://www.notion.so/api/v3/loadPageChunk` carrying a browser `User-Agent` returned **HTTP 200 with a complete `recordMap`** for page `3702c61e-…`. No session, no cookie — strictly less access than an incognito tab has | **Yes — the page is publicly shared.** A non-public page cannot return a `recordMap` to an unauthenticated caller | 2026-08-09 16:5x UTC |
 | When did the failure start, relative to this project's Vercel deployment history? | **Not determined.** Reason recorded rather than left blank: the controlled User-Agent experiment (below) identified the cause deterministically from a single variable, so the onset-vs-deploy correlation — whose only job was to discriminate candidate 6 from candidates 1–2 — was no longer load-bearing. Candidate 6 is eliminated on direct evidence instead | Not determined (reason above) | — |
 
 **Dashboard navigation used**
@@ -82,7 +82,7 @@ from any pasted request line before pasting (T-07-14).
 
 ### Debug route response body — `GET /api/diagnose-page?id=<page id>` with bearer secret
 
-Operator ran the authenticated call against Production for all three page ids at 2026-08-10 16:49 UTC.
+Operator ran the authenticated call against Production for all three page ids at 2026-08-09 16:49 UTC (= 2026-08-10 01:49 KST).
 Pasted verbatim from the terminal; the `Authorization` header was never included in what was pasted.
 
 ```
@@ -97,7 +97,7 @@ Pasted verbatim from the terminal; the `Authorization` header was never included
 All three are byte-identical apart from the id. `viaProbe: false` means the status, content-type and body
 excerpt came off the thrown `FetchError` itself — the D-04 raw-fetch probe was never needed.
 
-### Controlled discriminating experiment — the single-variable test (2026-08-10 ~16:5x UTC)
+### Controlled discriminating experiment — the single-variable test (2026-08-09 ~16:5x UTC)
 
 The production payload above establishes *what* the failure is. This experiment establishes *what triggers
 it*. Run from one developer machine — **one host, one egress IP** — against the same endpoint, same POST
@@ -119,7 +119,7 @@ what `notion-client` produces by default: it sets no `User-Agent` of its own (07
 `node_modules`), so Node's built-in `fetch` supplies `node`. Row 2 of the 403 body is byte-compatible with
 the production `bodyExcerpt` above.
 
-### Unauthorised requests (gate-closed check) — 2026-08-10 16:43 UTC
+### Unauthorised requests (gate-closed check) — 2026-08-09 16:43 UTC
 
 | Request | HTTP status | Body |
 |---------|-------------|------|
