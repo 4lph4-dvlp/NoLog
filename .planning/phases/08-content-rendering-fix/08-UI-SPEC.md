@@ -157,7 +157,17 @@ area) to carry the `empty`/`error`/`loading`/`populated` categories this phase's
 |---------|----------|--------|
 | E0 Post content area | loading | Async Server Component; `recordMap` resolves before the response streams. No client-side loading state exists, unchanged this phase (matches Phase 7's identical dismissal for this same area). |
 | E0 Post content area | populated | Happy-path rendering via `NotionPageRenderer` when `recordMap` has content is pre-existing and untouched by this phase. |
+| E0 Post content area | overflow | Pre-existing `.notion-content-wrapper` behaviour for wide Notion blocks (tables, code, embeds), unchanged this phase. This phase only changes which sentence replaces the body when there is nothing to render — it never alters how present content is laid out. |
+| E0 Post content area | long-text | Pre-existing `react-notion-x` block rendering for long Notion documents, unchanged this phase — same reason as `overflow` above. |
 | E1/E2 sentences | long-text | Both strings are hardcoded constants in the component; no user- or Notion-supplied text can reach either `<p>`. |
+
+**Probe accounting (no silent drops).** The `ui-consideration-probe` surfaced **10** applicable considerations
+across three elements — `E1` and `E2` (`static-content` → `overflow`, `long-text` each) and `E0`
+(`media` + `static-content` → `empty`, `loading`, `error`, `populated`, `overflow`, `long-text`). All 10 are
+accounted for above: **4 resolved (explicit)** — counting `E1 overflow` and `E2 overflow` separately, which
+row 3 covers jointly — and **6 dismissed with reasons**. `E0`'s own `overflow` and `long-text` rows were
+missing from the first draft of this section and were added on reconciliation against the probe output;
+without them the section would have silently dropped two considerations.
 
 No `unclassified` candidates. No consideration left `unresolved`.
 
@@ -208,11 +218,11 @@ Not a template-default field, but load-bearing for the executor:
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-08-10 (gsd-ui-checker — 6/6, no blocking issues, no recommendations)
