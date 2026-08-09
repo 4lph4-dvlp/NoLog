@@ -14,14 +14,26 @@ A forker can go from "empty Notion database" to "live, working blog" using only 
 
 Known override at close: Phase 5 (Production Cutover)'s automated verification-status check reported `missing` due to a stray `05-01-VERIFICATION.md` file shadowing the real, passing `05-VERIFICATION.md` in the tool's alphabetical file-picker — confirmed a tooling false-negative, not an actual gap. Full detail in `STATE.md` Deferred Items.
 
-## Next Milestone Goals
+## Current Milestone: v1.1 Live Blog Bug Fixes & Reading Width
 
-Not yet scoped — run `/gsd-new-milestone` to define v1.1/v2.0. Candidates carried from `TODOS.md` and REQUIREMENTS.md's v2 section:
+**Goal:** Fix the image and body-content rendering that is actually broken on the deployed blog (4lph4-bl0g.vercel.app), and give readers direct control over the content column's width.
+
+**Target features:**
+- **Home thumbnails load on first visit** — currently blank until a manual refresh. Leading hypothesis: Notion's presigned file URLs expire after ~1 hour, and ISR's stale-while-revalidate serves HTML carrying an already-expired URL; that request triggers regeneration, so the refresh succeeds. Root cause to be confirmed before a fix is chosen.
+- **Post body renders instead of "Content could not be loaded."** — `getPageRecordMap()` (unofficial `notion-client`) fails and `post/[id]/page.tsx`'s catch nulls `recordMap`. The operator has confirmed the Notion pages ARE published to the web, so the cause is code/deploy-environment, not Notion sharing state. **Locked decision: keep the unofficial API + `react-notion-x`; fix the cause, do not rewrite the renderer against the official blocks API.** Secondary: that same catch swallows `getPageRecordMap`, `getCategories`, and `getPosts` failures as one undifferentiated block.
+- **Collapsible left/right sidebars** — left toggle is a hamburger (≡) button, right toggle is a circular button showing the profile image. Each collapses independently, both auto-collapse below a viewport-width threshold, and the collapsed/expanded state persists via `localStorage`.
+
+**Milestone context:**
+- The 3-column grid in `apps/web/src/templates/default/Layout.tsx:41` activates at `md` (768px), where the content column is squeezed to roughly 232px (1400px max width; 200px + 240px sidebars, 32px gaps, 32px padding). The auto-collapse threshold must sit well above `md` — proposed default: collapse below 1280px, expand at/above it.
+- `Layout.tsx` is shared by home, category, and search as well as post pages, so the sidebar work applies site-wide by construction (not scoped to the post page).
+- Target template is `default` (`site.config.ts: template: "default"`). The `terminal` template is out of scope this milestone.
+
+**Deferred to a later milestone** (carried from `TODOS.md` and REQUIREMENTS.md's v2 section):
 - RSS feed (`/feed.xml`) as a second, zero-infra notification channel
 - On-site "new post" indicator/badge for return visitors
 - Lightweight non-blocking "you were just subscribed" notice (conditional on real abuse reports)
-- Pre-existing fail-open patterns found during codebase mapping (empty-string env var defaults, silent catch-alls, pagination gap) — unrelated to email feature, still untouched
-- Unvalidated dynamic route segment interpolated into the Notion API URL in `apps/web/src/app/post/[id]/page.tsx` (flagged post-Phase-1, never picked up — needs its own security review)
+- Pre-existing fail-open patterns found during codebase mapping (empty-string env var defaults, silent catch-alls, pagination gap)
+- Unvalidated dynamic route segment interpolated into the Notion API URL in `apps/web/src/app/post/[id]/page.tsx` (flagged post-Phase-1; explicitly considered for this milestone and declined by the user to keep scope at three items)
 - Adding a test framework to the repo (currently zero test infrastructure)
 
 ## Requirements
@@ -42,7 +54,11 @@ Not yet scoped — run `/gsd-new-milestone` to define v1.1/v2.0. Candidates carr
 
 ### Active
 
-None — all v1 requirements for the email subscription milestone are shipped, documented, and verified.
+Milestone v1.1 — scoped in `REQUIREMENTS.md`, phased in `ROADMAP.md`:
+
+- [ ] Home-feed thumbnails render on a visitor's first load, without a manual refresh
+- [ ] Post bodies render their Notion content instead of the "Content could not be loaded." fallback
+- [ ] Reader can collapse/expand the left (search + categories) and right (profile + subscribe) sidebars independently, with auto-collapse below a width threshold and `localStorage` persistence
 
 ### Out of Scope
 
@@ -114,4 +130,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-29 after v1.0 milestone complete (all 6 phases shipped, archived to `.planning/milestones/`)*
+*Last updated: 2026-08-09 after starting milestone v1.1 (Live Blog Bug Fixes & Reading Width)*
