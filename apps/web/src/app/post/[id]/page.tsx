@@ -1,5 +1,5 @@
 import { getPost, getCategories, getPosts } from "@/lib/notion";
-import { getPageRecordMap } from "@/lib/notion-x";
+import { getPageRecordMap, describeFetchFailure } from "@/lib/notion-x";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CONFIG } from "@/site.config";
@@ -60,21 +60,52 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     notFound();
   }
 
-  // Fetch full page recordMap for react-notion-x rendering
-  let recordMap;
+  // D-17 audit — every `await` in this file, and either the `try` that
+  // encloses it or why it structurally cannot throw:
+  //   - `await params` (generateMetadata + this function): awaiting an
+  //     already-resolved value, no I/O, cannot throw.
+  //   - `await getPost(id)` (generateMetadata + this function):
+  //     `packages/core/src/client.ts:311-338` wraps this method's entire
+  //     body in `try { ... } catch { return null }`, so it cannot throw to
+  //     a caller.
+  //   - `await getPageRecordMap(id)`: content leg `try`, below.
+  //   - `await getCategories()` / `await getPosts()`: chrome leg `try`,
+  //     below.
+  //   - `await describeFetchFailure(...)` (both catch blocks below): inside
+  //     each leg's own `catch`; the helper is documented (lib/notion-x.ts)
+  //     to never throw.
+
+  // Content leg — isolated per concern (D-11/CONT-01/CONT-04): a chrome-leg
+  // failure below can never null a recordMap that already succeeded here,
+  // because the two are caught separately.
+  let recordMap: Awaited<ReturnType<typeof getPageRecordMap>> | null = null;
+  try {
+    recordMap = await getPageRecordMap(id);
+  } catch (error) {
+    console.error(`[PostPage:recordMap] ${await describeFetchFailure(error, id, true)}`);
+    recordMap = null;
+  }
+
+  // Chrome leg — categories + related posts, attempted after the content
+  // leg so a request failing on both legs logs in a fixed, deterministic
+  // order (content before chrome). `allowProbe` is false: these calls go
+  // through @notionhq/client against api.notion.com, not through
+  // notion-client against the unofficial endpoint, so the D-04 probe's
+  // loadPageChunk target would describe the wrong request. Per D-13 this
+  // degradation is silent to the reader — the empty arrays are the only
+  // user-visible consequence, matching apps/web/src/app/layout.tsx:46-53's
+  // existing site-wide precedent (which lacks logging; this leg adds it).
   let categories: string[] = [];
   let relatedPosts: Post[] = [];
   try {
-    recordMap = await getPageRecordMap(id);
     categories = await getCategories();
-    
+
     if (post.category) {
       const allPosts = await getPosts();
       relatedPosts = allPosts.filter(p => p.category === post.category);
     }
   } catch (error) {
-    console.error("[PostPage] Failed to fetch page recordMap or categories:", error);
-    recordMap = null;
+    console.error(`[PostPage:chrome] ${await describeFetchFailure(error, id, false)}`);
     categories = [];
     relatedPosts = [];
   }
