@@ -45,7 +45,12 @@ Full phase goals, success criteria, and plan-level detail archived to [`mileston
   2. The operator holds captured live evidence from production (the failing call's actual HTTP status plus a response-body excerpt), recorded against `PITFALLS.md`'s six-candidate discriminating table with a named verdict — or an explicit "matches none of the six." A local `next dev` run does not satisfy this.
   3. On the deployed site, a post whose categories or related-posts fetch fails still renders its body. The body no longer disappears because of a chrome-level failure.
   4. A post that exists and is public never responds 404 or a full error page as a result of a content-fetch failure — `notFound()` is still reached only for a genuinely missing/non-public post, and no fetch leg is left to throw uncaught out of the render.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Gated deep diagnostics + secret-gated `/api/diagnose-page` route (tracer), then the per-leg catch decomposition of `post/[id]/page.tsx` (SC#1, SC#3)
+- [ ] 07-02-PLAN.md — App-level genuine-404-vs-transient discriminator + the `PostUnavailable` state, scoping `notFound()` (SC#4)
+- [ ] 07-03-PLAN.md — Operator-driven live Production capture into `07-EVIDENCE.md`: six-candidate table filled, raw log lines pasted, named verdict (SC#2)
 
 Notes for planning:
 - Decompose by *concern*, not by call (PITFALLS 6): one catch for `recordMap` (content), one for `categories`+`relatedPosts` (chrome). Neither leg may be left to throw into `error.tsx` — whether a thrown Server Component error during ISR regeneration falls back to stale HTML or surfaces as a 500 is an **unverified open question** on this Next 16 / Vercel Fluid Compute setup.
