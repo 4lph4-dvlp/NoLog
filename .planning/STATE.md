@@ -5,15 +5,15 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 7
 current_phase_name: Content Failure Isolation & Live Diagnosis
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-08-09T14:23:37.669Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-08-09T14:31:39.457Z"
 last_activity: 2026-08-09
 last_activity_desc: v1.1 roadmap created (Phases 7-10)
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 7 (Content Failure Isolation & Live Diagnosis) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
-Progress: [███░░░░░░░] 33% (0/4 v1.1 phases)
+Progress: [███████░░░] 67% (0/4 v1.1 phases)
 Last activity: 2026-08-09 — Phase 7 execution started
 
 ## Performance Metrics
@@ -80,6 +80,7 @@ Last activity: 2026-08-09 — Phase 7 execution started
 | Phase 06 P01 | 20min | 2 tasks | 2 files |
 | Phase 06 P02 | ~7min | 2 tasks | 2 files |
 | Phase 7 P01 | 45min | 2 tasks | 3 files |
+| Phase 7 P2 | 25min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 6 Plan 2: Korean notify-route node translated (알림 라우트); Vercel Cron and Resend kept as English product nouns, resolving an internal ambiguity in the plan's own action text by following the file's existing convention
 - [Phase ?]: [Phase 7 Plan 01] describeFetchFailure() is the single source of truth for both post/[id]/page.tsx and /api/diagnose-page — no duplicated error-shape discrimination logic
 - [Phase ?]: [Phase 7 Plan 01] Lint verification interpreted as 'no new errors from this plan's files' since apps/web/src/templates/terminal/components/TerminalConsole.tsx already fails lint on main (confirmed via git stash), unrelated and out of scope for v1.1's terminal-excluded scope
+- [Phase ?]: [Phase 7 Plan 02] classifyMissingPost() resolved as option (a) app-level discriminator per the plan's resolved engineering question — one extra Notion REST call, scoped strictly to getPost()'s already-null branch, URL built only from parsePageId()'s return value (never the raw route segment), never touching packages/core
+- [Phase ?]: [Phase 7 Plan 02] notFound() in post/[id]/page.tsx now reached only after classifyMissingPost() judges the missing verdict authoritative; PostUnavailable renders at plain HTTP 200 for the unavailable verdict; generateMetadata's not-found branch gained robots noindex to close the resulting soft-200 SEO exposure
 
 ### Pending Todos
 
@@ -166,8 +169,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-09T14:23:37.641Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-08-09T14:31:39.430Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
