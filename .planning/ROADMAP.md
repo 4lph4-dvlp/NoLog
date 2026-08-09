@@ -81,12 +81,12 @@ Notes for planning:
   3. A reader on a post whose Notion page genuinely has no content sees wording saying so, visibly distinct from the wording shown when the fetch failed. The two states are no longer the same sentence.
   4. The post still renders through `notion-client` + `react-notion-x` (D-01) — no renderer was rebuilt against the official blocks API, and no new npm dependency was added (D-07).
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 08-01-PLAN.md — The single-deploy code change: the `User-Agent` fix via `ofetchOptions` (tracer), the D-19 teardown of every diagnosis-only surface, and the CONT-05 split into two distinct sentences. Committed, deliberately unpushed.
+- [x] 08-01-PLAN.md — The single-deploy code change: the `User-Agent` fix via `ofetchOptions` (tracer), the D-19 teardown of every diagnosis-only surface, and the CONT-05 split into two distinct sentences. Committed, deliberately unpushed.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -175,7 +175,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 5. Production Cutover | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | In Progress|  |
-| 8. Content Rendering Fix | v1.1 | 0/TBD | Not started | - |
+| 8. Content Rendering Fix | v1.1 | 1/4 | In Progress|  |
 | 9. Thumbnail Freshness | v1.1 | 0/TBD | Not started | - |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 

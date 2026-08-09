@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
-current_phase: 7
-current_phase_name: Content Failure Isolation & Live Diagnosis
+current_phase: 08
+current_phase_name: content-rendering-fix
 status: executing
-stopped_at: Phase 8 context gathered
-last_updated: "2026-08-09T19:03:33.202Z"
-last_activity: 2026-08-09
-last_activity_desc: v1.1 roadmap created (Phases 7-10)
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-08-09T19:16:11.274Z"
+last_activity: 2026-08-10
+last_activity_desc: Phase 08 execution started
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
   percent: 25
 ---
 
@@ -24,15 +24,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 7 — Content Failure Isolation & Live Diagnosis
+**Current focus:** Phase 08 — content-rendering-fix
 
 ## Current Position
 
-Phase: 7 (Content Failure Isolation & Live Diagnosis) — EXECUTING
-Plan: 3 of 3
+Phase: 08 (content-rendering-fix) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Progress: [███████░░░] 67% (0/4 v1.1 phases)
-Last activity: 2026-08-09 — Phase 7 execution started
+Progress: [██████░░░░] 57% (0/4 v1.1 phases)
+Last activity: 2026-08-10 — Phase 08 execution started
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Last activity: 2026-08-09 — Phase 7 execution started
 | Phase 06 P02 | ~7min | 2 tasks | 2 files |
 | Phase 7 P01 | 45min | 2 tasks | 3 files |
 | Phase 7 P2 | 25min | 2 tasks | 3 files |
+| Phase 08 P01 | ~35min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 7 Plan 02] classifyMissingPost() resolved as option (a) app-level discriminator per the plan's resolved engineering question — one extra Notion REST call, scoped strictly to getPost()'s already-null branch, URL built only from parsePageId()'s return value (never the raw route segment), never touching packages/core
 - [Phase ?]: [Phase 7 Plan 02] notFound() in post/[id]/page.tsx now reached only after classifyMissingPost() judges the missing verdict authoritative; PostUnavailable renders at plain HTTP 200 for the unavailable verdict; generateMetadata's not-found branch gained robots noindex to close the resulting soft-200 SEO exposure
 - [Phase ?]: [Phase 7 Plan 03] VERDICT: candidate 2 of PITFALLS.md Pitfall 5 confirmed — notion-client sets no User-Agent, so Node's default 'user-agent: node' is answered by Cloudflare with 403 + an HTML challenge page, in front of a loadPageChunk endpoint that returns 200 to a browser-shaped request from the SAME IP. Five candidates eliminated on pasted production observations, none inconclusive; established by a single-variable experiment (one host, one IP, only the UA varied). Full record: 07-EVIDENCE.md. Phase 8's fix is narrowed to a browser-shaped User-Agent inside D-01/D-07, with three questions left open there deliberately — one of which (whether impersonating a browser UA is appropriate for this project) is the operator's call, not a technical one.
+- [Phase ?]: [Phase 8 Plan 01] NOLOG_USER_AGENT shipped as "NoLog (+https://github.com/4lph4-dvlp/NoLog)" (no version, hardcoded, no env var), wired through NotionAPI's ofetchOptions.headers["User-Agent"] — fixes Cloudflare 403 on notion-client's default user-agent: node
+- [Phase ?]: [Phase 8 Plan 01] D-19 teardown complete: deleted /api/diagnose-page route and describeFetchFailure()+helpers from lib/notion-x.ts; isDiagnosticsEnabled() and post-availability.ts preserved untouched (D-13)
+- [Phase ?]: [Phase 8 Plan 01] CONT-05 split shipped: isRecordMapEmpty(recordMap) with RENDERABLE_BLOCK_MIN=2 (boundary still [ASSUMED] pending plan 08-02); contentFetchFailed threaded from route to DefaultPostPage, driving a 3-way content branch with the two locked UI-SPEC sentences
 
 ### Pending Todos
 
@@ -170,9 +174,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-09T18:18:18.076Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-content-rendering-fix/08-CONTEXT.md
+Last session: 2026-08-09T19:16:11.246Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
