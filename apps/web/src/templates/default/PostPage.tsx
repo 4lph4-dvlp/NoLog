@@ -1,17 +1,20 @@
 import type { Post } from "@/types";
+import type { ExtendedRecordMap } from "notion-types";
 import { NotionPageRenderer } from "@/components/notion/NotionPageRenderer";
 import { CommentSection } from "@/components/comments/CommentSection";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { CONFIG } from "@/site.config";
+import { isRecordMapEmpty } from "@/lib/notion-x";
 
 interface DefaultPostPageProps {
   post: Post;
-  recordMap: any; // Allow any type since it's from notion-x which has complex types
+  recordMap: ExtendedRecordMap | null;
+  contentFetchFailed: boolean;
 }
 
-export default function DefaultPostPage({ post, recordMap }: DefaultPostPageProps) {
+export default function DefaultPostPage({ post, recordMap, contentFetchFailed }: DefaultPostPageProps) {
   return (
     <article className="max-w-none mx-auto py-8 md:px-4">
       {/* ─── Header ────────────────────────────────────────────── */}
@@ -94,10 +97,14 @@ export default function DefaultPostPage({ post, recordMap }: DefaultPostPageProp
 
       {/* ─── Content ───────────────────────────────────────────── */}
       <div className="notion-content-wrapper">
-        {recordMap ? (
+        {recordMap && !isRecordMapEmpty(recordMap) ? (
           <NotionPageRenderer recordMap={recordMap} />
+        ) : contentFetchFailed ? (
+          <p className="text-text-secondary italic">
+            This post&apos;s content could not be loaded right now.
+          </p>
         ) : (
-          <p className="text-text-secondary italic">Content could not be loaded.</p>
+          <p className="text-text-secondary italic">This post has no content yet.</p>
         )}
       </div>
 

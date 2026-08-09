@@ -1,4 +1,5 @@
 import { NotionAPI } from "notion-client";
+import type { ExtendedRecordMap } from "notion-types";
 
 /**
  * Unofficial Notion API client for fetching full page content (recordMap).
@@ -46,4 +47,28 @@ const DIAGNOSTICS_GATE_VALUE = "1";
 /** Whether deep-diagnostic capture (status/content-type/body-excerpt/probe) is active. Read at call time, not cached at module load, so tests and route handlers observe env changes without a process restart. */
 export function isDiagnosticsEnabled(): boolean {
   return process.env.NOTION_DEBUG_DIAGNOSTICS === DIAGNOSTICS_GATE_VALUE;
+}
+
+// CONT-05 (D-10): the boundary a "recordMap arrived but has nothing to
+// render" is judged against. notion-client's getPage() throws before ever
+// returning when recordMap.block is entirely absent (see below) — so any
+// recordMap that reaches isRecordMapEmpty always carries at least one
+// entry, the page's own container block. One entry means no content
+// children. A named constant, not an inlined `<= 1`, so the boundary rule
+// is explicit and plan 08-02 has exactly one scalar to recalibrate against
+// a real empty Notion page.
+//
+// [ASSUMED] (08-RESEARCH.md Finding 4, Assumption A1): this exact boundary
+// has never been observed against a genuinely content-empty public Notion
+// page — the three production pages inspected in Phase 7 all had content.
+// Plan 08-02 closes that gap.
+const RENDERABLE_BLOCK_MIN = 2;
+
+/**
+ * Whether a successfully-fetched recordMap has no renderable content
+ * blocks. Reads only the already-fetched object — no second Notion call
+ * (D-10, PITFALLS 4).
+ */
+export function isRecordMapEmpty(recordMap: ExtendedRecordMap): boolean {
+  return Object.keys(recordMap.block ?? {}).length < RENDERABLE_BLOCK_MIN;
 }

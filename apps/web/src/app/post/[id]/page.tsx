@@ -112,22 +112,23 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   // failure below can never null a recordMap that already succeeded here,
   // because the two are caught separately.
   let recordMap: Awaited<ReturnType<typeof getPageRecordMap>> | null = null;
+  let contentFetchFailed = false;
   try {
     recordMap = await getPageRecordMap(id);
   } catch (error) {
     console.error(`[PostPage:recordMap]`, error);
     recordMap = null;
+    contentFetchFailed = true;
   }
 
   // Chrome leg — categories + related posts, attempted after the content
   // leg so a request failing on both legs logs in a fixed, deterministic
-  // order (content before chrome). `allowProbe` is false: these calls go
-  // through @notionhq/client against api.notion.com, not through
-  // notion-client against the unofficial endpoint, so the D-04 probe's
-  // loadPageChunk target would describe the wrong request. Per D-13 this
-  // degradation is silent to the reader — the empty arrays are the only
-  // user-visible consequence, matching apps/web/src/app/layout.tsx:46-53's
-  // existing site-wide precedent (which lacks logging; this leg adds it).
+  // order (content before chrome). These calls go through @notionhq/client
+  // against api.notion.com, an entirely separate path from notion-client's
+  // unofficial endpoint above. Per D-13 this degradation is silent to the
+  // reader — the empty arrays are the only user-visible consequence,
+  // matching apps/web/src/app/layout.tsx:46-53's existing site-wide
+  // precedent (which lacks logging; this leg adds it).
   let categories: string[] = [];
   let relatedPosts: Post[] = [];
   try {
@@ -144,7 +145,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   }
 
   if (CONFIG.template === "default") {
-    return <DefaultPostPage post={post} recordMap={recordMap} />;
+    return <DefaultPostPage post={post} recordMap={recordMap} contentFetchFailed={contentFetchFailed} />;
   } else if (CONFIG.template === "terminal") {
     // The gate is constructed here, in a Server Component, and passed down as
     // an already-rendered element — never as a direct import inside the
@@ -161,5 +162,5 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   }
 
   // Default fallback
-  return <DefaultPostPage post={post} recordMap={recordMap} />;
+  return <DefaultPostPage post={post} recordMap={recordMap} contentFetchFailed={contentFetchFailed} />;
 }
