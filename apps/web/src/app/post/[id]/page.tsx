@@ -1,5 +1,5 @@
 import { getPost, getCategories, getPosts } from "@/lib/notion";
-import { getPageRecordMap, describeFetchFailure } from "@/lib/notion-x";
+import { getPageRecordMap } from "@/lib/notion-x";
 import { classifyMissingPost } from "@/lib/post-availability";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -105,9 +105,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   //   - `await getPageRecordMap(id)`: content leg `try`, below.
   //   - `await getCategories()` / `await getPosts()`: chrome leg `try`,
   //     below.
-  //   - `await describeFetchFailure(...)` (both catch blocks below): inside
-  //     each leg's own `catch`; the helper is documented (lib/notion-x.ts)
-  //     to never throw.
+  //   - Both catch blocks below log synchronously via `console.error` —
+  //     no `await` in either, so nothing to enumerate there post-teardown.
 
   // Content leg — isolated per concern (D-11/CONT-01/CONT-04): a chrome-leg
   // failure below can never null a recordMap that already succeeded here,
@@ -116,7 +115,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   try {
     recordMap = await getPageRecordMap(id);
   } catch (error) {
-    console.error(`[PostPage:recordMap] ${await describeFetchFailure(error, id, true)}`);
+    console.error(`[PostPage:recordMap]`, error);
     recordMap = null;
   }
 
@@ -139,7 +138,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       relatedPosts = allPosts.filter(p => p.category === post.category);
     }
   } catch (error) {
-    console.error(`[PostPage:chrome] ${await describeFetchFailure(error, id, false)}`);
+    console.error(`[PostPage:chrome]`, error);
     categories = [];
     relatedPosts = [];
   }
