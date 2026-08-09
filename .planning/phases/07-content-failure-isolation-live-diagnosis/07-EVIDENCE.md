@@ -6,7 +6,7 @@ captured_environment: production
 captured_at: 2026-08-09T16:43:00Z/2026-08-09T16:51:26Z
 deployment_id: dpl_DQWk6fxhJDQfUAHA9bTPMcAZ9bMz
 verdict: "Candidate 2 confirmed — notion-client sends no User-Agent, so Node's default `user-agent: node` is answered by Cloudflare with 403 + an HTML challenge page in front of a loadPageChunk endpoint that returns 200 to a browser-shaped request from the same IP. Five other candidates eliminated on pasted observations."
-closeout_redeploy: outstanding
+closeout_redeploy: 2026-08-09T17:13:00Z
 ---
 
 # Phase 7 — Live Production Evidence
@@ -367,18 +367,28 @@ outcome with the reason, rather than closing the phase on a disappearance.
 |------|------|-----------|
 | `NOTION_DEBUG_DIAGNOSTICS` removed from Production | ✅ yes | 2026-08-10 02:05 KST = **2026-08-09 17:05 UTC** |
 | `NOTION_DEBUG_ROUTE_SECRET` removed from Production | ✅ yes | 2026-08-10 02:05 KST = **2026-08-09 17:05 UTC** |
-| Production redeployed so running instances lost both vars | ⏳ **outstanding** | — |
+| Production redeployed so running instances lost both vars | ✅ yes | 2026-08-10 02:13 KST = **2026-08-09 17:13 UTC** |
 
-> **The redeploy is not optional and is not yet done.** Removing a variable in Vercel's dashboard changes
-> what the *next* deployment receives; the currently-running instances keep the environment they booted
-> with. Until Production is redeployed, `/api/diagnose-page` remains live to anyone holding the (now
-> un-retrievable, but not un-leaked) secret. This is threat **T-07-13**, whose recorded mitigation is
-> precisely "step 9 removes both variables **and redeploys** as a mandatory closeout". Exposure is small —
-> the secret was high-entropy, short-lived, and never committed — but the mitigation is only half-applied
-> until the redeploy lands.
->
-> **Phase 9 dependency:** the >1h idle verification window must be measured from that redeploy's
-> completion, not from the 17:05 UTC variable removal (ROADMAP parallelization caution).
+**T-07-13 fully mitigated.** Removing a variable in Vercel's dashboard only changes what the *next*
+deployment receives — running instances keep the environment they booted with — so the removal at 17:05 UTC
+left `/api/diagnose-page` reachable to a secret-holder until the redeploy landed at 17:13 UTC. Total window
+in which the route existed at all: **~34 minutes** (16:39-ish first enabling deploy → 17:13 UTC teardown).
+The secret was high-entropy, never committed, and is now un-retrievable and orphaned.
+
+Post-teardown verification, 2026-08-09 ~17:1x UTC:
+
+| Check | Result |
+|---|---|
+| `GET /` | 200 |
+| `GET /api/diagnose-page?id=3702c61e-…` (unauthenticated) | 404, 0 bytes |
+| `GET /post/3702c61e-…` | 200, page `<title>` renders, `Content could not be loaded.` fallback still shown |
+
+The fallback persisting is expected and correct: this phase diagnoses, it does not fix. The fix is CONT-03,
+Phase 8.
+
+> **Phase 9 dependency — measure from here.** The >1h idle verification window Phase 9 (IMG-01) requires
+> must be measured from **2026-08-09 17:13 UTC**, the closeout redeploy, not from the 17:05 UTC variable
+> removal (ROADMAP parallelization caution). Any further deploy before Phase 9's check resets this clock.
 
 ---
 
