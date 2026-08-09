@@ -6,15 +6,15 @@ current_phase: 7
 current_phase_name: Content Failure Isolation & Live Diagnosis
 status: executing
 stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-08-09T14:31:39.457Z"
+last_updated: "2026-08-09T17:33:03.936Z"
 last_activity: 2026-08-09
 last_activity_desc: v1.1 roadmap created (Phases 7-10)
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 25
 ---
 
 # Project State
@@ -143,6 +143,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 7 Plan 01] Lint verification interpreted as 'no new errors from this plan's files' since apps/web/src/templates/terminal/components/TerminalConsole.tsx already fails lint on main (confirmed via git stash), unrelated and out of scope for v1.1's terminal-excluded scope
 - [Phase ?]: [Phase 7 Plan 02] classifyMissingPost() resolved as option (a) app-level discriminator per the plan's resolved engineering question — one extra Notion REST call, scoped strictly to getPost()'s already-null branch, URL built only from parsePageId()'s return value (never the raw route segment), never touching packages/core
 - [Phase ?]: [Phase 7 Plan 02] notFound() in post/[id]/page.tsx now reached only after classifyMissingPost() judges the missing verdict authoritative; PostUnavailable renders at plain HTTP 200 for the unavailable verdict; generateMetadata's not-found branch gained robots noindex to close the resulting soft-200 SEO exposure
+- [Phase ?]: [Phase 7 Plan 03] VERDICT: candidate 2 of PITFALLS.md Pitfall 5 confirmed — notion-client sets no User-Agent, so Node's default 'user-agent: node' is answered by Cloudflare with 403 + an HTML challenge page, in front of a loadPageChunk endpoint that returns 200 to a browser-shaped request from the SAME IP. Five candidates eliminated on pasted production observations, none inconclusive; established by a single-variable experiment (one host, one IP, only the UA varied). Full record: 07-EVIDENCE.md. Phase 8's fix is narrowed to a browser-shaped User-Agent inside D-01/D-07, with three questions left open there deliberately — one of which (whether impersonating a browser UA is appropriate for this project) is the operator's call, not a technical one.
 
 ### Pending Todos
 
