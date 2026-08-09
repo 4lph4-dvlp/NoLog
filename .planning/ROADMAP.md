@@ -81,7 +81,21 @@ Notes for planning:
   3. A reader on a post whose Notion page genuinely has no content sees wording saying so, visibly distinct from the wording shown when the fetch failed. The two states are no longer the same sentence.
   4. The post still renders through `notion-client` + `react-notion-x` (D-01) — no renderer was rebuilt against the official blocks API, and no new npm dependency was added (D-07).
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 08-01-PLAN.md — The single-deploy code change: the `User-Agent` fix via `ofetchOptions` (tracer), the D-19 teardown of every diagnosis-only surface, and the CONT-05 split into two distinct sentences. Committed, deliberately unpushed.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 08-02-PLAN.md — Close or explicitly carry forward the `[ASSUMED]` emptiness heuristic by observing a real content-empty public Notion page through the production `getPage()` path (CONT-05)
+- [ ] 08-03-PLAN.md — Run and record Phase 7's two outstanding UAT tests, now unambiguous because the body renders again (D-15, closes 07-UAT.md)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 08-04-PLAN.md — The single push/deploy (D-14), then the deployed-site sign-off: the 3-request `x-vercel-cache` procedure across multiple posts (SC#1) plus D-19 production confirmation
 
 Notes for planning:
 
