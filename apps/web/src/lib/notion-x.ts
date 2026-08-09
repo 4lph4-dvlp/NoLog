@@ -11,8 +11,20 @@ import { parsePageId } from "notion-utils";
  * Auth: No token needed for publicly shared Notion pages.
  * If your pages are private, set NOTION_TOKEN_V2 in .env.local.
  */
+// D-05: hardcoded, not forker-configurable — no env var, no site.config.ts
+// field. D-19's whole premise is that a forker ends up with zero net new
+// env vars; an honest self-identifying UA is the fix itself (D-01/D-03),
+// not a per-deployment knob. Exported (unlike DIAGNOSTICS_GATE_VALUE below)
+// because Phase 9's thumbnail-proxy work reuses it (D-06).
+export const NOLOG_USER_AGENT = "NoLog (+https://github.com/4lph4-dvlp/NoLog)";
+
 const notionX = new NotionAPI({
   authToken: process.env.NOTION_TOKEN_V2 || undefined,
+  ofetchOptions: {
+    headers: {
+      "User-Agent": NOLOG_USER_AGENT,
+    },
+  },
 });
 
 /**
