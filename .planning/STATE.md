@@ -6,15 +6,15 @@ current_phase: 08
 current_phase_name: content-rendering-fix
 status: executing
 stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-08-10T17:40:20.445Z"
+last_updated: "2026-08-10T17:55:25.644Z"
 last_activity: 2026-08-10
 last_activity_desc: Phase 08 execution started
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 25
+  completed_plans: 7
+  percent: 50
 ---
 
 # Project State
@@ -150,6 +150,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 8 Plan 01] CONT-05 split shipped: isRecordMapEmpty(recordMap) with RENDERABLE_BLOCK_MIN=2 (boundary still [ASSUMED] pending plan 08-02); contentFetchFailed threaded from route to DefaultPostPage, driving a 3-way content branch with the two locked UI-SPEC sentences
 - [Phase ?]: [Phase 8 Plan 02] RENDERABLE_BLOCK_MIN corrected 2 -> 4 on measurement, closing 08-RESEARCH Assumption A1. A real empty public Notion page returns 3 block keys, not 1 — a page inside a database carries its ancestor chain (page + parent collection + one more) in the recordMap. Real posts return 21/44/45. At the derived threshold of 2 an empty page fell through to the renderer and CONT-05's no-content sentence was unreachable; confirmed by direct observation before the fix (content area held only the loading skeleton) and after (sentence renders, real posts unaffected). One measurement, one page, one database — a fork nesting pages differently could see a different floor; caveat written into the constant's comment.
 - [Phase ?]: [Phase 8 Plan 03] Phase 7's two outstanding UAT items closed by direct observation (D-15). SC#3: an env-gated forced throw in the chrome leg left the body rendering at HTTP 200 with exactly one [PostPage:chrome] line and zero [PostPage:recordMap] lines. SC#4: both directions exercised — an absent UUID returns 404, a wrong NOTION_TOKEN returns 200 with the PostUnavailable card inside normal page chrome and one [PostPage:post] verdict:unavailable line; the two are visibly different. Baseline before injection also confirmed the User-Agent fix works locally — the post body rendered where Phase 7 saw 'Content could not be loaded.'. One item left unticked and labelled unexercised: PostUnavailable's light/dark rendering was verified by token inspection, not by viewing it in a browser under both themes.
+- [Phase ?]: [Phase 8 Plan 04] CORRECTION to 08-RESEARCH Finding 2's SC#1 procedure: /post/[id] is NOT an ISR-cached route, so the prescribed A(MISS)->wait->B(STALE)->C(HIT) sequence cannot occur. Measured on the deployed site: /post/[id] returns 'cache-control: private, no-cache, no-store, max-age=0' with x-vercel-cache: MISS on every request and is classified 'f (Dynamic)' in the build, while / returns x-vercel-cache: PRERENDER at 3m. The research assumed the post route was ISR-cached like the home page. Consequence for SC#1: the criterion's guard (do not be fooled by a page cached from before the fix) is satisfied more strongly than the procedure would have shown -- every request is a fresh server render AND getPageRecordMap uses ofetch so it is absent from the Data Cache too, meaning every observation is a live loadPageChunk call. What the substitute does NOT cover is any claim about ISR behaviour on this route; there is none to claim.
+- [Phase ?]: [Phase 8 Plan 04] CONT-03 closed on the deployed site: the single D-14 deploy (a6becd8..5013b52) shipped the User-Agent fix, the D-19 teardown and the CONT-05 split together; all three public posts render their Notion body across four passes spanning ~9 minutes, where Phase 7 saw 'Content could not be loaded.' on every one. Source diff for Phases 7+8 combined: 4 files, +77/-216 — the teardown removed more than the fix added. Net new forker-facing env vars after v1.1: zero.
 
 ### Pending Todos
 
