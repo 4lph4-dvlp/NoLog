@@ -29,7 +29,7 @@ Full phase goals, success criteria, and plan-level detail archived to [`mileston
 
 **Milestone Goal:** Fix the image and body-content rendering that is actually broken on the deployed blog, and give readers direct control over the content column's width.
 
-- [ ] **Phase 7: Content Failure Isolation & Live Diagnosis** - Make the post-detail failure legible in production and stop chrome failures from blanking the body
+- [x] **Phase 7: Content Failure Isolation & Live Diagnosis** - Make the post-detail failure legible in production and stop chrome failures from blanking the body (completed 2026-08-11)
 - [ ] **Phase 8: Content Rendering Fix** - Published posts render their Notion body on first visit, against the cause Phase 7 actually observed
 - [ ] **Phase 9: Thumbnail Freshness** - Thumbnails load on a first, cold visit no matter how long the site sat idle
 - [ ] **Phase 10: Collapsible Sidebars & Reading Width** - Readers collapse either sidebar independently and reclaim the width for the article
@@ -48,7 +48,7 @@ Full phase goals, success criteria, and plan-level detail archived to [`mileston
   3. On the deployed site, a post whose categories or related-posts fetch fails still renders its body. The body no longer disappears because of a chrome-level failure.
   4. A post that exists and is public never responds 404 or a full error page as a result of a content-fetch failure — `notFound()` is still reached only for a genuinely missing/non-public post, and no fetch leg is left to throw uncaught out of the render.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -81,7 +81,7 @@ Notes for planning:
   3. A reader on a post whose Notion page genuinely has no content sees wording saying so, visibly distinct from the wording shown when the fetch failed. The two states are no longer the same sentence.
   4. The post still renders through `notion-client` + `react-notion-x` (D-01) — no renderer was rebuilt against the official blocks API, and no new npm dependency was added (D-07).
 
-**Plans**: 1/4 plans executed
+**Plans**: 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -90,12 +90,12 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 08-02-PLAN.md — Close or explicitly carry forward the `[ASSUMED]` emptiness heuristic by observing a real content-empty public Notion page through the production `getPage()` path (CONT-05)
-- [ ] 08-03-PLAN.md — Run and record Phase 7's two outstanding UAT tests, now unambiguous because the body renders again (D-15, closes 07-UAT.md)
+- [x] 08-02-PLAN.md — Close or explicitly carry forward the `[ASSUMED]` emptiness heuristic by observing a real content-empty public Notion page through the production `getPage()` path (CONT-05)
+- [x] 08-03-PLAN.md — Run and record Phase 7's two outstanding UAT tests, now unambiguous because the body renders again (D-15, closes 07-UAT.md)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 08-04-PLAN.md — The single push/deploy (D-14), then the deployed-site sign-off: the 3-request `x-vercel-cache` procedure across multiple posts (SC#1) plus D-19 production confirmation
+- [x] 08-04-PLAN.md — The single push/deploy (D-14), then the deployed-site sign-off: the 3-request `x-vercel-cache` procedure across multiple posts (SC#1) plus D-19 production confirmation
 
 Notes for planning:
 
@@ -174,8 +174,8 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 4. Notify Route | v1.0 | 3/3 | Complete | 2026-07-27 |
 | 5. Production Cutover | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
-| 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | In Progress|  |
-| 8. Content Rendering Fix | v1.1 | 1/4 | In Progress|  |
+| 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
+| 8. Content Rendering Fix | v1.1 | 4/4 | In Progress|  |
 | 9. Thumbnail Freshness | v1.1 | 0/TBD | Not started | - |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 
