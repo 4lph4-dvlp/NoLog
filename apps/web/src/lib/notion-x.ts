@@ -50,19 +50,35 @@ export function isDiagnosticsEnabled(): boolean {
 }
 
 // CONT-05 (D-10): the boundary a "recordMap arrived but has nothing to
-// render" is judged against. notion-client's getPage() throws before ever
-// returning when recordMap.block is entirely absent (see below) — so any
-// recordMap that reaches isRecordMapEmpty always carries at least one
-// entry, the page's own container block. One entry means no content
-// children. A named constant, not an inlined `<= 1`, so the boundary rule
-// is explicit and plan 08-02 has exactly one scalar to recalibrate against
-// a real empty Notion page.
+// render" is judged against. A named constant, not an inlined literal, so
+// the boundary rule is explicit and there is exactly one scalar to
+// recalibrate if the shape of a Notion response ever changes.
 //
-// [ASSUMED] (08-RESEARCH.md Finding 4, Assumption A1): this exact boundary
-// has never been observed against a genuinely content-empty public Notion
-// page — the three production pages inspected in Phase 7 all had content.
-// Plan 08-02 closes that gap.
-const RENDERABLE_BLOCK_MIN = 2;
+// EMPIRICAL, measured 2026-08-10 (plan 08-02, closing 08-RESEARCH.md
+// Assumption A1). This value is NOT derived — the derivation was tried and
+// was wrong. The original reasoning said a genuinely empty page returns a
+// single entry (its own container block), giving a threshold of 2. Fetching
+// a real empty public page in this database through the same getPage() path
+// production uses, with the shipped User-Agent, returned **3**:
+//
+//     empty UAT fixture   blockKeys=3
+//     real post           blockKeys=21
+//     real post           blockKeys=45
+//     real post           blockKeys=44
+//
+// A page inside a Notion database carries its ancestor chain in the record
+// map — the page itself plus its parent collection and one further ancestor
+// — so 3 is the floor for any post in this database, not 1. At the old
+// threshold of 2 an empty page fell through to the renderer and the reader
+// never saw the no-content sentence at all; that was observed directly (the
+// content area held only react-notion-x's loading skeleton).
+//
+// Threshold is floor + 1: 3 or fewer keys is empty, and a page with even one
+// real content block clears it. The margin to the smallest real post (21) is
+// wide, but this figure was measured once, against one page, in one
+// database. A fork whose database nests pages differently could see a
+// different floor.
+const RENDERABLE_BLOCK_MIN = 4;
 
 /**
  * Whether a successfully-fetched recordMap has no renderable content
