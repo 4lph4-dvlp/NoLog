@@ -1,9 +1,9 @@
 ---
-status: testing
+status: passed
 phase: 07-content-failure-isolation-live-diagnosis
 source: [07-VERIFICATION.md]
 started: 2026-08-09T17:40:00Z
-updated: 2026-08-09T17:40:00Z
+updated: 2026-08-10T00:00:00Z
 ---
 
 # Phase 7 — Human Verification (UAT)
@@ -59,15 +59,31 @@ renders normally — otherwise "body did not render" is ambiguous between the tw
 
 ### Expected
 
-- [ ] The post **body still renders** — the Notion content is visible.
-- [ ] The page returns **HTTP 200**. Not a 404, not an error page.
-- [ ] Exactly one `[PostPage:chrome]` line appears in the server console, naming the chrome leg.
-- [ ] **No** `[PostPage:recordMap]` line appears — the content leg was untouched and must not be implicated.
-- [ ] Under the active `default` template nothing visibly changes for the reader (D-13: silent degradation);
+- [x] The post **body still renders** — the Notion content is visible.
+- [x] The page returns **HTTP 200**. Not a 404, not an error page.
+- [x] Exactly one `[PostPage:chrome]` line appears in the server console, naming the chrome leg.
+- [x] **No** `[PostPage:recordMap]` line appears — the content leg was untouched and must not be implicated.
+- [x] Under the active `default` template nothing visibly changes for the reader (D-13: silent degradation);
       the categories/related lists it never rendered are simply empty.
 
-**Result:** _pending_
-**Observed at:** _pending_
+**Result:** passed — a forced chrome-leg throw left the post body rendering at HTTP 200, and named only the chrome leg.
+**Observed at:** 2026-08-10, local production build (`npm run build` + `npm start`), Phase 8 plan 08-03 under D-15.
+
+**Run notes (2026-08-10, during Phase 8 per D-15).** Fault injected as an env-gated `throw` at the top of the
+chrome `try` in `apps/web/src/app/post/[id]/page.tsx`, so the content leg was provably untouched; reverted
+immediately after, and `git status --porcelain apps/web/src` is empty. Observations, one per expected item:
+(1) the renderer was entered — neither CONT-05 sentence appeared in the served HTML, which by the template's
+own three-way branch means `recordMap` was present and non-empty; (2) HTTP **200**, and the page carried the
+real post's `<title>`, versus a genuine 404 which returns status 404 and the site title; (3) exactly **one**
+`[PostPage:chrome]` line — `[PostPage:chrome] Error: UAT: forced chrome failure`; (4) **zero**
+`[PostPage:recordMap]` lines; (5) nothing reader-visible changed, as expected under the `default` template,
+which never renders the categories/related lists.
+
+**Why this run is meaningful and an earlier one would not have been.** Until Phase 8's User-Agent fix landed,
+the content leg was failing for an unrelated reason (the Cloudflare 403), so "the body did not render" was
+ambiguous between the two causes. The zeroth-step baseline confirmed the body rendering *before* the fault was
+injected, which is what makes item (1) a real observation rather than a coincidence. This is the ordering note
+this file's own procedure called for.
 
 ---
 
@@ -103,18 +119,42 @@ directions so the test proves discrimination, not just that one branch works:
 
 ### Expected
 
-- [ ] Step 1 renders the **404** page. `notFound()` is still reachable for a genuinely missing post.
-- [ ] Step 2 renders the **"This post is temporarily unavailable"** card — heading, explanatory sentence, and
+- [x] Step 1 renders the **404** page. `notFound()` is still reachable for a genuinely missing post.
+- [x] Step 2 renders the **"This post is temporarily unavailable"** card — heading, explanatory sentence, and
       a working "Back to feed" link — at **HTTP 200**, *not* a 404 and *not* an error page.
-- [ ] Step 2 emits one `[PostPage:post]` line naming that leg.
-- [ ] The two outcomes are **visibly different from each other**. If both render the same thing, the
+- [x] Step 2 emits one `[PostPage:post]` line naming that leg.
+- [x] The two outcomes are **visibly different from each other**. If both render the same thing, the
       discriminator is not discriminating and SC#4 is not met.
-- [ ] The card renders inside the normal page chrome (sidebars, header, theme toggle all present) — it
+- [x] The card renders inside the normal page chrome (sidebars, header, theme toggle all present) — it
       replaces the article column, not the whole page.
 - [ ] `PostUnavailable` respects light **and** dark mode (`next-themes`); no raw colour is hard-coded.
 
-**Result:** _pending_
-**Observed at:** _pending_
+**Result:** passed — the discriminator discriminates: a missing post 404s, a transient failure renders the card at 200.
+**Observed at:** 2026-08-10, local production build (`npm run build` + `npm start`), Phase 8 plan 08-03 under D-15.
+
+**Run notes (2026-08-10, during Phase 8 per D-15).** Both directions were exercised in one session.
+
+*The `notFound()` direction* — a well-formed UUID absent from the database returned **HTTP 404** with the site
+title and no card. `notFound()` remains reachable for a genuinely missing post.
+
+*The `PostUnavailable` direction* — `NOTION_TOKEN` was overridden inline at server start with a syntactically
+valid but wrong value (never written into `.env.local`, which `git status` confirms is untouched; the value
+itself is not recorded anywhere). A real, public post id then returned **HTTP 200** carrying the
+"temporarily unavailable" heading, its explanatory sentence, and a working "Back to feed" link, inside the
+normal page chrome — the `<aside>` elements are present, so the card replaced the article column, not the
+page. Exactly one `[PostPage:post]` line was emitted:
+`[PostPage:post] {"verdict":"unavailable","reason":"notion-error"}`. The real token was restored by simply
+restarting without the override.
+
+*Visibly different from each other* — yes, and by more than wording: **404 + site title** versus
+**200 + a bordered card with a heading and a link**. A reader cannot confuse them.
+
+**The one unticked item, and exactly what was and was not checked.** `PostUnavailable`'s light/dark behaviour
+was verified **structurally, not visually**: the served HTML uses the `text-warning` design token rather than
+any raw colour, and Phase 7's approved `07-UI-SPEC.md` already established that token resolves in both themes
+against `globals.css`. Nobody loaded the card in a browser and toggled the theme. That half is left unticked
+rather than claimed. It is recorded here as **unexercised: the card was never viewed in a browser under both
+themes** — and noted that it is not what SC#4 asserts, so it does not hold SC#4 open.
 
 ---
 
