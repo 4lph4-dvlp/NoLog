@@ -32,8 +32,15 @@ export type MissingPostVerdict = "missing" | "unavailable";
 // imported from directly (REQUIREMENTS.md D-05).
 const NOTION_VERSION = "2022-06-28";
 
-/** Maximum length of a captured response-body excerpt — matches plan
- * 07-01's `BODY_EXCERPT_MAX_LENGTH` convention in `lib/notion-x.ts`. */
+/** Maximum length of a captured response-body excerpt.
+ *
+ * 200 was chosen in Phase 7 (D-03) over 1000: it is enough to classify a
+ * response — a `<!DOCTYPE html>` Cloudflare page versus a Notion JSON error
+ * is decided in the first ~90 characters — while bounding how much of an
+ * upstream body ever reaches a log line. The sibling constant this once
+ * mirrored in `lib/notion-x.ts` was removed by Phase 8's D-19 teardown; the
+ * rationale is restated here rather than pointing at a symbol that no longer
+ * exists. */
 const BODY_EXCERPT_MAX_LENGTH = 200;
 
 // Module-scope one-shot log latch (pattern copied from
@@ -130,7 +137,10 @@ async function buildResponseDetail(
 }
 
 /** Derived, coarse shape of a page id for diagnostic purposes — never the
- * raw id itself. Mirrors `lib/notion-x.ts`'s `describePageIdShape()`. */
+ * raw id itself, so a log line can report that an id was malformed without
+ * echoing caller-supplied input. The near-identical helper this once mirrored
+ * in `lib/notion-x.ts` was removed by Phase 8's D-19 teardown, which leaves
+ * this the sole copy — no longer a duplicate to keep in sync. */
 function describePageIdShape(pageId: string): "compact-32-hex" | "dashed-uuid" | "unrecognized" {
   if (/^[0-9a-f]{32}$/i.test(pageId)) {
     return "compact-32-hex";
