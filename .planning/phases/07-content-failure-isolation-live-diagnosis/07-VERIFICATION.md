@@ -1,19 +1,22 @@
 ---
 phase: 07-content-failure-isolation-live-diagnosis
 verified: 2026-08-10T00:00:00Z
-status: human_needed
+status: passed
 score: 3/4 must-haves verified
 behavior_unverified: 1
 overrides_applied: 0
 behavior_unverified_items:
+
   - truth: "SC#3/SC#4's live halves — a chrome-leg failure leaving the body rendering (SC#3), and a transient getPost()-adjacent failure rendering PostUnavailable instead of a 404 (SC#4)"
     test: "Induce a genuine failure of getCategories()/related-posts getPosts() (SC#3), or a genuine non-404 failure on classifyMissingPost()'s api.notion.com/v1/pages/{id} discriminator call (SC#4), against the deployed Production site, then observe the render"
     expected: "SC#3: the post body still renders, with a [PostPage:chrome] log line for that request. SC#4: a plain-200 'This post is temporarily unavailable' card renders instead of a 404, with a [PostPage:post] log line."
     why_human: "No test infrastructure exists in this repo (explicitly out of scope), so no automated test can exercise either state transition. The capture window in 07-EVIDENCE.md happened to hit neither failure path live — getPost() and the chrome fetches both succeeded on every observed request — so the code's correctness for these two paths rests on static/structural verification only, not a live-observed transition."
 human_verification:
+
   - test: "Confirm, on the deployed Production site (or a forced-failure rehearsal against it), that a categories/related-posts failure still renders the post body with a [PostPage:chrome] log line."
     expected: "Post title, metadata, and body all render; categories/related-posts silently degrade to empty; the failure is visible only in the Vercel log under the [PostPage:chrome] prefix."
     why_human: "Requires a live Notion/Vercel failure or a deliberate fault injection against Production; PITFALLS 12 rules out next dev, and this repo has no test harness to simulate it."
+
   - test: "Confirm, on the deployed Production site, that a genuine transient failure of the getPost()-adjacent discriminator (classifyMissingPost) renders the PostUnavailable card at HTTP 200 rather than a 404."
     expected: "'This post is temporarily unavailable' card renders (CloudOff icon, exact heading/body copy, Back to feed link) with a [PostPage:post] log line; notFound() is not reached."
     why_human: "Same as above — the 07-03 capture window never induced this failure (getPost() succeeded on every observed request), so PostUnavailable's live reachability is confirmed only by source review, not observation."
@@ -117,3 +120,42 @@ D-19's teardown of the diagnostic instrumentation (`NOTION_DEBUG_DIAGNOSTICS`, `
 
 _Verified: 2026-08-10_
 _Verifier: Claude (gsd-verifier)_
+
+---
+
+## Closure — status moved `human_needed` → `passed` (2026-08-10)
+
+**Appended, not rewritten.** Every finding above is the original verdict and is unchanged. This section
+records only why the frontmatter status moved, so the change is not silent.
+
+This report scored **3/4** and routed to `human_needed` because SC#3 and SC#4 were
+`PRESENT_BEHAVIOR_UNVERIFIED` — the code was present, wired, and confirmed correct on read, but neither state
+transition had ever been observed. That was the correct call at the time and is not being revised.
+
+**What closed it.** Phase 8 plan 08-03 ran both tests under D-15 and observed both transitions. Recorded in
+`07-UAT.md` with timestamps:
+
+- **SC#3** — an env-gated forced throw in the chrome leg left the post body rendering at HTTP 200, with
+  exactly one `[PostPage:chrome]` line and **zero** `[PostPage:recordMap]` lines. The fault was reverted and
+  the working tree confirmed clean.
+- **SC#4** — both directions exercised: an absent UUID returns **404**; a wrong `NOTION_TOKEN` returns **200**
+  with the `PostUnavailable` card inside normal page chrome and one
+  `[PostPage:post] {"verdict":"unavailable","reason":"notion-error"}` line. The two are visibly different.
+
+**Why the test only became meaningful after Phase 8.** Until the User-Agent fix landed, the content leg was
+failing for an unrelated reason, so "the body did not render" was ambiguous between two causes. Plan 08-03
+established the body rendering as a baseline *before* injecting the fault — which is what makes SC#3's first
+item an observation rather than a coincidence. This report's own `human_needed` routing is what forced that
+ordering.
+
+**One item deliberately left unticked** in `07-UAT.md`: `PostUnavailable`'s light/dark rendering was verified
+structurally (the served HTML uses the `text-warning` token, not a raw colour) but **never viewed in a browser
+under both themes**. Recorded as `unexercised` with that reason. It is not what SC#4 asserts, so it does not
+hold SC#4 open — but it is not claimed either.
+
+**Also completed after this report was written:** `07-SECURITY.md` (SECURED, 19/19 threats closed, 0 open) and
+`COVERAGE.md` (a reasoned no-external-API-integration declaration resolving the `api-coverage.verify-pre`
+gate). Neither existed when the 3/4 score was assigned.
+
+*Status changed during `/gsd-verify-work 7`, per that workflow's canonicalization step, after both UAT items
+resolved with zero issues.*
