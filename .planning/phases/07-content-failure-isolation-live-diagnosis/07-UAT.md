@@ -18,6 +18,39 @@ milestone exists because that distinction was collapsed once before (PROJECT.md'
 
 ---
 
+## Tests
+
+<!-- Machine-readable index. The narrative sections below carry the full observations,
+     procedures and caveats; these entries are the parseable summary of the same results. -->
+
+### 1. SC#3 — a chrome-leg failure must not blank the post body
+expected: With a forced throw in the chrome try block, the post body still renders at HTTP 200; exactly one [PostPage:chrome] line and zero [PostPage:recordMap] lines; nothing reader-visible changes under the default template.
+result: pass
+observed_at: 2026-08-10
+source: local production build (npm run build + npm start), Phase 8 plan 08-03 under D-15
+
+### 2. SC#4 — a transient getPost failure must render PostUnavailable, not a 404
+expected: An absent-but-well-formed UUID renders the 404 page; a transient failure renders the "temporarily unavailable" card at HTTP 200 inside normal page chrome with one [PostPage:post] line; the two outcomes are visibly different.
+result: pass
+observed_at: 2026-08-10
+source: local production build (npm run build + npm start), Phase 8 plan 08-03 under D-15
+note: PostUnavailable's light/dark rendering verified structurally (text-warning token, no raw colour) but never viewed in a browser under both themes — recorded as unexercised, and not what SC#4 asserts.
+
+## Summary
+
+total: 2
+passed: 2
+issues: 0
+pending: 0
+skipped: 0
+blocked: 0
+
+## Gaps
+
+[none]
+
+---
+
 ## Why these two can be tested locally, when CONT-03 could not
 
 `PITFALLS.md` Pitfall 12 rules out `next dev` for the *content-rendering* and *thumbnail* bugs. That
