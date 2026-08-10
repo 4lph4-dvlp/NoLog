@@ -6,14 +6,14 @@ current_phase: 08
 current_phase_name: content-rendering-fix
 status: executing
 stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-08-09T19:16:11.274Z"
+last_updated: "2026-08-10T17:22:01.799Z"
 last_activity: 2026-08-10
 last_activity_desc: Phase 08 execution started
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
   percent: 25
 ---
 
@@ -148,6 +148,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 8 Plan 01] NOLOG_USER_AGENT shipped as "NoLog (+https://github.com/4lph4-dvlp/NoLog)" (no version, hardcoded, no env var), wired through NotionAPI's ofetchOptions.headers["User-Agent"] — fixes Cloudflare 403 on notion-client's default user-agent: node
 - [Phase ?]: [Phase 8 Plan 01] D-19 teardown complete: deleted /api/diagnose-page route and describeFetchFailure()+helpers from lib/notion-x.ts; isDiagnosticsEnabled() and post-availability.ts preserved untouched (D-13)
 - [Phase ?]: [Phase 8 Plan 01] CONT-05 split shipped: isRecordMapEmpty(recordMap) with RENDERABLE_BLOCK_MIN=2 (boundary still [ASSUMED] pending plan 08-02); contentFetchFailed threaded from route to DefaultPostPage, driving a 3-way content branch with the two locked UI-SPEC sentences
+- [Phase ?]: [Phase 8 Plan 02] RENDERABLE_BLOCK_MIN corrected 2 -> 4 on measurement, closing 08-RESEARCH Assumption A1. A real empty public Notion page returns 3 block keys, not 1 — a page inside a database carries its ancestor chain (page + parent collection + one more) in the recordMap. Real posts return 21/44/45. At the derived threshold of 2 an empty page fell through to the renderer and CONT-05's no-content sentence was unreachable; confirmed by direct observation before the fix (content area held only the loading skeleton) and after (sentence renders, real posts unaffected). One measurement, one page, one database — a fork nesting pages differently could see a different floor; caveat written into the constant's comment.
 
 ### Pending Todos
 
