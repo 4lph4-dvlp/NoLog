@@ -1,7 +1,7 @@
 import type { Post } from "@/types";
 import Link from "next/link";
-import Image from "next/image";
 import { CONFIG } from "@/site.config";
+import { PostThumbnail } from "@/components/PostThumbnail";
 
 interface DefaultHomePageProps {
   posts: Post[];
@@ -35,17 +35,7 @@ export default function DefaultHomePage({ posts }: DefaultHomePageProps) {
         >
           <Link href={`/post/${post.id}`} className="flex gap-4">
             {/* Thumbnail */}
-            {post.thumbnail && (
-              <div className="relative shrink-0 w-24 h-24 rounded-md overflow-hidden bg-surface">
-                <Image
-                  src={post.thumbnail}
-                  alt={post.title}
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-              </div>
-            )}
+            <PostThumbnail post={post} variant="card" />
 
             {/* Content */}
             <div className="flex-1 min-w-0">
