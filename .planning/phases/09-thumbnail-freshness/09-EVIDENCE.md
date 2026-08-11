@@ -584,25 +584,72 @@ which is expected — same underlying Notion file, same resolved URL.
 
 ### Step 5 — the reader's view, corroboration only
 
-**Status: PENDING — not yet performed.** Per this plan's own discipline (D-13, and the explicit
-instruction accompanying this execution run), this step is a genuine fresh-incognito-browser observation
-and is not something the executing agent may perform on the operator's behalf or infer from the direct
-requests above. It requires an actual human (or an explicitly operator-directed browser session) to open
-`https://4lph4-bl0g.vercel.app/` and
-`https://4lph4-bl0g.vercel.app/post/3702c61e-4a24-8001-a9a6-c4ff3aadadb5` in a fresh incognito window and
-confirm every thumbnail renders.
+**Performed at approximately `2026-08-11T16:10Z`, after the cold capture in steps 1-4 above** — the
+mechanical criterion and the timing together are why this cannot disturb the one-shot window, and why it
+is corroboration rather than a second establishing observation.
 
-When performed, record here: pass/fail for each page, and the one-line reason this is corroboration and
-not proof — Next 16's image optimizer holds a derived variant for at least four hours, and 09-02's
-`/browse` pass populated that cache within this window's span, so a thumbnail rendering in a browser now
-could be the optimizer replaying bytes it fetched before the gap rather than a fresh resolution. Steps 1-4
-above, not this step, are what establish IMG-01 and IMG-02.
+**Who/what performed it, stated plainly:** this was **not** a human eyeball in a personal incognito
+window. It was run in a **freshly started headless Chromium daemon** (the gstack `/browse` skill), whose
+only prior state was `about:blank` — the previous daemon (used earlier in 09-02 for the IMG-04
+observation) was stopped and a new one started specifically for this check, so the session carried no
+cookies, no `localStorage`, and no prior visit to this origin for either page. That is
+cookie-and-storage-equivalent to a fresh incognito window, but the record must not present it as a human
+visual confirmation, and it does not.
 
-### Result — pending step 5
+**Method:** navigated to each page, waited for network idle, then enumerated every `<img>` element and
+read `currentSrc`, `naturalWidth`, `naturalHeight`, and `complete` off the live DOM. The pass criterion was
+mechanical and specific — `naturalWidth > 0 && complete === true` — not "it looked fine to the eye."
+Screenshots were also captured for both pages.
 
-- **IMG-01:** established by steps 1-3 above — three distinct home-feed thumbnail references, read out of
-  a 224-minute-idle first request, each resolve to live image bytes on direct request. Awaiting step 5's
-  corroborating browser observation to close this task's full acceptance criteria.
-- **IMG-02:** established by step 4 above — the post hero thumbnail, extracted from a dynamic-route render
-  inside the same idle window, resolves to live image bytes on direct request. Awaiting step 5's
-  corroborating browser observation, same as IMG-01.
+**`/` (home feed):**
+
+| # | src (role) | naturalWidth × naturalHeight | complete |
+|---|---|---|---|
+| 1 | optimizer-wrapped `/avatar.png` | 80 × 80 | true |
+| 2 | optimizer-wrapped proxy path, post `3702c61e-…adb5` | 96 × 47 | true |
+| 3 | optimizer-wrapped proxy path, post `36e2c61e-…7e23` | 96 × 54 | true |
+| 4 | optimizer-wrapped proxy path, post `6b42c61e-…110f` | 96 × 54 | true |
+| 5 | optimizer-wrapped `/avatar.png` | 80 × 80 | true |
+
+Broken-image count (`!complete || naturalWidth === 0`): **0**. Console errors: **none**. The three
+thumbnail ids match the three extracted from the step-1 captured cold HTML exactly.
+
+**`/post/3702c61e-4a24-8001-a9a6-c4ff3aadadb5`:**
+
+| # | src (role) | naturalWidth × naturalHeight | complete |
+|---|---|---|---|
+| 1 | optimizer-wrapped `/avatar.png` | 80 × 80 | true |
+| 2 | optimizer-wrapped proxy path (hero), post `3702c61e-…adb5` | 1280 × 630 | true |
+| 3 | Notion body image (`www.notion.so/image/attachment…`) | 1920 × 945 | true |
+| 4 | Notion body image (same host/shape) | 1920 × 945 | true |
+| 5 | Notion body image (same host/shape) | 800 × 944 | true |
+| 6 | Notion body image (same host/shape) | 4000 × 3000 | true |
+| 7 | optimizer-wrapped `/avatar.png` | 80 × 80 | true |
+
+Broken-image count: **0**. Console errors: **none**. Rows 3-6 are `react-notion-x` body-block images
+served from Notion's own `www.notion.so/image/...` redirect endpoint — they are post *content* images,
+not thumbnails, and are **out of scope for IMG-01/IMG-02**. Noted only because their rendering was
+observed alongside the hero's, and labelled as out of scope rather than presented as thumbnail evidence.
+Only row 2 (the hero) is this task's corroborating signal for IMG-02.
+
+**Why this is corroboration and not proof, unchanged from the plan's own reasoning:** Next 16's image
+optimizer holds a derived variant for at least four hours, and 09-02's earlier `/browse` pass populated
+that cache within this same window's span. A thumbnail rendering here — even under a fresh, cookie-less
+daemon session — could in principle be the optimizer replaying bytes it fetched before the gap rather than
+proof of a fresh resolution through the proxy route. Steps 1-4 above, which requested the proxy path
+directly and outside the optimizer, are what establish IMG-01 and IMG-02; this step corroborates that a
+reader's actual browser view matches what those direct requests found.
+
+### Result
+
+- **IMG-01: established.** Steps 1-3: three distinct home-feed thumbnail references, read out of HTML that
+  had sat cached for 224 minutes (past both the 70-minute margin and Notion's ~1h presign lifetime), each
+  resolve to live image bytes (`200`, `image/png`, non-zero size) on a direct, outside-the-optimizer
+  request. Step 5 corroborates: the same three thumbnails render with `naturalWidth > 0 && complete` and
+  zero broken-image count in a freshly started, cookie-less browser session, with the caveat above about
+  what the optimizer's own cache floor can and cannot mask.
+- **IMG-02: established.** Step 4: the post hero thumbnail, extracted from a dynamic-route render that
+  occurred inside the same idle window (page HTML uncached, `x-vercel-cache: MISS` as always for this
+  route; what could have gone stale is `getPost`'s Data Cache entry per D-08), resolves to live image bytes
+  on direct request. Step 5 corroborates: the hero renders with `naturalWidth: 1280 × 630` and `complete:
+  true` in the same fresh browser session, zero broken-image count, no console errors.
