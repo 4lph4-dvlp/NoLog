@@ -14,6 +14,8 @@ A forker can go from "empty Notion database" to "live, working blog" using only 
 
 Known override at close: Phase 5 (Production Cutover)'s automated verification-status check reported `missing` due to a stray `05-01-VERIFICATION.md` file shadowing the real, passing `05-VERIFICATION.md` in the tool's alphabetical file-picker — confirmed a tooling false-negative, not an actual gap. Full detail in `STATE.md` Deferred Items.
 
+**v1.1 in progress — Phase 9 (Thumbnail Freshness) complete 2026-08-12.** Validated in Phase 9: IMG-01, IMG-02, IMG-03, IMG-04, IMG-05. Thumbnails now render through a server-side proxy route (`/api/thumbnail/[id]`) that resolves Notion's short-lived presigned S3 URL per request, so a cold load after an arbitrarily long idle gap no longer shows blank images. Gap G-09-1, raised in UAT, was closed by plan 09-04: the presigned URL had still been leaking into the RSC flight payload because `PostThumbnail` was a Client Component receiving the whole `Post` object; the boundary was moved so the only Client Component in the path receives three primitives. Confirmed on the deployed site — 0 presigned-URL occurrences where 3 and 1 were previously measured. Two coverage gaps remain accepted-by-operator rather than observed: the host-allowlist guard's firing (Notion picks the presign host, so an off-allowlist case cannot be constructed from real data) and IMG-05's live half (no external-thumbnail post exists in the operator's database). Both are source-verified and corroborated by code review. Phases 7 and 8 complete; Phase 10 (Collapsible Sidebars & Reading Width) remains.
+
 ## Current Milestone: v1.1 Live Blog Bug Fixes & Reading Width
 
 **Goal:** Fix the image and body-content rendering that is actually broken on the deployed blog (4lph4-bl0g.vercel.app), and give readers direct control over the content column's width.
@@ -130,4 +132,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-09 after starting milestone v1.1 (Live Blog Bug Fixes & Reading Width)*
+*Last updated: 2026-08-12 after Phase 9 (Thumbnail Freshness) completed*
