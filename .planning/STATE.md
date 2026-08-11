@@ -4,17 +4,17 @@ milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 10
 current_phase_name: Collapsible Sidebars & Reading Width
-status: executing
-stopped_at: Completed 10-03-PLAN.md
-last_updated: "2026-08-11T22:23:33.562Z"
+status: verifying
+stopped_at: Completed 10-04-PLAN.md
+last_updated: "2026-08-11T23:05:20.890Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 15
-  completed_plans: 14
-  percent: 75
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 Phase: 10 (Collapsible Sidebars & Reading Width) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
-Progress: [█████████░] 93% (2/4 v1.1 phases complete)
+Status: Phase complete — ready for verification
+Progress: [██████████] 100% (2/4 v1.1 phases complete)
 Last activity: 2026-08-12 — Phase 10 execution started
 
 > **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
@@ -93,6 +93,7 @@ Last activity: 2026-08-12 — Phase 10 execution started
 | Phase 10 P01 | 35min | 2 tasks | 6 files |
 | Phase 10 P02 | ~30min | 2 tasks | 4 files |
 | Phase 10 P03 | ~40min | 2 tasks | 4 files |
+| Phase 10 P04 | ~40min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -180,6 +181,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 10 Plan 03] applyCollapse(side, collapsed, animate) is the single shared routine invoked by both the click handler and the matchMedia resize listener, so A11Y-03's focus rescue and A11Y-02's inert write never drift between the two triggers; focus rescue fires strictly before the inert write, same tick, on both paths and both sides
 - [Phase ?]: [Phase 10 Plan 03] Confirmed via real Tab-key navigation and CDP Accessibility.getFullAXTree (not gstack /browse's own snapshot command, which does not honor inert when scoped to a collapsed panel) that A11Y-02 holds: the collapsed panel and its descendants are genuinely absent from the accessibility tree, not merely visually hidden
 - [Phase ?]: [Phase 10 Plan 03] Post-detail prose column capped at max-w-[1100px] (one-token change from max-w-none); measured on a real post at 1400x900: both expanded 864/864, both collapsed 1304/1100 (+236px payoff), right-only collapsed 1104/1100 -- matching wave 2's corrected asymmetric-collapse arithmetic, not the UI-SPEC's uncorrected 1136px/18px paragraph
+- [Phase ?]: [Phase 10 Plan 04] Both-collapsed width re-measured live and matches D-04's derived 1304px exactly; corrected 10-UI-SPEC.md's Reading-Width Contract paragraph which had double-counted the 32px gap (1136px/18px replaced with the real 1104px/1100px/~2px)
+- [Phase ?]: [Phase 10 Plan 04] Declined to bypass the harness classifier blocking a live subscribe-form submit (real PII against production Resend) and declined to mutate production Notion content for the E7 wide-table backstop; both recorded UNEXERCISED with stated reasons rather than fabricated or worked around
+- [Phase ?]: [Phase 10 Plan 04] nyquist_compliant left false in 10-VALIDATION.md: all 15 requirement rows + SC#5 are green on their core definition, but 4 rows carry an honestly-recorded UNEXERCISED sub-item (SIDE-10 live submit, A11Y-04 dual-bypass, E7 real-content backstop, SC#5 home-page scroll depth) per the plan's own all-or-nothing rule
 
 ### Pending Todos
 
@@ -208,8 +212,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T22:23:33.530Z
-Stopped at: Completed 10-03-PLAN.md
+Last session: 2026-08-11T23:05:20.859Z
+Stopped at: Completed 10-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
