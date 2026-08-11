@@ -149,3 +149,47 @@ Everything else — the User-Agent fix, the CONT-05 split's no-content branch, t
 
 *Verified: 2026-08-10T18:08:12Z*
 *Verifier: Claude (gsd-verifier)*
+
+---
+
+## Gap closure progress (appended 2026-08-10 — status deliberately NOT changed)
+
+**Appended, not rewritten.** Every finding above is the original verdict, unchanged. Status remains
+`gaps_found` because one gap is genuinely still open.
+
+| # | Gap | State |
+|---|---|---|
+| 1 | `08-CACHE-EVIDENCE.md` never created | **closed** — commit `a38b58e` |
+| 2 | Plan 08-04 Task 2's checkpoint result unrecorded | **partially closed** — see below |
+| 3 | CONT-05 fetch-failed sentence never observed | **closed** — commit `13852d6` |
+
+**Gap 1 — closed.** The artifact now exists with the per-request, per-post table plan 08-04's `must_haves`
+required: 13 rows across 3 posts and 4 passes, each carrying the extracted `x-vercel-cache` value and two
+integer sentence counts. Recorded to T-08-13's rule — no header dump, no body excerpt, no token. It also
+records, rather than normalises away, that the prescribed `STALE` → `HIT` sequence never occurred and why:
+`/post/[id]` is `ƒ (Dynamic)`, so there is no page cache to go stale.
+
+**Gap 3 — closed by observation.** The fetch-failed sentence was watched rendering: content leg forced to
+throw, HTTP 200, `This post's content could not be loaded right now.` present once, the no-content sentence
+absent, the pre-Phase-8 combined string absent, renderer not entered, one `[PostPage:recordMap]` line. Full
+record in `08-UAT.md`. Both CONT-05 states now rest on direct observation rather than static review — which
+was this gap's entire point.
+
+**Gap 2 — half closed, and the open half is why this report still reads `gaps_found`.**
+
+*Done:* the live post-deploy check of the removed diagnostic route. `GET /api/diagnose-page` returns **404**
+both unauthenticated and with a bearer header — and, more tellingly, it now returns the **site's own 404
+page** rather than the bare empty 404 the gated route used to emit. The change in response *shape* is the
+evidence: the route is absent, not merely refusing.
+
+*Open:* an affirmative listing of the Production environment variable **names**, which plan 08-04 Task 2 asks
+for as positive proof of D-19's "zero net new forker-facing env vars". Only the Vercel dashboard can supply
+it. What exists instead is negative evidence — the route 404s, no source file reads
+`NOTION_DEBUG_ROUTE_SECRET`, no README mentions either variable (`07-SECURITY.md` § D-19 goal check), and the
+operator recorded removing both at 2026-08-09 17:05 UTC with a closeout redeploy at 17:13 UTC
+(`07-EVIDENCE.md` § Closeout). That is strong, and it is not the same thing as having read the list.
+
+**Why the status is not being flipped.** Two of three gaps are closed on evidence; the third is not, and it
+depends on a reading only the operator can take. Marking this `passed` now would assert something nobody has
+checked — the precise failure this milestone was created to stop repeating. It moves to `passed` when the
+listing is in hand, and not before.
