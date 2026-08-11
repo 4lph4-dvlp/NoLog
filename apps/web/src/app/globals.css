@@ -60,18 +60,28 @@
 }
 
 /* ─── Sidebar collapse (Phase 10) ───────────────────────────────────────── */
-/* @property registration makes --sidebar-width animatable by grid-template-
-   columns. --profile-width's own @property registration and the
-   data-sidebar-right override are added by plan 10-02, once the right
-   toggle exists. */
+/* @property registration makes --sidebar-width and --profile-width
+   animatable by grid-template-columns. Both custom properties are declared
+   only under :root above and are never redefined inside .dark, so one
+   attribute-scoped override per side works identically in both themes. */
 @property --sidebar-width {
   syntax: '<length>';
   inherits: true;
   initial-value: 200px;
 }
 
+@property --profile-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 240px;
+}
+
 html[data-sidebar-left="collapsed"] {
   --sidebar-width: 0px;
+}
+
+html[data-sidebar-right="collapsed"] {
+  --profile-width: 0px;
 }
 
 /* Transition is opt-in — only present while SidebarShell adds the

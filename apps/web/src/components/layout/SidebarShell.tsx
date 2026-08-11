@@ -13,6 +13,7 @@ import {
   type SidebarSide,
 } from "@/lib/sidebar";
 import { SidebarToggleLeft } from "@/components/layout/SidebarToggleLeft";
+import { SidebarToggleRight } from "@/components/layout/SidebarToggleRight";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface SidebarShellProps {
@@ -37,14 +38,11 @@ const SIDES: SidebarSide[] = ["left", "right"];
  * to undefined, silently disabling the subscribe form for every configured
  * forker.
  *
- * The per-side collapse machinery (handleToggle below) is written once,
- * parameterized by `side`, so plan 10-02's right-side avatar toggle reuses
- * it unmodified. Task 1 wired only the left side's mount-read and click
- * path; the right side's Record entries exist (matching the pre-hydration
- * script, which writes both sides' attributes deliberately) and are now
- * also read by the auto-collapse listener below — a no-op today since
- * there is no right-side button or CSS consumer yet, but that lands with
- * plan 10-02's avatar toggle without needing to touch this listener again.
+ * The per-side collapse machinery (handleToggle below, and the mount-read
+ * effect) is written once, parameterized by `side`, and invoked for both
+ * "left" and "right" — no second, copy-pasted state machine. The right
+ * side's avatar toggle (SidebarToggleRight) is wired into the pinned row
+ * below, reusing this machinery unmodified.
  */
 export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProps) {
   const [mounted, setMounted] = useState(false);
@@ -75,13 +73,16 @@ export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProp
       // second, independent localStorage read here for the collapsed value
       // (Pitfall 1). The explicit preference is read separately via
       // readSidebarPref, which is the one place localStorage is read on
-      // the client.
-      const leftCollapsed = document.documentElement.getAttribute(sidebarAttrName("left")) === "collapsed";
-      const leftPref = readSidebarPref("left");
-      collapsedRef.current = { ...collapsedRef.current, left: leftCollapsed };
-      prefRef.current = { ...prefRef.current, left: leftPref };
-      setCollapsed((prev) => ({ ...prev, left: leftCollapsed }));
-      setPrefs((prev) => ({ ...prev, left: leftPref }));
+      // the client. One per-side helper, invoked for both sides, so this
+      // mount-read logic exists exactly once.
+      SIDES.forEach((side) => {
+        const sideCollapsed = document.documentElement.getAttribute(sidebarAttrName(side)) === "collapsed";
+        const sidePref = readSidebarPref(side);
+        collapsedRef.current = { ...collapsedRef.current, [side]: sideCollapsed };
+        prefRef.current = { ...prefRef.current, [side]: sidePref };
+        setCollapsed((prev) => ({ ...prev, [side]: sideCollapsed }));
+        setPrefs((prev) => ({ ...prev, [side]: sidePref }));
+      });
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -194,6 +195,11 @@ export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProp
         />
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <SidebarToggleRight
+            collapsed={collapsed.right}
+            mounted={mounted}
+            onToggle={() => handleToggle("right")}
+          />
         </div>
       </div>
       <div

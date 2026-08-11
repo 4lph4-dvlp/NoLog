@@ -60,7 +60,11 @@ export function Profile() {
   );
 
   return (
-    <aside className="flex flex-col items-center text-center gap-4 p-6 bg-surface border border-border rounded-2xl shadow-sm transition-colors">
+    // A plain <div>, not a landmark: SidebarShell's right panel wrapper is
+    // already the sole complementary region for this side, so this card
+    // must not nest a second landmark inside it — that would report two
+    // regions where there is one collapsible panel (A11Y-05 prerequisite).
+    <div className="flex flex-col items-center text-center gap-4 p-6 bg-surface border border-border rounded-2xl shadow-sm transition-colors">
       {/* Avatar */}
       <div className="relative w-20 h-20 rounded-full overflow-hidden bg-surface-active border-2 border-border">
         <Image
@@ -114,6 +118,6 @@ export function Profile() {
           })}
         </div>
       )}
-    </aside>
+    </div>
   );
 }
