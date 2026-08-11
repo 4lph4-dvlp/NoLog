@@ -30,7 +30,7 @@ Full phase goals, success criteria, and plan-level detail archived to [`mileston
 **Milestone Goal:** Fix the image and body-content rendering that is actually broken on the deployed blog, and give readers direct control over the content column's width.
 
 - [x] **Phase 7: Content Failure Isolation & Live Diagnosis** - Make the post-detail failure legible in production and stop chrome failures from blanking the body (completed 2026-08-11)
-- [ ] **Phase 8: Content Rendering Fix** - Published posts render their Notion body on first visit, against the cause Phase 7 actually observed
+- [x] **Phase 8: Content Rendering Fix** - Published posts render their Notion body on first visit, against the cause Phase 7 actually observed (completed 2026-08-11)
 - [ ] **Phase 9: Thumbnail Freshness** - Thumbnails load on a first, cold visit no matter how long the site sat idle
 - [ ] **Phase 10: Collapsible Sidebars & Reading Width** - Readers collapse either sidebar independently and reclaim the width for the article
 
@@ -81,7 +81,7 @@ Notes for planning:
   3. A reader on a post whose Notion page genuinely has no content sees wording saying so, visibly distinct from the wording shown when the fetch failed. The two states are no longer the same sentence.
   4. The post still renders through `notion-client` + `react-notion-x` (D-01) — no renderer was rebuilt against the official blocks API, and no new npm dependency was added (D-07).
 
-**Plans**: 4/4 plans executed
+**Plans**: 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -175,7 +175,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 5. Production Cutover | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
-| 8. Content Rendering Fix | v1.1 | 4/4 | In Progress|  |
+| 8. Content Rendering Fix | v1.1 | 4/4 | Complete   | 2026-08-11 |
 | 9. Thumbnail Freshness | v1.1 | 0/TBD | Not started | - |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 
