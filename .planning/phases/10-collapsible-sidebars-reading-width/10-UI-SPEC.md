@@ -367,18 +367,68 @@ planner or executor to invent.
 
 ## UI Considerations
 
-Applicable state considerations resolved: **1 covered, 2 backstop, 0 unresolved** (3 additional
-rows dismissed with reason — listed for completeness, not counted against coverage since a
-dismissal is itself a resolution, not a gap).
+Computed by the `ui-consideration-probe` engine after checker approval (workflow §9.5), not
+hand-authored. Seven surfaces were classified with author-supplied `elements` overrides (the
+heuristic classifier over-classified — it proposed all six kinds for five of the seven surfaces,
+which would have asked a theme-toggle button about `zero-one-many`; the overrides below name only
+the kinds actually present, which is what makes an unresolved row meaningful).
 
-| Category | Element(s) | Status | Resolution / Reason |
-|----------|------------|--------|---------------------|
-| empty + error | Avatar toggle image | 🧪 backstop | D-14's `lucide-react` `User` icon fallback (see Component Contract 2) covers both "missing" (empty) and "failed to load" (error) with one mechanism — held out for a real verification pass: render with `CONFIG.profile.avatarUrl` pointed at a 404 path, confirm the icon renders correctly in **both** light and dark theme. |
-| loading | Avatar toggle image | dismissed | `CONFIG.profile.avatarUrl` (`/avatar.png`) is a local, build-bundled static asset, not a runtime network fetch — no perceptible loading state applies. This is the same assumption `Profile.tsx`'s own 80px avatar already makes in production today; this phase does not change that. |
-| long-text | Hamburger / avatar toggle accessible names | dismissed | Both toggle strings are fixed, short, English-only, and locked by D-13/this contract's Copywriting section — there is no dynamic-length input that could drive truncation or wrapping here. |
-| overflow | Left/right panel inner content during collapse | ✅ covered | The Collapsed Geometry Contract's fixed-width inner wrapper + `overflow-hidden` on the `<aside>` (Pitfall 6 fix) guarantees content is clipped, never reflowed, as the track animates toward 0px. |
-| zero-one-many | Category list inside the left panel | dismissed | Item-count rendering/overflow for the category list is pre-existing `CategoryList.tsx` behavior, entirely unmodified by this phase — this phase only changes whether the panel's *outer track* is zero or non-zero width, never the list's own internal rendering. |
-| overflow + long-text | Post-detail prose column at the new 1100px cap | 🧪 backstop | Widening the cap from today's 864px to 1100px only *relaxes* existing width constraints — a layout that already fits at 864px cannot newly overflow at a wider 1100px. Held out anyway for a real visual pass: confirm the longest real published post title and any wide embed/table/code block render cleanly at the fully-both-collapsed 1100px width, in both themes. |
+**Element kinds (authored, `--auto` kind-confirmation):**
+
+| Id | Surface | Kinds |
+|----|---------|-------|
+| E1 | Hamburger toggle | `interactive-control` |
+| E2 | Avatar toggle | `interactive-control`, `media` |
+| E3 | Repositioned `ThemeToggle` | `interactive-control` |
+| E4 | Pinned sticky toggle row | `nav`, `interactive-control` |
+| E5 | Left collapsible panel (search + categories) | `form`, `list-collection`, `nav` |
+| E6 | Right collapsible panel (profile + subscribe) | `form`, `media`, `static-content`, `list-collection` |
+| E7 | Post-detail prose column at the 1100px cap | `static-content`, `media` |
+
+**Coverage: 37 applicable · 37 resolved · 0 unresolved · 0 unclassified — 33 explicit, 4 backstop.**
+
+Empty-state and error-state **copy** lives in `## Copywriting Contract`; the rows below cover
+shape-rooted STATE coverage and reference that section rather than restating it.
+
+| Id | Category | Verification | Statement |
+|----|----------|--------------|-----------|
+| E1 | loading | explicit | Before hydration the hamburger renders a fixed `w-[18px] h-[18px]` placeholder inside its normal button chrome (the `ThemeToggle.tsx:22-32` mounted-guard idiom), so the button's box never changes size between first paint and hydration. |
+| E1 | error | explicit | The hamburger performs no async work — a click synchronously rescues focus, sets `inert`, and flips a `data-sidebar-left` attribute. No fetch, no await, therefore no error state exists or is rendered. |
+| E1 | long-text | explicit | The hamburger renders no text node. Its only strings are the two fixed literals in `## Copywriting Contract`, carried in `aria-label`/`title`, so text length cannot affect its layout. |
+| E2 | empty | explicit | Absent media resolves to D-14's fallback: a centred `lucide-react` `User` icon at `w-5 h-5` on a `bg-surface-active` backdrop inside the same 36px circle, with the accent ring unchanged (Component Contract 2). |
+| E2 | loading | explicit | Before hydration a fixed 36px circular placeholder renders. After hydration the image is `CONFIG.profile.avatarUrl` (`/avatar.png`), a local build-bundled static asset served through `next/image` — no spinner or skeleton is specified for it, matching what `Profile.tsx`'s own 80px avatar already does in production. |
+| E2 | error | explicit | A failed load fires the `<img>`'s native `onError`, which flips local state to the same D-14 icon fallback as the `empty` row. One mechanism covers both; no retry and no error message. |
+| E2 | populated | explicit | Normal state is the 36px circle with `object-cover` image, `alt=""`, and the always-on `ring-2 ring-accent ring-offset-2 ring-offset-background` cue present identically whether the right panel is expanded or collapsed. |
+| E2 | long-text | explicit | Renders no text node; `alt` is deliberately empty and the accessible name is a fixed literal, so text length cannot affect layout. |
+| E3 | loading | explicit | `ThemeToggle`'s existing mounted guard renders an 18px placeholder in matching chrome (`ThemeToggle.tsx:22-32`). This phase changes only its position, never its internals. |
+| E3 | error | explicit | `next-themes`' `setTheme` is synchronous with no network call; internals unchanged by this phase, so no error state is introduced. |
+| E3 | long-text | explicit | Its two strings are the existing fixed `ThemeToggle.tsx:40-41` literals, unchanged; it renders no text node. |
+| E4 | loading | explicit | The row is server-rendered markup. Each of its three children carries its own fixed-size mounted-guard placeholder, so the row's height and its children's positions are stable from first paint through hydration — no reflow, no cumulative layout shift. |
+| E4 | error | explicit | The row is layout chrome with no async work of its own; no error state exists. |
+| E4 | overflow | explicit | The row renders only at `md` (≥768px) and holds three ~36px controls plus one 8px gap (≈116px) inside a container at least 736px wide, so it cannot overflow. `justify-between` deliberately decouples the cells from the animating grid tracks so the hamburger's hit area never shrinks toward 0 as the left track collapses. |
+| E4 | long-text | explicit | Contains no text node — three icon-only controls. |
+| E5 | empty | explicit | An unfilled `SearchBar` shows its existing placeholder; zero categories is pre-existing behaviour preserved by `app/layout.tsx:48-53`, which catches a Notion failure and passes `categories: []` to `CategoryList`. This phase changes only whether the outer track has width, never the panel's internal rendering. |
+| E5 | loading | explicit | Server-rendered with the page, so there is no data-loading state. The one genuine in-flight state is the collapse transition, during which the panel is already `inert` while still visually present — specified in the Transition Contract's sequencing step 2. |
+| E5 | error | explicit | A categories fetch failure degrades to `categories: []` via the existing `app/layout.tsx` catch; unchanged by this phase. |
+| E5 | populated | explicit | `SearchBar` above `CategoryList` inside a fixed `w-[200px]` inner wrapper, `sticky top-8 self-start`, exactly as today. |
+| E5 | partial | explicit | Partial category data renders through the existing `CategoryList` path unchanged; this phase adds no new data dependency to the panel. |
+| E5 | overflow | explicit | The Pitfall 6 fix governs this: `min-w-0 overflow-hidden` on the `<aside>` plus a fixed `w-[200px]` immediate child wrapper means the search input and category chips are progressively **clipped** by the shrinking boundary and never rewrap or repack as the track animates to `0px`. |
+| E5 | zero-one-many | explicit | Item-count rendering is pre-existing `CategoryList.tsx` behaviour, entirely unmodified — this phase only changes the outer track's width. |
+| E5 | long-text | backstop | An unusually long single category name inside the fixed `w-[200px]` inner wrapper must not push the wrapper wider or escape the `overflow-hidden` boundary. Held out for a real visual pass: render a category name long enough to exceed 200px and confirm it clips or wraps within the wrapper in both themes, expanded and mid-collapse. |
+| E6 | empty | explicit | When `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` are unset, `SubscribeSection` returns `null` server-side and the panel holds only the Profile card — the shipped, deliberate unconfigured-fork state. The panel must render correctly with that child absent. |
+| E6 | loading | explicit | Server-rendered with the page; no data-loading state. The collapse transition is the only in-flight state and the panel is `inert` throughout it (Transition Contract step 2). |
+| E6 | error | explicit | A failed subscribe submission is handled by `SubscribeForm`'s existing error rendering, unchanged by this phase. The panel's own structure has no failure mode. |
+| E6 | populated | explicit | Profile card above `SubscribeSection` inside a fixed `w-[240px]` inner wrapper, `sticky top-8 self-start`. `Profile.tsx`'s root becomes a `<div>` with identical `className` — zero visual change. |
+| E6 | partial | explicit | The configured-vs-unconfigured split is the panel's only partial-data axis and is covered by the `empty` row above; no other field of this panel is optional at render time. |
+| E6 | overflow | explicit | Same Pitfall 6 mechanism as E5: `min-w-0 overflow-hidden` on the `<aside>` plus a fixed `w-[240px]` inner wrapper clips the avatar, bio text and subscribe form rather than reflowing them during collapse. |
+| E6 | zero-one-many | explicit | The social-links row's 0/1/many handling is `Profile.tsx`'s existing `activeLinks.length > 0` guard, unchanged by this phase. |
+| E6 | long-text | backstop | A long `CONFIG.profile.bio` or `CONFIG.profile.greeting` inside the fixed `w-[240px]` inner wrapper must not push the wrapper wider or escape `overflow-hidden`. Held out for a real visual pass with a deliberately long bio string, in both themes, expanded and mid-collapse. |
+| E7 | empty | explicit | A post with no renderable body shows Phase 8's shipped CONT-05 no-content sentence; this phase changes only the column's `max-width` and does not touch that branch. |
+| E7 | loading | explicit | The content area's existing loading skeleton (shipped in Phase 8) is unchanged — the reading-width cap is a static ceiling applied at every state, not a state of its own. |
+| E7 | error | explicit | A content-fetch failure shows Phase 8's shipped CONT-05 fetch-failed sentence, and a genuinely unavailable post shows `PostUnavailable`; both unchanged by this phase. |
+| E7 | populated | explicit | `<article className="max-w-[1100px] mx-auto py-8 md:px-4">` — unaffected while both sidebars are expanded (`<main>` is 864px < 1100px) and capped at 1100px once both collapse (`<main>` is 1304px), leaving ≈102px of margin each side. |
+| E7 | overflow | backstop | Wide embeds, tables and `notion-code` blocks must render cleanly at the fully-collapsed 1100px column. Widening 864px → 1100px only *relaxes* the existing constraint, so nothing that fits today can newly overflow — but that is an argument, not an observation. Held out for a real visual pass at 1100px in both themes on a post containing a wide table and a wide code block. |
+| E7 | long-text | backstop | The longest real published post title must not break layout at the 1100px column. Same relaxation argument as the `overflow` row, and held out on the same terms — confirm against the actual longest title in the operator's database, in both themes. |
 
 ---
 
