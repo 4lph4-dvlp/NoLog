@@ -210,3 +210,6 @@ None — no external service configuration required. (The subscribe form observe
 ---
 *Phase: 10-collapsible-sidebars-reading-width*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+All referenced files and commit hashes verified present in the working tree / git history.
