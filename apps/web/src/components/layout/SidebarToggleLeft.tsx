@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import { Menu } from "lucide-react";
 import { SIDEBAR_PANEL_IDS } from "@/lib/sidebar";
 
@@ -18,34 +19,42 @@ const CHROME =
  * conventions verbatim. The Menu glyph never swaps (D-07) — only
  * aria-expanded, the label/title strings, and the focus-visible ring react
  * to state.
+ *
+ * Forwards its ref to the underlying <button> so SidebarShell can call
+ * .focus() on it directly for the A11Y-03 focus rescue — the ref is
+ * attached in BOTH the placeholder and mounted branches, so the handle
+ * exists regardless of hydration timing.
  */
-export function SidebarToggleLeft({ collapsed, mounted, onToggle }: SidebarToggleLeftProps) {
-  if (!mounted) {
-    // Prevent hydration mismatch — render a placeholder with matching
-    // dimensions (ThemeToggle.tsx's mounted-guard idiom). Because the
-    // pre-hydration script has already corrected <html>'s data-sidebar-left
-    // attribute before paint, this window is only as long as it takes React
-    // to hydrate, not until a client-side read resolves.
+export const SidebarToggleLeft = forwardRef<HTMLButtonElement, SidebarToggleLeftProps>(
+  function SidebarToggleLeft({ collapsed, mounted, onToggle }, ref) {
+    if (!mounted) {
+      // Prevent hydration mismatch — render a placeholder with matching
+      // dimensions (ThemeToggle.tsx's mounted-guard idiom). Because the
+      // pre-hydration script has already corrected <html>'s data-sidebar-left
+      // attribute before paint, this window is only as long as it takes React
+      // to hydrate, not until a client-side read resolves.
+      return (
+        <button ref={ref} type="button" className={CHROME} aria-label="Toggle search and categories panel">
+          <div className="w-[18px] h-[18px]" />
+        </button>
+      );
+    }
+
+    const label = collapsed ? "Show search and categories" : "Hide search and categories";
+
     return (
-      <button type="button" className={CHROME} aria-label="Toggle search and categories panel">
-        <div className="w-[18px] h-[18px]" />
+      <button
+        ref={ref}
+        type="button"
+        aria-expanded={!collapsed}
+        aria-controls={SIDEBAR_PANEL_IDS.left}
+        aria-label={label}
+        title={label}
+        className={CHROME}
+        onClick={onToggle}
+      >
+        <Menu className="w-[18px] h-[18px] text-text-secondary" />
       </button>
     );
   }
-
-  const label = collapsed ? "Show search and categories" : "Hide search and categories";
-
-  return (
-    <button
-      type="button"
-      aria-expanded={!collapsed}
-      aria-controls={SIDEBAR_PANEL_IDS.left}
-      aria-label={label}
-      title={label}
-      className={CHROME}
-      onClick={onToggle}
-    >
-      <Menu className="w-[18px] h-[18px] text-text-secondary" />
-    </button>
-  );
-}
+);

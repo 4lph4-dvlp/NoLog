@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import Image from "next/image";
 import { User } from "lucide-react";
 import { CONFIG } from "@/site.config";
@@ -24,46 +24,54 @@ const CHROME =
  * a control", never decoration (SIDE-09, D-12). No dropdown/menu semantics,
  * no caret, no status dot: this is a sidebar disclosure button, not an
  * account menu — NoLog has no user accounts.
+ *
+ * Forwards its ref to the underlying <button> so SidebarShell can call
+ * .focus() on it directly for the A11Y-03 focus rescue — the ref is
+ * attached in BOTH the placeholder and mounted branches, so the handle
+ * exists regardless of hydration timing.
  */
-export function SidebarToggleRight({ collapsed, mounted, onToggle }: SidebarToggleRightProps) {
-  const [failed, setFailed] = useState(false);
+export const SidebarToggleRight = forwardRef<HTMLButtonElement, SidebarToggleRightProps>(
+  function SidebarToggleRight({ collapsed, mounted, onToggle }, ref) {
+    const [failed, setFailed] = useState(false);
 
-  if (!mounted) {
-    // Prevent hydration mismatch — render a placeholder with matching
-    // dimensions (ThemeToggle.tsx's mounted-guard idiom).
+    if (!mounted) {
+      // Prevent hydration mismatch — render a placeholder with matching
+      // dimensions (ThemeToggle.tsx's mounted-guard idiom).
+      return (
+        <button ref={ref} type="button" className={CHROME} aria-label="Toggle profile sidebar">
+          <div className="w-9 h-9" />
+        </button>
+      );
+    }
+
+    const label = collapsed ? "Show profile sidebar" : "Hide profile sidebar";
+
     return (
-      <button type="button" className={CHROME} aria-label="Toggle profile sidebar">
-        <div className="w-9 h-9" />
+      <button
+        ref={ref}
+        type="button"
+        aria-expanded={!collapsed}
+        aria-controls={SIDEBAR_PANEL_IDS.right}
+        aria-label={label}
+        title={label}
+        className={CHROME}
+        onClick={onToggle}
+      >
+        {failed ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-surface-active">
+            <User className="w-5 h-5 text-text-secondary" strokeWidth={1.5} />
+          </div>
+        ) : (
+          <Image
+            src={CONFIG.profile.avatarUrl}
+            alt=""
+            fill
+            sizes="36px"
+            className="object-cover"
+            onError={() => setFailed(true)}
+          />
+        )}
       </button>
     );
   }
-
-  const label = collapsed ? "Show profile sidebar" : "Hide profile sidebar";
-
-  return (
-    <button
-      type="button"
-      aria-expanded={!collapsed}
-      aria-controls={SIDEBAR_PANEL_IDS.right}
-      aria-label={label}
-      title={label}
-      className={CHROME}
-      onClick={onToggle}
-    >
-      {failed ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-surface-active">
-          <User className="w-5 h-5 text-text-secondary" strokeWidth={1.5} />
-        </div>
-      ) : (
-        <Image
-          src={CONFIG.profile.avatarUrl}
-          alt=""
-          fill
-          sizes="36px"
-          className="object-cover"
-          onError={() => setFailed(true)}
-        />
-      )}
-    </button>
-  );
-}
+);
