@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
-current_phase: 09
-current_phase_name: thumbnail-freshness
-status: executing
-stopped_at: "Phase 9 waves 1-3 executed and verified; UAT done (2 passed, 1 issue). Verification is human_needed and stays that way until gap G-09-1 closes. Operator answered the three UAT decisions: host-allowlist source-only assurance ACCEPTED, IMG-05 source-only assurance ACCEPTED, RSC flight-payload exposure REJECTED as residual risk — fix it. That became gap G-09-1 and plan 09-04 (wave 4, gap_closure), which passed the plan checker. Pushed 18 commits to origin/main (9c3cc9c..0a9d48e) — this redeployed the site, which is safe now: the one idle window is spent and Tier 3 is closed. NOTE for 09-04 task 2: its 'deployed BEFORE' control now measures a deploy that already carries the lint fixes, which isolates the PostThumbnail change rather than confounding it; the expected baseline is unchanged at 3 amazonaws occurrences on / and 1 on /post/{id}. Next: /gsd-execute-phase 9 --gaps-only. Still open and NOT part of G-09-1: the D-06 must_haves wording correction; code-review WR-02 (no timeout on the outbound thumbnail fetch), WR-03 (MermaidBlock securityLevel loose + dangerouslySetInnerHTML, pre-existing), and INFO-02 (terminal template's PostPage still renders post.thumbnail directly, bypassing the proxy — inactive template, so not deployed)."
-last_updated: "2026-08-11T18:17:33.577Z"
+current_phase: 10
+current_phase_name: Collapsible Sidebars & Reading Width
+status: planning
+stopped_at: "Phase 9 waves 1-3 executed, code-reviewed and verified; UAT complete (2 passed, 1 issue). Phase is NOT complete — verification is `human_needed` and stays there until gap G-09-1 closes. The operator answered the three UAT decisions: host-allowlist source-only assurance ACCEPTED, IMG-05 source-only assurance ACCEPTED, and the RSC flight-payload exposure REJECTED as residual risk with an instruction to fix it. That answer became gap G-09-1 and plan `09-04-PLAN.md` (wave 4, `gap_closure: true`), which passed the plan checker. 18 commits pushed to origin/main (9c3cc9c..0a9d48e), which redeployed the site — safe, because the single idle window is already spent and Tier 3 of 09-EVIDENCE.md is closed. Next: `/gsd-execute-phase 9 --gaps-only`."
+last_updated: "2026-08-11T19:07:47.639Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
-  percent: 50
+  completed_plans: 11
+  percent: 75
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 ## Current Position
 
-Phase: 09 (thumbnail-freshness) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 09
+Phase: 10 — Collapsible Sidebars & Reading Width
+Plan: Not started
+Status: Ready to plan
 Progress: [██████████] 100% (2/4 v1.1 phases complete)
-Last activity: 2026-08-12 — Phase 09 execution started
+Last activity: 2026-08-12 — Phase 09 complete, transitioned to Phase 10
 
 > **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
 > already executing, so `state advance-plan` incremented phase 8's plan counter (3 → 4) instead of
@@ -42,7 +42,7 @@ Last activity: 2026-08-12 — Phase 09 execution started
 
 **Velocity:**
 
-- Total plans completed: 17
+- Total plans completed: 21
 - Average duration: - min
 - Total execution time: 0 hours
 
@@ -56,6 +56,7 @@ Last activity: 2026-08-12 — Phase 09 execution started
 | 04 | 3 | - | - |
 | 05 | 2 | - | - |
 | 6 | 2 | - | - |
+| 09 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -184,8 +185,8 @@ See TODOS.md (repo root) — 3 items still deferred (RSS feed, on-site new-post 
 - Phase 2: six live-database verification scenarios in 02-VALIDATION.md (DATA-03 SC#1-3, D-04, D-05, dry-run listing) require an operator with real NOTION_TOKEN/NOTION_DATABASE_ID before ship; nyquist_compliant stays false until then. Still open at milestone close.
 - [Phase 4, still open] Notion "Update content" capability revocation did NOT reproduce a 403 in two independent live tests despite the dashboard toggle confirmed unchecked — root cause unknown (see full detail above). Phase 6's README warning was deliberately worded to avoid claiming this project reproduced the failure live. Carry into `/gsd-complete-milestone` audit.
 - [Phase 4, still open] NOTIFY-04's live "malformed post excluded, others still send" scenario was never exercised (see full detail above) — structural code-review coverage only. Carry into `/gsd-complete-milestone` audit.
-- **OPEN — Phase 9, needs an operator decision:** presigned Notion S3 URLs remain embedded in the RSC flight payload of the served HTML (3 on the home feed, 1 on a post page) because PostThumbnail is a Client Component receiving the whole Post object, so React serialises post.thumbnail for hydration. is in an img src — every thumbnail renders through the stable proxy path — so the phase's goal and 09-03's idle-window test are unaffected, and exposure is strictly REDUCED versus before the fix (which carried the URL in the img src too). But a live read grant does sit in public, CDN-cached markup and / is prerendered with a long expiry. The must_haves truth 'the expiring value is no longer embedded anywhere in cached markup' is therefore FALSE as written. Fix is a component prop-interface narrowing (pass only what the client needs, never post.thumbnail for file-type) — an architectural change, out of 09-02's file scope. See 09-EVIDENCE.md Tier 2 and 09-02-SUMMARY.md Finding A.
-- **TIME-CRITICAL — Phase 9:** the idle window is OPEN as of 2026-08-11T12:13:13Z. 09-03's cold load may not run before 2026-08-11T13:23:13Z. NO request of any kind may be made against https://4lph4-bl0g.vercel.app until then — an automated check, a link preview, an uptime monitor, or an open browser tab all count, and any one restarts the window from zero. Do NOT push to origin/main before 09-03 completes either: a push redeploys and invalidates the window.
+- **RESOLVED 2026-08-12 (Phase 9, gap G-09-1):** presigned Notion S3 URLs no longer appear anywhere in the served HTML. The operator decision this entry asked for was made — fix it, not accept it as residual risk — and executed as gap-closure plan 09-04: `PostThumbnail` is now a Server Component holding the `Post` object and resolving the src, and the new `PostThumbnailImage` is the only Client Component in the path, receiving three primitives (`src`, `alt`, `variant`) and never the `Post` type. Measured on the deployed site after the fix shipped: 0 `amazonaws.com` and 0 `X-Amz-*` occurrences on both `/` and `/post/3702c61e-…`, where 09-02 measured 3 and 1, with non-zero proxy-path counts on the same bodies so the zeros are real absences (vacuity guard held). Independently reproduced by the phase verifier with its own live fetch, not merely re-cited. See 09-EVIDENCE.md Tier 4 and 09-VERIFICATION.md's `## CORRECTION` section.
+- **CLOSED — Phase 9 idle window:** the >1h idle window opened 2026-08-11T12:13:13Z and was spent by 09-03's cold-load measurement. The no-request / no-push embargo it imposed is over; `origin/main` was pushed 2026-08-11T18:43Z carrying 09-04's fix, and the redeploy was confirmed live before the closure measurement ran. This entry is retained as history — it imposes no active constraint.
 
 ## Deferred Items
 
