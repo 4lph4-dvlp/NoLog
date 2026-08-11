@@ -1,172 +1,223 @@
 ---
 phase: 09-thumbnail-freshness
-reviewed: 2026-08-12T00:00:00Z
+reviewed: 2026-08-11T18:59:56Z
 depth: standard
-files_reviewed: 12
+files_reviewed: 8
 files_reviewed_list:
   - apps/web/src/app/api/thumbnail/[id]/route.ts
   - apps/web/src/components/PostThumbnail.tsx
-  - apps/web/src/components/Profile.tsx
-  - apps/web/src/components/notion/MermaidBlock.tsx
+  - apps/web/src/components/PostThumbnailImage.tsx
   - apps/web/src/templates/default/CategoryPage.tsx
   - apps/web/src/templates/default/HomePage.tsx
   - apps/web/src/templates/default/PostPage.tsx
   - apps/web/src/templates/default/SearchPage.tsx
-  - apps/web/src/templates/terminal/Layout.tsx
-  - apps/web/src/templates/terminal/PostPage.tsx
-  - apps/web/src/templates/terminal/components/TerminalConsole.tsx
   - apps/web/src/types/index.ts
 findings:
   critical: 0
-  warning: 3
+  warning: 4
   info: 3
-  total: 6
+  total: 7
 status: issues_found
 ---
 
-# Phase 9: Code Review Report
+# Phase 09: Code Review Report
 
-**Reviewed:** 2026-08-12T00:00:00Z
+**Reviewed:** 2026-08-11T18:59:56Z
 **Depth:** standard
-**Files Reviewed:** 12
+**Files Reviewed:** 8
 **Status:** issues_found
 
 ## Summary
 
-Reviewed both provenance groups named in scope: Group A (`api/thumbnail/[id]/route.ts`,
-`PostThumbnail.tsx`, `types/index.ts`, and the four `templates/default/*` surfaces — Phase 9's own
-thumbnail-freshness work) and Group B (`Profile.tsx`, `MermaidBlock.tsx`,
-`templates/terminal/Layout.tsx`, `templates/terminal/PostPage.tsx`,
-`templates/terminal/components/TerminalConsole.tsx` — the post-merge lint-cleanup commit `9d535a5`).
+Reviewed the post-09-04 server/client split of the thumbnail feature and the proxy route it
+depends on. The primary invariant this gap closure exists to protect — that
+`PostThumbnailImage.tsx` (the only Client Component in the pair) receives nothing but
+`src`/`alt`/`variant` and never imports `Post`/`thumbnailType`/the types barrel — holds. All
+four `templates/default/*` call sites (`CategoryPage`, `HomePage`, `PostPage`, `SearchPage`)
+remain Server Components with no `"use client"` directive, so the full `Post` object (and the
+expiring presigned S3 URL it can carry) is never re-serialized into the RSC flight payload;
+G-09-1 is closed as designed. The proxy route's host allowlist matches `next.config.ts`'s two
+`remotePatterns` hostnames exactly, `redirect: "error"` correctly rejects redirect responses
+before they're followed, and `NologClient.getPost()` is confirmed (by reading
+`packages/core/src/client.ts`) to never throw, so the route's lack of a try/catch around that
+call is safe as claimed in its own comment.
 
-The route (`api/thumbnail/[id]/route.ts`) is the security-sensitive surface and holds up well: the
-raw path segment is never used for anything except `parsePageId()` (verified against
-`notion-utils`'s implementation — its output is composed solely of hex digits and dashes, so
-interpolating it into the outbound Notion URL is safe), no query string or other caller-controlled
-data reaches the outbound fetch, the host allowlist mirrors `next.config.ts` exactly, `redirect:
-"error"` closes the open-redirect vector, and the `content-type` assertion plus
-`x-content-type-options: nosniff` are both present. `PostThumbnail.tsx` correctly special-cases
-`thumbnailType !== "file"` before ever constructing the proxy path, matching the route's own
-server-side rejection of the same case (IMG-05 enforced on both sides). No critical/blocker findings.
-`npx eslint` and `npx tsc --noEmit` both pass clean on all 12 files, corroborating the plan's own
-build/lint claims.
-
-Group B's two behaviorally-edited files were checked against the specific hazards called out in
-scope: `MermaidBlock.tsx`'s relocated render effect correctly scopes its `cancelled` flag per-effect-
-run and its dependency array (`[code, mermaidReady, isDark]`) is equivalent to the pre-refactor
-`renderDiagram`/`[renderDiagram, isDark]` pair — no state can go stale across a superseded run.
-`TerminalConsole.tsx`'s relocated auto-typing effect tracks every `setTimeout` it schedules and
-clears all of them on cleanup — but the cleanup does not reset `isTyping` back to `false`, a real gap
-in an otherwise correct rewrite (see WR-01; currently unreachable by any in-repo caller, so scored a
-warning rather than a blocker).
-
-Three warnings and three info-level items are below; none are blocking. See details for exact
-citations and fixes.
+No blocker-tier defects were found. The issues below are robustness/DX gaps in the proxy route
+and one client-image edge case where the documented "graceful icon fallback on any load
+failure" design intent (D-09/D-10) doesn't actually hold in `next dev` for one specific input
+shape, plus minor code-quality items.
 
 ## Warnings
 
-### WR-01: Auto-typing cleanup can leave `isTyping` permanently stuck true
+### WR-01: External thumbnails on non-allowlisted hosts crash in dev (SSR + CSR), bypassing the documented graceful-fallback design
 
-**File:** `apps/web/src/templates/terminal/components/TerminalConsole.tsx:257-296`
-**Issue:** The auto-typing effect's cleanup (`clearAll`, returned at lines 270 and 294) only clears
-pending timers — it never resets the `isTyping` state. If this effect were ever re-run mid-sequence
-with a new falsy `initialCommand` (dependency array is `[initialCommand]`, line 296), the cleanup
-would fire after `setIsTyping(true)` (line 274) had already executed but before the terminating timer
-at line 282-288 (which is the only code path that calls `setIsTyping(false)`) had a chance to run. The
-`!initialCommand` early return (line 258) on the new effect invocation then skips scheduling anything
-that would reset `isTyping`, permanently disabling the input (`disabled={isTyping}` at line 331) for
-the remaining lifetime of the component instance.
+**File:** `apps/web/src/components/PostThumbnail.tsx:30-33`, `apps/web/src/components/PostThumbnailImage.tsx:45-52`
 
-None of the four current call sites (`HomePage.tsx` `initialCommand="neofetch"`, `CategoryPage.tsx`
-`initialCommand="ls"`, `SearchPage.tsx` `initialCommand={\`find "${query}"\`}` which never reaches the
-`isTyping`-setting branch because of the `path === "~/search"` early-return, and `PostPage.tsx`
-`initialCommand=""` which never enters the effect body at all) pass a value that can transition from
-truthy to falsy on an already-mounted instance, so this cannot currently be triggered — but it is a
-real hole in the cleanup contract that a future caller (e.g. a dynamic search-as-you-type command) would
-hit immediately.
+**Issue:** For `post.thumbnailType === "external"`, `PostThumbnail.tsx` passes the raw pasted
+URL straight through to `PostThumbnailImage`'s `<Image src={src} fill ... />` with no host
+validation. `next.config.ts`'s `images.remotePatterns` only allowlists the two Notion S3
+hostnames — it has no entry that could ever match an arbitrary externally-pasted thumbnail URL
+(e.g. an Unsplash or imgur link), since `remotePatterns` is scoped to the proxy's upstream
+fetch, not to externally-typed thumbnails.
 
-**Fix:**
+In Next's `defaultLoader` (`node_modules/next/dist/shared/lib/image-loader.js:79-103`), the
+hostname-allowlist check that throws `Invalid src prop (...) hostname "..." is not configured
+under images in your next.config.js` is gated behind `process.env.NODE_ENV !== 'production'`.
+That means:
+- In production, the loader silently builds a `/_next/image?url=...` request; the image
+  optimizer's own server-side check then fails the request as a normal HTTP error, and the
+  existing `onError` handler in `PostThumbnailImage.tsx:50` correctly swaps to the `ImageOff`
+  fallback (D-10 as designed).
+- In `next dev` (and in the SSR pass of a client component, which also runs with
+  `NODE_ENV=development`), this same code path throws synchronously inside the `Image`
+  render, which is not caught by `onError` (that only handles browser-level load failures).
+  With no error boundary around `PostThumbnail`/`PostThumbnailImage`, this crashes the whole
+  page render — every post in `HomePage`/`CategoryPage`/`SearchPage`'s list, not just the one
+  with the offending thumbnail — the first time a forker pastes an external thumbnail URL
+  hosted anywhere other than the two Notion S3 hosts and runs `npm run dev`.
+
+This is reachable through completely normal usage: `thumbnailType: "external"` is exactly the
+type produced when an editor pastes a URL into Notion's Files & Media property instead of
+uploading a file, which is the documented, supported "stable pasted external URL" path per
+`apps/web/src/types/index.ts:18`.
+
+**Fix:** Validate (or catch) unconfigured hosts before handing them to `next/image`, so local
+dev matches the graceful production behavior instead of crashing:
 ```tsx
-const clearAll = () => {
-  timers.forEach(clearTimeout);
-  setIsTyping(false); // always leave the input usable, even on a cancelled run
-};
+// PostThumbnail.tsx — only take the next/image fast path for hosts next.config.ts
+// actually allowlists; render a plain <img> (or reuse the ImageOff fallback) for
+// anything else so dev and prod behave the same way.
+const ALLOWED_IMAGE_HOSTS = new Set([
+  "s3.us-west-2.amazonaws.com",
+  "prod-files-secure.s3.us-west-2.amazonaws.com",
+]);
+
+function isOptimizableExternalHost(url: string): boolean {
+  try {
+    return ALLOWED_IMAGE_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
 ```
+and thread an `unoptimized`/plain-`<img>` branch through `PostThumbnailImage` for external
+URLs that don't match, rather than always assuming `next/image` can safely render them.
 
-### WR-02: No timeout on the outbound thumbnail fetch
+### WR-02: Outbound fetch to the resolved S3 URL has no timeout
 
-**File:** `apps/web/src/app/api/thumbnail/[id]/route.ts:91-102`
-**Issue:** `fetch(post.thumbnail, { redirect: "error", headers: {...} })` has no `signal` /
-`AbortController` timeout. A slow or hanging upstream S3 response ties up the whole Function
-invocation with no fast-fail path; the request only ends when the platform's own function-duration
-limit kicks in (itself explicitly flagged as unconfirmed for this project in `.claude/CLAUDE.md`'s
-Constraints section). Every uncached-thumbnail request pays this risk, not just a rare edge case.
+**File:** `apps/web/src/app/api/thumbnail/[id]/route.ts:91-98`
+
+**Issue:** `fetch(post.thumbnail, { redirect: "error", headers: {...} })` has no
+`AbortSignal`/timeout. If the upstream S3 host hangs or is slow to respond, the function stays
+open until the platform's own execution-duration limit kills it — the project's own
+`.claude/CLAUDE.md` flags that limit as "contested" and unconfirmed for this Vercel project.
+There is no fast, deliberate failure path for a slow upstream; every such request just occupies
+a function invocation until forcibly terminated.
+
 **Fix:**
 ```ts
-upstream = await fetch(post.thumbnail, {
-  redirect: "error",
-  headers: { "User-Agent": NOLOG_USER_AGENT },
-  signal: AbortSignal.timeout(8000),
-});
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 8_000);
+try {
+  upstream = await fetch(post.thumbnail, {
+    redirect: "error",
+    headers: { "User-Agent": NOLOG_USER_AGENT },
+    signal: controller.signal,
+  });
+} catch {
+  return new Response(null, { status: 502 });
+} finally {
+  clearTimeout(timeout);
+}
 ```
 
-### WR-03: `dangerouslySetInnerHTML` + Mermaid `securityLevel: "loose"` is a known XSS-adjacent pattern
+### WR-03: Upstream response body is left unconsumed on the error branches
 
-**File:** `apps/web/src/components/notion/MermaidBlock.tsx:67-70` (initialize call) and `:186-189`
-(`dangerouslySetInnerHTML={{ __html: svg }}`)
-**Issue:** `mermaid.initialize({ ..., securityLevel: "loose", ... })` disables Mermaid's own label-
-escaping/sandboxing, and the rendered SVG is injected verbatim via `dangerouslySetInnerHTML`. This is
-a documented risk pattern for Mermaid.js: `loose` mode permits raw HTML/tags inside diagram labels,
-and injecting that output directly into the DOM (rather than through Mermaid's own sanitizing render
-target, or `securityLevel: "strict"`/`"sandbox"`) means any diagram source containing a crafted label
-can execute script in the reader's session. This predates the reviewed diff (only the effect's
-structure/guard changed in `9d535a5`, not this configuration) and the realistic exploitation path in
-this project's current single-owner-authors-own-posts model is narrow — but it is present, unchanged,
-in a file under review, and would become directly exploitable the moment this codebase gains any
-multi-author or less-trusted-content-source Notion workspace.
-**Fix:** Prefer `securityLevel: "strict"` (or `"sandbox"`, which renders into an iframe) unless a
-specific diagram feature genuinely requires `loose`; if `loose` is required, sanitize `svg` (e.g. via
-DOMPurify with an SVG-safe profile) before passing it to `dangerouslySetInnerHTML`.
+**File:** `apps/web/src/app/api/thumbnail/[id]/route.ts:104-108`
+
+**Issue:** When `!upstream.ok || !contentType.startsWith("image/")`, the function returns a
+502 without reading or cancelling `upstream.body`. Under Node's fetch implementation
+(undici), an un-drained response body can keep the underlying socket/connection open until
+garbage collection reclaims it, rather than being released back to the connection pool
+immediately. This is a resource-leak footgun on a route whose entire purpose is proxying
+bytes from an external host, and it will trigger on every non-2xx or non-image response from
+S3 (e.g. an already-expired presigned URL returning a 403 XML error body).
+
+**Fix:**
+```ts
+if (!upstream.ok || !contentType.startsWith("image/")) {
+  await upstream.body?.cancel();
+  console.warn("[Thumbnail] upstream response was not an ok image response");
+  return new Response(null, { status: 502 });
+}
+```
+
+### WR-04: No negative caching or rate limiting on the proxy route enables Notion-API amplification via well-formed but non-existent/non-public IDs
+
+**File:** `apps/web/src/app/api/thumbnail/[id]/route.ts:56-76`
+
+**Issue:** Any request with a syntactically valid page-ID-shaped path segment reaches
+`freshNologClient.getPost(parsedId)`, which always hits `https://api.notion.com/v1/pages/...`
+live (the client is deliberately constructed with `cache: "no-store"` per the module's own
+top-of-file comment). The 400/404 responses returned for a malformed, non-existent, or
+non-public post carry no `Cache-Control` header, so Vercel's edge will not absorb repeat
+requests for the same bad ID either. An attacker (or a broken crawler) can drive an arbitrary
+number of live Notion API calls per second by requesting `/api/thumbnail/<random-uuid>`
+repeatedly, which competes for the same Notion API rate limit that the rest of the site's
+real content depends on.
+
+**Fix:** Add a short `Cache-Control` (e.g. `public, s-maxage=60`) to the 404/400 branches so
+repeat requests for the same bad ID are absorbed by the CDN instead of re-hitting Notion on
+every single request, and/or apply Vercel's edge rate limiting / a WAF rule to this route.
 
 ## Info
 
-### IN-01: Proxy path built without `encodeURIComponent`
+### IN-01: Host allowlist checks hostname only, not scheme
 
-**File:** `apps/web/src/components/PostThumbnail.tsx:41`
-**Issue:** ``/api/thumbnail/${post.id}`` interpolates `post.id` directly. `post.id` is always a
-Notion page UUID today (verified against `mapPageToPost()` in `packages/core/src/client.ts:125`,
-which sets `id: page.id` straight from the Notion API), so this is not currently exploitable, but it
-is a raw string interpolation into a URL path with no defensive encoding.
-**Fix:** `` `/api/thumbnail/${encodeURIComponent(post.id)}` ``
+**File:** `apps/web/src/app/api/thumbnail/[id]/route.ts:78-89`
 
-### IN-02: Terminal template's `PostPage` bypasses the thumbnail-freshness fix entirely
+**Issue:** `ALLOWED_HOSTS.has(hostname)` validates only the hostname component of
+`new URL(post.thumbnail)`. A URL such as `http://s3.us-west-2.amazonaws.com/...` (plain HTTP)
+would pass the allowlist check and be fetched as-is. In practice Notion's presigned URLs are
+always `https://`, so this isn't currently reachable, but it's a cheap defense-in-depth gap
+given the route already does host validation.
 
-**File:** `apps/web/src/templates/terminal/PostPage.tsx:70-80`
-**Issue:** Unlike the four `default`-template surfaces, this file still renders
-`<Image src={post.thumbnail} .../>` directly instead of going through `PostThumbnail`/the new proxy
-route. For a `"file"`-type thumbnail this is the raw, ~1-hour-expiring presigned S3 URL — exactly the
-staleness bug Phase 9 exists to fix — baked straight into this page's render. This is out of Phase 9's
-stated rollout (`09-01-SUMMARY.md` explicitly scopes to the four `default` surfaces) and the
-`terminal` template is inactive (`site.config.ts` sets `template: "default"`), so this is not a live
-regression today, only a gap that would surface immediately if an operator switched templates.
-**Fix:** When/if `terminal`'s `PostPage` is revisited, swap this block for
-`<PostThumbnail post={post} variant="hero" />` to match the `default` template's behavior.
+**Fix:** `if (!ALLOWED_HOSTS.has(hostname) || new URL(post.thumbnail).protocol !== "https:") { ... }` (or check `.protocol` alongside `.hostname` in the existing `try` block).
 
-### IN-03: Near-identical card-list markup duplicated across three files
+### IN-02: `hero` variant omits `sizes` while using `fill`
 
-**File:** `apps/web/src/templates/default/HomePage.tsx:31-76`,
-`apps/web/src/templates/default/SearchPage.tsx:50-93`,
-`apps/web/src/templates/default/CategoryPage.tsx:45-90`
-**Issue:** The `<article>...<PostThumbnail variant="card" />...</article>` block (title, summary,
-category chip, tags, date) is byte-for-byte identical across all three files. This predates Phase 9 —
-the diff only swapped each file's inline thumbnail markup for `<PostThumbnail>` — but it's directly
-visible in every file reviewed here and is the same kind of duplication `PostThumbnail` itself was
-introduced to eliminate for the thumbnail piece specifically.
-**Fix:** Extract a shared `PostCard` component (post, and optionally a `showCategory`/`emptyState`
-slot) the same way `PostThumbnail` was extracted, so all three surfaces stay in sync by construction.
+**File:** `apps/web/src/components/PostThumbnailImage.tsx:51`
+
+**Issue:** The `card` variant sets `sizes="96px"`, but the `hero` variant only sets
+`priority: true` and never provides `sizes`. Per Next.js's own guidance, an `Image` with
+`fill` and no `sizes` defaults to `100vw`, which for a hero image that is not actually full
+viewport width means the optimizer is asked to generate/serve a larger source image than the
+rendered box needs, and Next logs a console warning about it.
+
+**Fix:**
+```tsx
+{...(variant === "card"
+  ? { sizes: "96px" }
+  : { priority: true, sizes: "(min-width: 768px) 768px, 100vw" })}
+```
+
+### IN-03: Near-identical post-card markup duplicated across three templates
+
+**File:** `apps/web/src/templates/default/CategoryPage.tsx:45-89`, `apps/web/src/templates/default/HomePage.tsx:31-76`, `apps/web/src/templates/default/SearchPage.tsx:50-93`
+
+**Issue:** The `<article>`/`<Link>`/`<PostThumbnail>`/title/summary/category/tags/date block is
+copy-pasted verbatim (down to class names) across all three list-rendering templates. This
+predates the thumbnail-freshness phase but all three copies were touched by it (each now
+imports and calls `PostThumbnail`), so a future change to card layout or thumbnail wiring has
+to be made identically in three places, which is exactly the kind of place a change like the
+09-04 split can be applied in one file and silently missed in the other two.
+
+**Fix:** Extract a shared `PostCard({ post })` (or similar) component used by all three
+templates, so `PostThumbnail`'s call site — and any future invariant like the one 09-04 just
+fixed — only exists once.
 
 ---
 
-_Reviewed: 2026-08-12T00:00:00Z_
+_Reviewed: 2026-08-11T18:59:56Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
