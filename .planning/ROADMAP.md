@@ -115,7 +115,7 @@ Notes for planning:
   4. A post whose thumbnail genuinely fails to resolve shows a visible placeholder, not an empty box.
   5. A post whose thumbnail is an external (non-Notion-hosted) URL renders exactly as it does today, and its image request does not travel through the new resolution path.
 
-**Plans**: 3/4 plans executed (09-04 added as gap closure for UAT gap G-09-1)
+**Plans**: 4/4 plans executed (09-04 added as gap closure for UAT gap G-09-1)
 
 Plans:
 **Wave 1**
@@ -132,7 +132,7 @@ Plans:
 
 **Wave 4** *(gap closure — blocked on Wave 3; the idle window is already spent, so a redeploy costs nothing)*
 
-- [ ] 09-04-PLAN.md — G-09-1: split the thumbnail client boundary so `post.thumbnail` never crosses it, then re-measure the served HTML until the presigned-URL count in the RSC payload is 0 where 09-02 measured 3 and 1 (IMG-01, IMG-02, IMG-04, IMG-05)
+- [x] 09-04-PLAN.md — G-09-1: split the thumbnail client boundary so `post.thumbnail` never crosses it, then re-measure the served HTML until the presigned-URL count in the RSC payload is 0 where 09-02 measured 3 and 1 (IMG-01, IMG-02, IMG-04, IMG-05)
 
 Notes for planning:
 
@@ -195,7 +195,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
 | 8. Content Rendering Fix | v1.1 | 4/4 | Complete   | 2026-08-11 |
-| 9. Thumbnail Freshness | v1.1 | 3/3 | In Progress|  |
+| 9. Thumbnail Freshness | v1.1 | 4/4 | In Progress|  |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 
 ## Requirement Coverage (v1.1)

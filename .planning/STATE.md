@@ -6,15 +6,15 @@ current_phase: 09
 current_phase_name: thumbnail-freshness
 status: executing
 stopped_at: "Phase 9 waves 1-3 executed and verified; UAT done (2 passed, 1 issue). Verification is human_needed and stays that way until gap G-09-1 closes. Operator answered the three UAT decisions: host-allowlist source-only assurance ACCEPTED, IMG-05 source-only assurance ACCEPTED, RSC flight-payload exposure REJECTED as residual risk — fix it. That became gap G-09-1 and plan 09-04 (wave 4, gap_closure), which passed the plan checker. Pushed 18 commits to origin/main (9c3cc9c..0a9d48e) — this redeployed the site, which is safe now: the one idle window is spent and Tier 3 is closed. NOTE for 09-04 task 2: its 'deployed BEFORE' control now measures a deploy that already carries the lint fixes, which isolates the PostThumbnail change rather than confounding it; the expected baseline is unchanged at 3 amazonaws occurrences on / and 1 on /post/{id}. Next: /gsd-execute-phase 9 --gaps-only. Still open and NOT part of G-09-1: the D-06 must_haves wording correction; code-review WR-02 (no timeout on the outbound thumbnail fetch), WR-03 (MermaidBlock securityLevel loose + dangerouslySetInnerHTML, pre-existing), and INFO-02 (terminal template's PostPage still renders post.thumbnail directly, bypassing the proxy — inactive template, so not deployed)."
-last_updated: "2026-08-11T18:20:00.000Z"
+last_updated: "2026-08-11T18:17:33.577Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 10
+  completed_phases: 2
+  total_plans: 11
   completed_plans: 10
-  percent: 75
+  percent: 50
 ---
 
 # Project State
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 09 (thumbnail-freshness) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
+Plan: 1 of 4
+Status: Executing Phase 09
 Progress: [██████████] 100% (2/4 v1.1 phases complete)
 Last activity: 2026-08-12 — Phase 09 execution started
 
