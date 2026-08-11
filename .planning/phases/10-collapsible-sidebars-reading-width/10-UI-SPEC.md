@@ -306,11 +306,16 @@ each side inside `<main>`. This is why D-02 rejected a 900px alternative: it wou
 the prose by only 36px, satisfying SIDE-04's wording on paper while failing it in substance.
 
 **Asymmetric collapse (D-03's accepted consequence):** collapsing only the right sidebar frees
-240px + one 32px gap = 272px, taking `<main>` to 1136px — this exceeds the 1100px cap, so the
-article centres at 1100px with (1136-1100)/2 = 18px of slack split evenly *inside* `<main>`.
-Because `<main>`'s own left edge did not move (only its right edge, where the collapsed track
-used to be), the visually-centred-within-`<main>` article reads as shifted slightly toward the
-collapsed side relative to the viewport — this is the exact, deliberately-accepted consequence
+240px of track width (the 32px gap SURVIVES a collapse per D-04 — it never gets double-counted),
+taking `<main>` to **1104px** — this exceeds the 1100px cap, so the article centres at 1100px
+with (1104-1100)/2 ≈ 2px of slack split evenly *inside* `<main>`. **Corrected 2026-08-12 by plan
+10-04** (`10-EVIDENCE.md` §"Measured widths"): an earlier draft of this paragraph double-counted
+the 32px gap as additionally freed on top of the 240px track (arriving at 1136px/18px), which
+contradicts this same contract's own Collapsed Geometry Contract above (the gap survives a
+collapse). The live-measured, plan-10-02/10-03/10-04-corroborated figure is 1104px main / 1100px
+article. Because `<main>`'s own left edge did not move (only its right edge, where the collapsed
+track used to be), the visually-centred-within-`<main>` article reads as shifted slightly toward
+the collapsed side relative to the viewport — this is the exact, deliberately-accepted consequence
 D-03 names, not a bug to fix.
 
 ---
