@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
-current_phase: 8
+current_phase: 9
+current_phase_name: thumbnail-freshness
 status: executing
-stopped_at: "Phase 9 Wave 1 complete (09-01 committed, unpushed). Next: Wave 2 = 09-02, which deploys and starts the >70min idle clock."
-last_updated: "2026-08-11T11:41:08.877Z"
+stopped_at: "09-02 complete. Deploy 9c3cc9c live. IDLE WINDOW OPEN 2026-08-11T12:13:13Z — earliest cold load 13:23:13Z. Do NOT request the site or push until 09-03 runs."
+last_updated: "2026-08-11T12:18:53.158Z"
 last_activity: 2026-08-11
-last_activity_desc: Phase 7 marked complete
+last_activity_desc: Phase 9 Plan 02 complete — fix deployed, Tier 2 evidence banked, idle window opened
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 50
-current_phase_name: content-rendering-fix
 ---
 
 # Project State
@@ -24,15 +24,19 @@ current_phase_name: content-rendering-fix
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 08 — content-rendering-fix
+**Current focus:** Phase 09 — thumbnail-freshness
 
 ## Current Position
 
-Phase: 8 — COMPLETE
-Plan: 3 of 4
-Status: Ready to execute
-Progress: [████████░░] 80% (0/4 v1.1 phases)
-Last activity: 2026-08-11 — Phase 8 marked complete
+Phase: 9 — thumbnail-freshness (executing)
+Plan: 3 of 3 (09-01 and 09-02 complete; 09-03 is the idle-window proof)
+Status: **WAITING ON THE IDLE WINDOW** — 09-03's cold load may not run before 2026-08-11T13:23:13Z
+Progress: [█████████░] 90% (2/4 v1.1 phases complete)
+Last activity: 2026-08-11 — Phase 9 Plan 02 complete, fix deployed as `9c3cc9c`, idle window opened
+
+> **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
+> already executing, so `state advance-plan` incremented phase 8's plan counter (3 → 4) instead of
+> phase 9's. Pointer corrected to phase 9 here; phase 8 remains complete at 4/4 plans.
 
 ## Performance Metrics
 
@@ -83,6 +87,7 @@ Last activity: 2026-08-11 — Phase 8 marked complete
 | Phase 7 P2 | 25min | 2 tasks | 3 files |
 | Phase 08 P01 | ~35min | 3 tasks | 4 files |
 | Phase 09 P01 | 20min | 3 tasks | 8 files |
+| Phase 09 P02 | ~40min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -155,6 +160,11 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 8 Plan 04] CONT-03 closed on the deployed site: the single D-14 deploy (a6becd8..5013b52) shipped the User-Agent fix, the D-19 teardown and the CONT-05 split together; all three public posts render their Notion body across four passes spanning ~9 minutes, where Phase 7 saw 'Content could not be loaded.' on every one. Source diff for Phases 7+8 combined: 4 files, +77/-216 — the teardown removed more than the fix added. Net new forker-facing env vars after v1.1: zero.
 - [Phase ?]: [Phase 8 UAT] CONT-05's fetch-failed sentence observed directly (08-VERIFICATION gap 3 closed): with the content leg forced to throw, the post returns HTTP 200 showing 'This post's content could not be loaded right now.' with zero occurrences of the no-content sentence and zero of the pre-Phase-8 combined string, renderer not entered, one [PostPage:recordMap] line. Both CONT-05 states are now directly observed rather than inferred — no-content in plan 08-02 against a real empty Notion page, fetch-failed here. Fault injection reverted; apps/web/src clean.
 - [Phase ?]: [Phase 9 Plan 01] thumbnailType added to apps/web's local Post type as its own commit before any file reads it, closing landmine 2 in git history order; route's fresh lookup uses a second, separately-constructed NologClient with cache:no-store rather than an unwrapped export off the shared singleton, closing landmine 1 (D-14)
+- [Phase ?]: [Phase 9 Plan 02] Two of the four IMG-03 guards (redirect refusal, content-type assertion) upgraded from source-assertion to OBSERVED, via a loopback origin behind a temporary env-gated fetch override that was reverted and gated twice before the push. The host-allowlist guard stays source-asserted and unexercised — Notion chooses the presign host, so it cannot be forced off-allowlist.
+- [Phase ?]: [Phase 9 Plan 02] Deployed as 9c3cc9c and proven live by a status the pre-deploy site cannot produce: garbage id answered 404 with 40,884 bytes of framework HTML before the deploy, 400 with an empty body after. The pre-deploy baseline was captured during the push-authorization pause and is unrepeatable.
+- [Phase ?]: [Phase 9 Plan 02] IMG-04 closed by direct browser observation, retiring 09-01's D5 human_judgment gap: card 32x32 and hero 48x48, text-tertiary on surface, exact token matches in both themes, no caption, zero img left to render a broken-image glyph. Failure induced by repointing each thumbnail at the route's own 400 path — /browse exposes no request blocking and Network.setBlockedURLs is not in its CDP allowlist.
+- [Phase ?]: [Phase 9 Plan 02] IMG-05's live half is UNEXERCISED and recorded as such: all three public posts are Notion-hosted file thumbnails, so no external-thumbnail post exists to load. Production Notion content was deliberately NOT mutated to manufacture the case.
+- [Phase ?]: [Phase 9 Plan 02] D-06 correction: the deployed response carries 'public, immutable', NOT 'public, s-maxage=14400, immutable'. Vercel's edge consumes s-maxage and does not forward it. D-06's purpose is satisfied and was demonstrated (a cache-busted URL went MISS then HIT with age:2, and only s-maxage supplies the shared-cache lifetime storage requires); the must_haves truth's wording needs to name the origin, not the deployed response.
 
 ### Pending Todos
 
@@ -170,6 +180,8 @@ See TODOS.md (repo root) — 3 items still deferred (RSS feed, on-site new-post 
 - Phase 2: six live-database verification scenarios in 02-VALIDATION.md (DATA-03 SC#1-3, D-04, D-05, dry-run listing) require an operator with real NOTION_TOKEN/NOTION_DATABASE_ID before ship; nyquist_compliant stays false until then. Still open at milestone close.
 - [Phase 4, still open] Notion "Update content" capability revocation did NOT reproduce a 403 in two independent live tests despite the dashboard toggle confirmed unchecked — root cause unknown (see full detail above). Phase 6's README warning was deliberately worded to avoid claiming this project reproduced the failure live. Carry into `/gsd-complete-milestone` audit.
 - [Phase 4, still open] NOTIFY-04's live "malformed post excluded, others still send" scenario was never exercised (see full detail above) — structural code-review coverage only. Carry into `/gsd-complete-milestone` audit.
+- **OPEN — Phase 9, needs an operator decision:** presigned Notion S3 URLs remain embedded in the RSC flight payload of the served HTML (3 on the home feed, 1 on a post page) because PostThumbnail is a Client Component receiving the whole Post object, so React serialises post.thumbnail for hydration. is in an img src — every thumbnail renders through the stable proxy path — so the phase's goal and 09-03's idle-window test are unaffected, and exposure is strictly REDUCED versus before the fix (which carried the URL in the img src too). But a live read grant does sit in public, CDN-cached markup and / is prerendered with a long expiry. The must_haves truth 'the expiring value is no longer embedded anywhere in cached markup' is therefore FALSE as written. Fix is a component prop-interface narrowing (pass only what the client needs, never post.thumbnail for file-type) — an architectural change, out of 09-02's file scope. See 09-EVIDENCE.md Tier 2 and 09-02-SUMMARY.md Finding A.
+- **TIME-CRITICAL — Phase 9:** the idle window is OPEN as of 2026-08-11T12:13:13Z. 09-03's cold load may not run before 2026-08-11T13:23:13Z. NO request of any kind may be made against https://4lph4-bl0g.vercel.app until then — an automated check, a link preview, an uptime monitor, or an open browser tab all count, and any one restarts the window from zero. Do NOT push to origin/main before 09-03 completes either: a push redeploys and invalidates the window.
 
 ## Deferred Items
 
@@ -181,9 +193,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T11:41:08.845Z
-Stopped at: Phase 9 Wave 1 complete (09-01 committed, unpushed). Next: Wave 2 = 09-02, which deploys and starts the >70min idle clock.
-Resume file: .planning/phases/09-thumbnail-freshness/09-02-PLAN.md
+Last session: 2026-08-11T12:17:57.224Z
+Stopped at: 09-02 complete. Deploy 9c3cc9c live. IDLE WINDOW OPEN 2026-08-11T12:13:13Z — earliest cold load 13:23:13Z. Do NOT request the site or push until 09-03 runs.
+Resume file: .planning/phases/09-thumbnail-freshness/09-03-PLAN.md
 
 ## Operator Next Steps
 

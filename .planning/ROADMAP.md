@@ -115,7 +115,7 @@ Notes for planning:
   4. A post whose thumbnail genuinely fails to resolve shows a visible placeholder, not an empty box.
   5. A post whose thumbnail is an external (non-Notion-hosted) URL renders exactly as it does today, and its image request does not travel through the new resolution path.
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -124,7 +124,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-02-PLAN.md — Everything that costs no waiting: controlled-origin probes for the redirect and content-type guards, the deploy, the deployed guard battery, the placeholder observation, then the idle clock starts (IMG-03, IMG-04, IMG-05)
+- [x] 09-02-PLAN.md — Everything that costs no waiting: controlled-origin probes for the redirect and content-type guards, the deploy, the deployed guard battery, the placeholder observation, then the idle clock starts (IMG-03, IMG-04, IMG-05)
 
 **Wave 3** *(blocked on Wave 2 completion — separated by the >1h idle window itself)*
 
@@ -191,7 +191,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
 | 8. Content Rendering Fix | v1.1 | 4/4 | Complete   | 2026-08-11 |
-| 9. Thumbnail Freshness | v1.1 | 1/3 | In Progress|  |
+| 9. Thumbnail Freshness | v1.1 | 2/3 | In Progress|  |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 
 ## Requirement Coverage (v1.1)

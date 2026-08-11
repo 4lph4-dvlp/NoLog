@@ -258,6 +258,21 @@ with `age: 2`, and only `s-maxage` supplies the shared-cache lifetime that stora
   changes, so they can ship whenever without re-triggering a meaningful deploy — though **pushing before
   13:23:13Z would redeploy and invalidate the window.** Do not push until 09-03 is done.
 
+## Self-Check: PASSED
+
+All claimed artifacts exist on disk and all claimed commits exist in git.
+
+| Claim | Result |
+|-------|--------|
+| `09-02-SUMMARY.md` exists | FOUND |
+| `09-EVIDENCE.md` exists | FOUND |
+| Commits `dbb01e7`, `9c3cc9c`, `b4df8ba`, `51f8c1b`, `2dc01b1` | all FOUND |
+| Deploy SHA `9c3cc9c` is an ancestor of `origin/main` | FOUND — the deploy really shipped |
+| `git status --porcelain apps/web/src \| wc -l` | `0` |
+| `grep -c 'THUMBNAIL_TEST_ORIGIN' route.ts` | `0` |
+| `grep -cE 'X-Amz-(Signature\|Credential)' 09-EVIDENCE.md` | `0` |
+| `git status --porcelain apps packages \| wc -l` | `0` |
+
 ---
 *Phase: 09-thumbnail-freshness*
 *Completed: 2026-08-11*
