@@ -759,3 +759,61 @@ and which rest on source assertion alone.
 `09-01`), Tier 2 (deployed and controlled-origin checks, `09-02`), Tier 3 (the idle window, `09-03`, this
 plan). No claim above is unsupported by pasted output, and every unexercised item is named with its reason
 rather than silently omitted.
+
+---
+
+## Tier 4 — RSC flight-payload closure (G-09-1)
+
+> Appended by plan 09-04. Tiers 1-3 above are unmodified. This tier exists because the operator was
+> offered "accept as residual risk" at UAT test 1 (see `09-VERIFICATION.md`'s first
+> `human_verification` item) and chose to fix it instead. The phase's single idle window was already
+> spent and its record closed (Tier 3 above) before this section's first request was made — nothing
+> below touches the idle-window claim, and requesting `/` or a post page here does not endanger it.
+
+### Task 2 — local production proof and deployed before-control
+
+**Local production proof.** Built and served with `next start` on a non-default port (3210), detached
+via `setsid` so the sandbox's process-group timeout could not kill it — the pattern Phase 3 and 09-02
+both used. Real Notion credentials, real page. Server confirmed down afterwards (`ss -ltnp` showed zero
+listeners on 3210 once fully killed).
+
+| Body | Distinct `/api/thumbnail/{uuid}` refs (vacuity guard, must be >0) | `amazonaws.com` occurrences | `X-Amz-(Signature\|Credential)` occurrences |
+|------|---|---|---|
+| Home (`/`), local `next start` | `3` | `0` | `0` |
+| Post (`/post/3702c61e-…adb5`), local `next start` | `1` | `0` | `0` |
+
+The vacuity guard passes on both bodies — the zero `amazonaws.com` counts above are real absences, not
+an empty page. This is the local, pre-deploy proof that the boundary split (Task 1) works end to end
+against real Notion data.
+
+**Deployed before-control.** Requested `https://4lph4-bl0g.vercel.app/` and the post detail page for the
+same hero post id, against the deploy that shipped *before* this plan's fix (still carrying the whole
+`Post` object across the `PostThumbnail` client boundary).
+
+| Body | Distinct `/api/thumbnail/{uuid}` refs, raw/unescaped | `amazonaws.com` occurrences |
+|------|---|---|
+| Home (`/`), deployed before-control | `0` | `3` |
+| Post (`/post/3702c61e-…adb5`), deployed before-control | `0` | `1` |
+
+The `amazonaws.com` counts (3 and 1) reproduce Tier 2's recorded figures exactly, confirming this is the
+same before-state Tier 2 measured — a genuine before/after pair inside this one document. The
+raw-unescaped proxy-ref count is `0` on both bodies here, and that is expected rather than a vacuity
+failure: before this plan's fix, `PostThumbnail` served the computed thumbnail `src` only inside the
+rendered `<img>` element (as a percent-encoded `/_next/image?url=%2Fapi%2Fthumbnail%2F{uuid}&…` string,
+confirmed present at `3` and `1` distinct occurrences respectively), never as a raw client-component prop
+in the RSC flight payload — because the pre-fix component received the whole `post` object and computed
+`src` internally, rather than receiving `src` as a passed-in prop. Only *after* the Task 1 split does the
+resolved `src` string exist as a literal Client Component prop, which is exactly the artifact the raw
+(unescaped) regex is built to detect in the after-measurement below. This document therefore uses
+different counters for different purposes, deliberately: `amazonaws.com`/`X-Amz-*` for the closure gate
+(unaffected by encoding), and the raw proxy-ref pattern specifically to confirm the *new* prop shape
+exists post-fix — its `0` here is a property of the old code's data flow, not a vacuous capture.
+
+**Liveness signal recorded for Task 3.** The set of `/_next/static/chunks/*.js` filenames from this
+deployed home-page before-capture — `5` distinct filenames — is saved so Task 3 can confirm the new
+deploy actually shipped by observing the set change, rather than inferring liveness from the measurement
+itself.
+
+Redaction: counts, hostnames and path shapes only, matching Tier 2's discipline. No signature,
+credential, query string or filename from any presigned URL enters this repository —
+`grep -cE 'X-Amz-(Signature|Credential)'` over this document returns `0`.
