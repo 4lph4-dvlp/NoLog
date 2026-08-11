@@ -32,11 +32,11 @@ Decisions made at requirement-scoping time. Downstream planning must not re-liti
 
 ### Thumbnail Freshness (IMG)
 
-- [ ] **IMG-01**: Reader sees home-feed post thumbnails on their first page load, with no manual refresh, including after the site has sat idle longer than Notion's presigned-URL lifetime
-- [ ] **IMG-02**: Reader sees the post detail page's hero thumbnail under the same conditions as IMG-01
-- [ ] **IMG-03**: The image path accepts only a Notion page identifier and resolves the file URL server-side — it never accepts an arbitrary URL from the client, and rejects any resolved host outside the allowlist already declared in `next.config.ts`
-- [ ] **IMG-04**: Reader sees a proper placeholder instead of an empty box when a thumbnail genuinely fails to load
-- [ ] **IMG-05**: Posts whose thumbnail is an external (non-Notion-hosted) URL continue to render exactly as they do today, without passing through the new resolution path
+- [x] **IMG-01**: Reader sees home-feed post thumbnails on their first page load, with no manual refresh, including after the site has sat idle longer than Notion's presigned-URL lifetime
+- [x] **IMG-02**: Reader sees the post detail page's hero thumbnail under the same conditions as IMG-01
+- [x] **IMG-03**: The image path accepts only a Notion page identifier and resolves the file URL server-side — it never accepts an arbitrary URL from the client, and rejects any resolved host outside the allowlist already declared in `next.config.ts`
+- [x] **IMG-04**: Reader sees a proper placeholder instead of an empty box when a thumbnail genuinely fails to load
+- [x] **IMG-05**: Posts whose thumbnail is an external (non-Notion-hosted) URL continue to render exactly as they do today, without passing through the new resolution path
 
 ### Sidebar Collapse (SIDE)
 
@@ -106,11 +106,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONT-03 | Phase 8 | Complete |
 | CONT-04 | Phase 7 | Complete |
 | CONT-05 | Phase 8 | Complete |
-| IMG-01 | Phase 9 | Pending |
-| IMG-02 | Phase 9 | Pending |
-| IMG-03 | Phase 9 | Pending |
-| IMG-04 | Phase 9 | Pending |
-| IMG-05 | Phase 9 | Pending |
+| IMG-01 | Phase 9 | Complete |
+| IMG-02 | Phase 9 | Complete |
+| IMG-03 | Phase 9 | Complete |
+| IMG-04 | Phase 9 | Complete |
+| IMG-05 | Phase 9 | Complete |
 | SIDE-01 | Phase 10 | Pending |
 | SIDE-02 | Phase 10 | Pending |
 | SIDE-03 | Phase 10 | Pending |

@@ -4,15 +4,15 @@ milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 8
 status: executing
-stopped_at: Phase 9 context gathered
-last_updated: "2026-08-11T08:22:20.927Z"
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-08-11T08:34:25.809Z"
 last_activity: 2026-08-11
 last_activity_desc: Phase 7 marked complete
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
   percent: 50
 current_phase_name: content-rendering-fix
 ---
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 8 — COMPLETE
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
-Progress: [██████░░░░] 57% (0/4 v1.1 phases)
+Progress: [████████░░] 80% (0/4 v1.1 phases)
 Last activity: 2026-08-11 — Phase 8 marked complete
 
 ## Performance Metrics
@@ -82,6 +82,7 @@ Last activity: 2026-08-11 — Phase 8 marked complete
 | Phase 7 P01 | 45min | 2 tasks | 3 files |
 | Phase 7 P2 | 25min | 2 tasks | 3 files |
 | Phase 08 P01 | ~35min | 3 tasks | 4 files |
+| Phase 09 P01 | 20min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -153,6 +154,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 8 Plan 04] CORRECTION to 08-RESEARCH Finding 2's SC#1 procedure: /post/[id] is NOT an ISR-cached route, so the prescribed A(MISS)->wait->B(STALE)->C(HIT) sequence cannot occur. Measured on the deployed site: /post/[id] returns 'cache-control: private, no-cache, no-store, max-age=0' with x-vercel-cache: MISS on every request and is classified 'f (Dynamic)' in the build, while / returns x-vercel-cache: PRERENDER at 3m. The research assumed the post route was ISR-cached like the home page. Consequence for SC#1: the criterion's guard (do not be fooled by a page cached from before the fix) is satisfied more strongly than the procedure would have shown -- every request is a fresh server render AND getPageRecordMap uses ofetch so it is absent from the Data Cache too, meaning every observation is a live loadPageChunk call. What the substitute does NOT cover is any claim about ISR behaviour on this route; there is none to claim.
 - [Phase ?]: [Phase 8 Plan 04] CONT-03 closed on the deployed site: the single D-14 deploy (a6becd8..5013b52) shipped the User-Agent fix, the D-19 teardown and the CONT-05 split together; all three public posts render their Notion body across four passes spanning ~9 minutes, where Phase 7 saw 'Content could not be loaded.' on every one. Source diff for Phases 7+8 combined: 4 files, +77/-216 — the teardown removed more than the fix added. Net new forker-facing env vars after v1.1: zero.
 - [Phase ?]: [Phase 8 UAT] CONT-05's fetch-failed sentence observed directly (08-VERIFICATION gap 3 closed): with the content leg forced to throw, the post returns HTTP 200 showing 'This post's content could not be loaded right now.' with zero occurrences of the no-content sentence and zero of the pre-Phase-8 combined string, renderer not entered, one [PostPage:recordMap] line. Both CONT-05 states are now directly observed rather than inferred — no-content in plan 08-02 against a real empty Notion page, fetch-failed here. Fault injection reverted; apps/web/src clean.
+- [Phase ?]: [Phase 9 Plan 01] thumbnailType added to apps/web's local Post type as its own commit before any file reads it, closing landmine 2 in git history order; route's fresh lookup uses a second, separately-constructed NologClient with cache:no-store rather than an unwrapped export off the shared singleton, closing landmine 1 (D-14)
 
 ### Pending Todos
 
@@ -179,9 +181,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T07:19:42.951Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-thumbnail-freshness/09-CONTEXT.md
+Last session: 2026-08-11T08:34:25.778Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

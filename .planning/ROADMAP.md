@@ -115,12 +115,12 @@ Notes for planning:
   4. A post whose thumbnail genuinely fails to resolve shows a visible placeholder, not an empty box.
   5. A post whose thumbnail is an external (non-Notion-hosted) URL renders exactly as it does today, and its image request does not travel through the new resolution path.
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — The whole fix: local `Post` type field, the streaming proxy route with its four guards (tracer), then the rollout to all four `default` surfaces through one shared component, closed by the Tier 1 gate sweep (IMG-01…IMG-05)
+- [x] 09-01-PLAN.md — The whole fix: local `Post` type field, the streaming proxy route with its four guards (tracer), then the rollout to all four `default` surfaces through one shared component, closed by the Tier 1 gate sweep (IMG-01…IMG-05)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -191,7 +191,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
 | 8. Content Rendering Fix | v1.1 | 4/4 | Complete   | 2026-08-11 |
-| 9. Thumbnail Freshness | v1.1 | 0/3 | Planned | - |
+| 9. Thumbnail Freshness | v1.1 | 1/3 | In Progress|  |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 
 ## Requirement Coverage (v1.1)
