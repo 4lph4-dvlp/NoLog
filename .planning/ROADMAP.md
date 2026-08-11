@@ -115,7 +115,7 @@ Notes for planning:
   4. A post whose thumbnail genuinely fails to resolve shows a visible placeholder, not an empty box.
   5. A post whose thumbnail is an external (non-Notion-hosted) URL renders exactly as it does today, and its image request does not travel through the new resolution path.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/4 plans executed (09-04 added as gap closure for UAT gap G-09-1)
 
 Plans:
 **Wave 1**
@@ -129,6 +129,10 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion — separated by the >1h idle window itself)*
 
 - [x] 09-03-PLAN.md — The one idle window: the cold first request after the gap, the direct proxy-path check that the optimizer cannot mask, and the honest IMG-02 finding (IMG-01, IMG-02)
+
+**Wave 4** *(gap closure — blocked on Wave 3; the idle window is already spent, so a redeploy costs nothing)*
+
+- [ ] 09-04-PLAN.md — G-09-1: split the thumbnail client boundary so `post.thumbnail` never crosses it, then re-measure the served HTML until the presigned-URL count in the RSC payload is 0 where 09-02 measured 3 and 1 (IMG-01, IMG-02, IMG-04, IMG-05)
 
 Notes for planning:
 
