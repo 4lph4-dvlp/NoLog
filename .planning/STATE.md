@@ -5,10 +5,10 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 09
 current_phase_name: thumbnail-freshness
 status: executing
-stopped_at: "09-03 complete. Phase 9 (thumbnail-freshness) all 3 plans executed. IMG-01/IMG-02 observed via the idle-window cold request; 09-EVIDENCE.md closed end to end. Two carried-forward operator items remain open (not this plan's scope): the RSC flight-payload presigned-URL exposure from 09-02, and the D-06 must_haves wording correction. Next: phase-level verification/ship for Phase 9, or Phase 10 (Collapsible Sidebars)."
-last_updated: "2026-08-11T16:09:56.550Z"
+stopped_at: "Phase 9 waves 1-3 executed and verified; UAT done (2 passed, 1 issue). Verification is human_needed and stays that way until gap G-09-1 closes. Operator answered the three UAT decisions: host-allowlist source-only assurance ACCEPTED, IMG-05 source-only assurance ACCEPTED, RSC flight-payload exposure REJECTED as residual risk — fix it. That became gap G-09-1 and plan 09-04 (wave 4, gap_closure), which passed the plan checker. Pushed 18 commits to origin/main (9c3cc9c..0a9d48e) — this redeployed the site, which is safe now: the one idle window is spent and Tier 3 is closed. NOTE for 09-04 task 2: its 'deployed BEFORE' control now measures a deploy that already carries the lint fixes, which isolates the PostThumbnail change rather than confounding it; the expected baseline is unchanged at 3 amazonaws occurrences on / and 1 on /post/{id}. Next: /gsd-execute-phase 9 --gaps-only. Still open and NOT part of G-09-1: the D-06 must_haves wording correction; code-review WR-02 (no timeout on the outbound thumbnail fetch), WR-03 (MermaidBlock securityLevel loose + dangerouslySetInnerHTML, pre-existing), and INFO-02 (terminal template's PostPage still renders post.thumbnail directly, bypassing the proxy — inactive template, so not deployed)."
+last_updated: "2026-08-11T18:20:00.000Z"
 last_activity: 2026-08-12
-last_activity_desc: Phase 09 execution started
+last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
   completed_phases: 3
@@ -197,8 +197,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T16:09:56.521Z
-Stopped at: 09-03 complete. Phase 9 (thumbnail-freshness) all 3 plans executed. IMG-01/IMG-02 observed via the idle-window cold request; 09-EVIDENCE.md closed end to end. Two carried-forward operator items remain open (not this plan's scope): the RSC flight-payload presigned-URL exposure from 09-02, and the D-06 must_haves wording correction. Next: phase-level verification/ship for Phase 9, or Phase 10 (Collapsible Sidebars).
+Last session: 2026-08-11T18:20:00.000Z
+Stopped at: Phase 9 waves 1-3 executed, code-reviewed and verified; UAT complete (2 passed, 1 issue). Phase is NOT complete — verification is `human_needed` and stays there until gap G-09-1 closes. The operator answered the three UAT decisions: host-allowlist source-only assurance ACCEPTED, IMG-05 source-only assurance ACCEPTED, and the RSC flight-payload exposure REJECTED as residual risk with an instruction to fix it. That answer became gap G-09-1 and plan `09-04-PLAN.md` (wave 4, `gap_closure: true`), which passed the plan checker. 18 commits pushed to origin/main (9c3cc9c..0a9d48e), which redeployed the site — safe, because the single idle window is already spent and Tier 3 of 09-EVIDENCE.md is closed. Next: `/gsd-execute-phase 9 --gaps-only`.
 Resume file: None
 
 ## Operator Next Steps
