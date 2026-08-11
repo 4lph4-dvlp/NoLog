@@ -4,17 +4,17 @@ milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 10
 current_phase_name: Collapsible Sidebars & Reading Width
-status: planning
-stopped_at: Phase 10 context gathered
-last_updated: "2026-08-11T19:57:22.786Z"
+status: executing
+stopped_at: Phase 10 UI-SPEC approved
+last_updated: "2026-08-11T21:15:38.943Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 11
+  total_plans: 15
   completed_plans: 11
-  percent: 75
+  percent: 73
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 Phase: 10 — Collapsible Sidebars & Reading Width
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Progress: [██████████] 100% (2/4 v1.1 phases complete)
 Last activity: 2026-08-12 — Phase 09 complete, transitioned to Phase 10
 
@@ -198,9 +198,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T19:57:22.755Z
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-collapsible-sidebars-reading-width/10-CONTEXT.md
+Last session: 2026-08-11T20:30:58.567Z
+Stopped at: Phase 10 UI-SPEC approved
+Resume file: .planning/phases/10-collapsible-sidebars-reading-width/10-UI-SPEC.md
 
 ## Operator Next Steps
 

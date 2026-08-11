@@ -160,9 +160,20 @@ Notes for planning:
 **Plans:** 4 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 10-01-PLAN.md — Tracer: left sidebar collapses end-to-end (shared constants module, `@property` CSS, pre-hydration script, Server-Component slot refactor, client shell, hamburger) + resize/transition/reduced-motion
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 10-02-PLAN.md — Right sidebar: circular avatar toggle with ring cue and icon fallback, right-side wiring, `Profile.tsx` landmark fix
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 10-03-PLAN.md — Accessibility completion (focus rescue then `inert`, both paths, both sides) + the 1100px post-detail prose cap
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 10-04-PLAN.md — Verification battery: collapsed-state width measurement, delayed-onset pitfall checks, a11y battery, stop-ship battery, `10-EVIDENCE.md`
 
 **UI hint**: yes
