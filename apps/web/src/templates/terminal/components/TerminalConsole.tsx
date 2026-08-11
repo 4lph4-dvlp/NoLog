@@ -258,7 +258,14 @@ export function TerminalConsole({
     if (!initialCommand) return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const clearAll = () => timers.forEach(clearTimeout);
+    // Cancelling the chain must also release the typing lock. The terminating
+    // timer is the only path that clears it, so without this a run cancelled
+    // after typing started would leave the input disabled for good.
+    let typingStarted = false;
+    const clearAll = () => {
+      timers.forEach(clearTimeout);
+      if (typingStarted) setIsTyping(false);
+    };
 
     // Prevent 'find' recursion on search page
     if (path === "~/search" && initialCommand.startsWith("find")) {
@@ -271,7 +278,12 @@ export function TerminalConsole({
     }
 
     let currentIndex = 0;
-    timers.push(setTimeout(() => setIsTyping(true), 0));
+    timers.push(
+      setTimeout(() => {
+        typingStarted = true;
+        setIsTyping(true);
+      }, 0)
+    );
 
     const typeChar = () => {
       if (currentIndex < initialCommand.length) {
@@ -283,6 +295,7 @@ export function TerminalConsole({
           setTimeout(() => {
             handleCommand(initialCommand);
             setInput("");
+            typingStarted = false;
             setIsTyping(false);
           }, 300)
         ); // Wait before executing
