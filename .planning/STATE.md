@@ -4,8 +4,8 @@ milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 8
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-08-11T08:34:25.809Z"
+stopped_at: "Phase 9 Wave 1 complete (09-01 committed, unpushed). Next: Wave 2 = 09-02, which deploys and starts the >70min idle clock."
+last_updated: "2026-08-11T11:41:08.877Z"
 last_activity: 2026-08-11
 last_activity_desc: Phase 7 marked complete
 progress:
@@ -181,9 +181,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T08:34:25.778Z
-Stopped at: Completed 09-01-PLAN.md
-Resume file: None
+Last session: 2026-08-11T11:41:08.845Z
+Stopped at: Phase 9 Wave 1 complete (09-01 committed, unpushed). Next: Wave 2 = 09-02, which deploys and starts the >70min idle clock.
+Resume file: .planning/phases/09-thumbnail-freshness/09-02-PLAN.md
 
 ## Operator Next Steps
 
