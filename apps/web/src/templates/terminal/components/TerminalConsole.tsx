@@ -46,37 +46,6 @@ export function TerminalConsole({
     }
   };
 
-  // Auto-typing effect for initial command
-  useEffect(() => {
-    if (!initialCommand) return;
-
-    // Prevent 'find' recursion on search page
-    if (path === "~/search" && initialCommand.startsWith("find")) {
-      setHistory([{ command: initialCommand, output: printLs() }]);
-      return;
-    }
-
-    let currentIndex = 0;
-    setIsTyping(true);
-
-    const typeChar = () => {
-      if (currentIndex < initialCommand.length) {
-        setInput(initialCommand.slice(0, currentIndex + 1));
-        currentIndex++;
-        setTimeout(typeChar, 50); // Typing speed
-      } else {
-        setTimeout(() => {
-          handleCommand(initialCommand);
-          setInput("");
-          setIsTyping(false);
-        }, 300); // Wait before executing
-      }
-    };
-
-    setTimeout(typeChar, 400); // Initial delay
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialCommand]);
-
   const printHelp = () => (
     <div className="text-terminal-dim">
       <p>Available commands:</p>
@@ -87,7 +56,7 @@ export function TerminalConsole({
         <li><span className="text-terminal-accent">tree</span>    : Show category and post structure</li>
         <li><span className="text-terminal-accent">cd</span>      : Change directory (e.g., cd [category], cd ~)</li>
         <li><span className="text-terminal-accent">cat</span>     : Read a post by index (e.g., cat 1)</li>
-        <li><span className="text-terminal-accent">find</span>    : Search posts (e.g., find "keyword")</li>
+        <li><span className="text-terminal-accent">find</span>    : Search posts (e.g., find &quot;keyword&quot;)</li>
         <li><span className="text-terminal-accent">clear</span>   : Clear terminal output</li>
       </ul>
     </div>
@@ -118,7 +87,7 @@ export function TerminalConsole({
           <p><span className="text-terminal-prompt font-semibold w-24 inline-block">Packages:</span> {posts.length} (posts)</p>
           <p><span className="text-terminal-prompt font-semibold w-24 inline-block">Bio:</span> {profile.bio}</p>
           {profile.greeting && (
-            <p className="mt-2 text-terminal-dim italic">"{profile.greeting}"</p>
+            <p className="mt-2 text-terminal-dim italic">&quot;{profile.greeting}&quot;</p>
           )}
           <div className="flex gap-2 mt-3">
             <div className="w-4 h-4 bg-zinc-950"></div>
@@ -267,10 +236,10 @@ export function TerminalConsole({
       case "find":
         const query = args.slice(1).join(" ").replace(/["']/g, "");
         if (!query) {
-          output = <div className="text-error">find: missing keyword. Usage: find "keyword"</div>;
+          output = <div className="text-error">find: missing keyword. Usage: find &quot;keyword&quot;</div>;
         } else {
           router.push(`/search?q=${encodeURIComponent(query)}`);
-          output = <div className="text-terminal-dim">Searching for "{query}" ...</div>;
+          output = <div className="text-terminal-dim">Searching for &quot;{query}&quot; ...</div>;
         }
         break;
       default:
@@ -279,6 +248,52 @@ export function TerminalConsole({
 
     setHistory((prev) => [...prev, { command: trimmedCmd, output }]);
   };
+
+  // Auto-typing effect for the initial command. Declared after printLs and
+  // handleCommand so it closes over their current definitions rather than
+  // reaching for them before they exist. Every state write is scheduled on a
+  // timer instead of running synchronously in the effect body, and the timers
+  // are tracked so a re-run or unmount cancels an in-flight typing sequence.
+  useEffect(() => {
+    if (!initialCommand) return;
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const clearAll = () => timers.forEach(clearTimeout);
+
+    // Prevent 'find' recursion on search page
+    if (path === "~/search" && initialCommand.startsWith("find")) {
+      timers.push(
+        setTimeout(() => {
+          setHistory([{ command: initialCommand, output: printLs() }]);
+        }, 0)
+      );
+      return clearAll;
+    }
+
+    let currentIndex = 0;
+    timers.push(setTimeout(() => setIsTyping(true), 0));
+
+    const typeChar = () => {
+      if (currentIndex < initialCommand.length) {
+        setInput(initialCommand.slice(0, currentIndex + 1));
+        currentIndex++;
+        timers.push(setTimeout(typeChar, 50)); // Typing speed
+      } else {
+        timers.push(
+          setTimeout(() => {
+            handleCommand(initialCommand);
+            setInput("");
+            setIsTyping(false);
+          }, 300)
+        ); // Wait before executing
+      }
+    };
+
+    timers.push(setTimeout(typeChar, 400)); // Initial delay
+
+    return clearAll;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCommand]);
 
   return (
     <div

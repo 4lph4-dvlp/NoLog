@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { CONFIG } from "@/site.config";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Mail, ExternalLink } from "lucide-react";
 
 /**

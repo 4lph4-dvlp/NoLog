@@ -1,18 +1,18 @@
 "use client";
 
 import type { Post } from "@/types";
+import type { ExtendedRecordMap } from "notion-types";
 import { NotionPageRenderer } from "@/components/notion/NotionPageRenderer";
 import { CommentSection } from "@/components/comments/CommentSection";
 import Image from "next/image";
 import Link from "next/link";
 import { TerminalConsole } from "./components/TerminalConsole";
-import { CONFIG } from "@/site.config";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 interface TerminalPostPageProps {
   post: Post;
-  recordMap: any;
+  recordMap: ExtendedRecordMap | null;
   categories: string[];
   relatedPosts: Post[];
   subscribeSlot?: React.ReactNode;

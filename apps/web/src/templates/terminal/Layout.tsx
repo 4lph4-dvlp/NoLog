@@ -1,4 +1,3 @@
-import { Profile } from "@/components/Profile";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface TerminalLayoutProps {

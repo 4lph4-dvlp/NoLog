@@ -26,7 +26,6 @@ export function MermaidBlock({ code, caption }: MermaidBlockProps) {
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
-  const idRef = useRef(`mermaid-${Math.random().toString(36).slice(2, 9)}`);
 
   const onClickCopyToClipboard = useCallback(() => {
     navigator.clipboard.writeText(code);
@@ -91,26 +90,34 @@ export function MermaidBlock({ code, caption }: MermaidBlockProps) {
     });
   }, [isDark, mermaidReady]);
 
-  // Render mermaid diagram
-  const renderDiagram = useCallback(async () => {
-    if (!mermaidReady || !code.trim()) return;
-    try {
-      const mermaid = (await import("mermaid")).default;
-      // Each render needs a unique ID
-      const uniqueId = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      const { svg: renderedSvg } = await mermaid.render(uniqueId, code.trim());
-      setSvg(renderedSvg);
-      setError(null);
-    } catch (err) {
-      console.warn("[MermaidBlock] Render error:", err);
-      setError(err instanceof Error ? err.message : "Failed to render Mermaid diagram");
-      setSvg("");
-    }
-  }, [code, mermaidReady]);
-
+  // Render mermaid diagram. The work is async, so state only settles after the
+  // await — the cancelled guard drops results from a superseded run (theme flip
+  // or code change mid-render) instead of letting them overwrite the newer one.
   useEffect(() => {
-    renderDiagram();
-  }, [renderDiagram, isDark]);
+    if (!mermaidReady || !code.trim()) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const mermaid = (await import("mermaid")).default;
+        // Each render needs a unique ID
+        const uniqueId = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const { svg: renderedSvg } = await mermaid.render(uniqueId, code.trim());
+        if (cancelled) return;
+        setSvg(renderedSvg);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        console.warn("[MermaidBlock] Render error:", err);
+        setError(err instanceof Error ? err.message : "Failed to render Mermaid diagram");
+        setSvg("");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [code, mermaidReady, isDark]);
 
   // Mode selector labels matching Notion's dropdown style
   const modeOptions: { value: ViewMode; label: string }[] = useMemo(
