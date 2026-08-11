@@ -5,8 +5,8 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 10
 current_phase_name: Collapsible Sidebars & Reading Width
 status: planning
-stopped_at: "Phase 9 waves 1-3 executed, code-reviewed and verified; UAT complete (2 passed, 1 issue). Phase is NOT complete — verification is `human_needed` and stays there until gap G-09-1 closes. The operator answered the three UAT decisions: host-allowlist source-only assurance ACCEPTED, IMG-05 source-only assurance ACCEPTED, and the RSC flight-payload exposure REJECTED as residual risk with an instruction to fix it. That answer became gap G-09-1 and plan `09-04-PLAN.md` (wave 4, `gap_closure: true`), which passed the plan checker. 18 commits pushed to origin/main (9c3cc9c..0a9d48e), which redeployed the site — safe, because the single idle window is already spent and Tier 3 of 09-EVIDENCE.md is closed. Next: `/gsd-execute-phase 9 --gaps-only`."
-last_updated: "2026-08-11T19:07:47.639Z"
+stopped_at: Phase 10 context gathered
+last_updated: "2026-08-11T19:57:22.786Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
@@ -198,9 +198,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T18:20:00.000Z
-Stopped at: Phase 9 waves 1-3 executed, code-reviewed and verified; UAT complete (2 passed, 1 issue). Phase is NOT complete — verification is `human_needed` and stays there until gap G-09-1 closes. The operator answered the three UAT decisions: host-allowlist source-only assurance ACCEPTED, IMG-05 source-only assurance ACCEPTED, and the RSC flight-payload exposure REJECTED as residual risk with an instruction to fix it. That answer became gap G-09-1 and plan `09-04-PLAN.md` (wave 4, `gap_closure: true`), which passed the plan checker. 18 commits pushed to origin/main (9c3cc9c..0a9d48e), which redeployed the site — safe, because the single idle window is already spent and Tier 3 of 09-EVIDENCE.md is closed. Next: `/gsd-execute-phase 9 --gaps-only`.
-Resume file: None
+Last session: 2026-08-11T19:57:22.755Z
+Stopped at: Phase 10 context gathered
+Resume file: .planning/phases/10-collapsible-sidebars-reading-width/10-CONTEXT.md
 
 ## Operator Next Steps
 
