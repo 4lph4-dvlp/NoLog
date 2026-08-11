@@ -5,16 +5,16 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 10
 current_phase_name: Collapsible Sidebars & Reading Width
 status: executing
-stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-08-11T21:15:38.943Z"
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-08-11T21:42:30.836Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 15
-  completed_plans: 11
-  percent: 73
+  completed_plans: 12
+  percent: 75
 ---
 
 # Project State
@@ -24,15 +24,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 09 — thumbnail-freshness
+**Current focus:** Phase 10 — Collapsible Sidebars & Reading Width
 
 ## Current Position
 
-Phase: 10 — Collapsible Sidebars & Reading Width
-Plan: Not started
+Phase: 10 (Collapsible Sidebars & Reading Width) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Progress: [██████████] 100% (2/4 v1.1 phases complete)
-Last activity: 2026-08-12 — Phase 09 complete, transitioned to Phase 10
+Progress: [████████░░] 80% (2/4 v1.1 phases complete)
+Last activity: 2026-08-12 — Phase 10 execution started
 
 > **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
 > already executing, so `state advance-plan` incremented phase 8's plan counter (3 → 4) instead of
@@ -90,6 +90,7 @@ Last activity: 2026-08-12 — Phase 09 complete, transitioned to Phase 10
 | Phase 09 P01 | 20min | 3 tasks | 8 files |
 | Phase 09 P02 | ~40min | 3 tasks | 1 files |
 | Phase 09 P03 | ~25min | 2 tasks | 2 files |
+| Phase 10 P01 | 35min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 9 Plan 03] The task 1 human-check's browser-corroboration half was performed by the orchestrator via gstack /browse in a freshly started, cookie-less headless Chromium session — not by a human incognito window — and recorded in 09-EVIDENCE.md in those exact terms rather than presented as a human observation
 - [Phase ?]: [Phase 9 Plan 03] IMG-02 reported as observed (hero thumbnail resolved after the gap), with the underlying Data Cache staleness mechanism held at MEDIUM confidence per 09-RESEARCH.md — unexercisable by this phase's own design since D-11's verify-after-fix trade-off plus the fix itself removed the one discriminating signal
 - [Phase ?]: [Phase 9 Plan 03] research/ARCHITECTURE.md §1 corrected in writing in 09-EVIDENCE.md: it attributes staleness for both / and /post/[id] to the Full Route Cache — right for /, wrong for /post/[id], which has no Full Route Cache entry at all; the actual mechanism there is the Next.js Data Cache inside getPost()'s own fetch
+- [Phase ?]: [Phase 10 Plan 01] @property's syntax descriptor must be single-quoted (syntax: '<length>';) — Turbopack's Lightning CSS silently drops the whole @property block (and every rule after it in that source region) on the double-quoted form, with no build error; found live via gstack /browse measurement, fixed to match 10-RESEARCH.md's own example
+- [Phase ?]: [Phase 10 Plan 01] Per-side sidebar collapse state built as Record<SidebarSide, T> from Task 1 onward so Task 2's viewport listener could iterate both sides without a rewrite; only left is wired to a button/CSS in this plan, right has state machinery only — closed by plan 10-02
 
 ### Pending Todos
 
@@ -198,9 +201,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T20:30:58.567Z
-Stopped at: Phase 10 UI-SPEC approved
-Resume file: .planning/phases/10-collapsible-sidebars-reading-width/10-UI-SPEC.md
+Last session: 2026-08-11T21:42:30.805Z
+Stopped at: Completed 10-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
