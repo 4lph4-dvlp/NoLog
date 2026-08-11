@@ -15,6 +15,9 @@ export interface Post {
   /** Thumbnail image URL from the `Thumbnail` (files) property */
   thumbnail: string | null;
 
+  /** Distinguishes a Notion-hosted (expiring) file URL from a stable pasted external URL */
+  thumbnailType: "file" | "external" | null;
+
   /** Category from the `Category` (select) property */
   category: string;
 
