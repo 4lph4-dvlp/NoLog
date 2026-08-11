@@ -157,7 +157,7 @@ Notes for planning:
   4. A keyboard-and-screen-reader user can operate both toggles: each reports its state via `aria-expanded` and names its panel via `aria-controls`; a collapsed sidebar is unreachable by Tab and absent from the accessibility tree; focus moves to the controlling toggle when a panel collapses while focus is inside it, whether the collapse came from a click or from a resize; and the avatar toggle announces an action ("Show profile sidebar"), distinct from the Profile card's own avatar `alt` text, with a matching `title` tooltip.
   5. A reader with `prefers-reduced-motion: reduce` gets an instant collapse with no transition, every other reader gets a smooth one, and both sidebars still stick on scroll after the transition ships.
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -170,7 +170,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 10-03-PLAN.md — Accessibility completion (focus rescue then `inert`, both paths, both sides) + the 1100px post-detail prose cap
+- [x] 10-03-PLAN.md — Accessibility completion (focus rescue then `inert`, both paths, both sides) + the 1100px post-detail prose cap
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -214,7 +214,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
 | 8. Content Rendering Fix | v1.1 | 4/4 | Complete   | 2026-08-11 |
 | 9. Thumbnail Freshness | v1.1 | 4/4 | Complete    | 2026-08-12 |
-| 10. Collapsible Sidebars & Reading Width | v1.1 | 2/4 | In Progress|  |
+| 10. Collapsible Sidebars & Reading Width | v1.1 | 3/4 | In Progress|  |
 
 ## Requirement Coverage (v1.1)
 

@@ -5,15 +5,15 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 10
 current_phase_name: Collapsible Sidebars & Reading Width
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-08-11T22:01:06.814Z"
+stopped_at: Completed 10-03-PLAN.md
+last_updated: "2026-08-11T22:23:33.562Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
   percent: 75
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 10 (Collapsible Sidebars & Reading Width) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
-Progress: [█████████░] 87% (2/4 v1.1 phases complete)
+Progress: [█████████░] 93% (2/4 v1.1 phases complete)
 Last activity: 2026-08-12 — Phase 10 execution started
 
 > **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
@@ -92,6 +92,7 @@ Last activity: 2026-08-12 — Phase 10 execution started
 | Phase 09 P03 | ~25min | 2 tasks | 2 files |
 | Phase 10 P01 | 35min | 2 tasks | 6 files |
 | Phase 10 P02 | ~30min | 2 tasks | 4 files |
+| Phase 10 P03 | ~40min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -176,6 +177,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 10 Plan 01] Per-side sidebar collapse state built as Record<SidebarSide, T> from Task 1 onward so Task 2's viewport listener could iterate both sides without a rewrite; only left is wired to a button/CSS in this plan, right has state machinery only — closed by plan 10-02
 - [Phase ?]: [Phase 10 Plan 02] Right sidebar avatar toggle shipped: @property --profile-width (single-quoted syntax, matching 10-01's fix) plus html[data-sidebar-right="collapsed"] override; SidebarShell.tsx's mount-read effect refactored into one SIDES.forEach helper instead of a second hardcoded 'right' block, keeping per-side machinery at one implementation; Profile.tsx root demoted from <aside> to <div> so the right panel is a single complementary landmark (A11Y-05 prerequisite)
 - [Phase ?]: [Phase 10 Plan 02] D-14 icon fallback verified live against a real 404 avatar path (config temporarily repointed, reverted after); all four left/right collapse combinations measured at 1400x900: 864/1064/1104/1304px, matching plan expectations exactly
+- [Phase ?]: [Phase 10 Plan 03] applyCollapse(side, collapsed, animate) is the single shared routine invoked by both the click handler and the matchMedia resize listener, so A11Y-03's focus rescue and A11Y-02's inert write never drift between the two triggers; focus rescue fires strictly before the inert write, same tick, on both paths and both sides
+- [Phase ?]: [Phase 10 Plan 03] Confirmed via real Tab-key navigation and CDP Accessibility.getFullAXTree (not gstack /browse's own snapshot command, which does not honor inert when scoped to a collapsed panel) that A11Y-02 holds: the collapsed panel and its descendants are genuinely absent from the accessibility tree, not merely visually hidden
+- [Phase ?]: [Phase 10 Plan 03] Post-detail prose column capped at max-w-[1100px] (one-token change from max-w-none); measured on a real post at 1400x900: both expanded 864/864, both collapsed 1304/1100 (+236px payoff), right-only collapsed 1104/1100 -- matching wave 2's corrected asymmetric-collapse arithmetic, not the UI-SPEC's uncorrected 1136px/18px paragraph
 
 ### Pending Todos
 
@@ -204,8 +208,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T22:01:06.782Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-08-11T22:23:33.530Z
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

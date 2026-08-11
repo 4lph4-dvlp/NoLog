@@ -54,8 +54,8 @@ Decisions made at requirement-scoping time. Downstream planning must not re-liti
 ### Sidebar Accessibility (A11Y)
 
 - [x] **A11Y-01**: Both toggle buttons expose their state via `aria-expanded` and point at the panel they control via `aria-controls`
-- [ ] **A11Y-02**: A collapsed sidebar is removed from the accessibility tree, so screen-reader and keyboard users cannot tab into content that is not visible
-- [ ] **A11Y-03**: Keyboard focus is never stranded — if a panel collapses while focus is inside it, focus moves to that panel's toggle button
+- [x] **A11Y-02**: A collapsed sidebar is removed from the accessibility tree, so screen-reader and keyboard users cannot tab into content that is not visible
+- [x] **A11Y-03**: Keyboard focus is never stranded — if a panel collapses while focus is inside it, focus moves to that panel's toggle button
 - [x] **A11Y-04**: The collapse transition is disabled for readers who have set `prefers-reduced-motion: reduce`
 - [x] **A11Y-05**: The avatar toggle has an action-phrased accessible name (e.g. "Show profile sidebar") distinct from the Profile card's own avatar `alt` text, plus a matching hover tooltip following `ThemeToggle.tsx`'s existing `title` convention
 
@@ -122,8 +122,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIDE-09 | Phase 10 | Complete |
 | SIDE-10 | Phase 10 | Complete |
 | A11Y-01 | Phase 10 | Complete |
-| A11Y-02 | Phase 10 | Pending |
-| A11Y-03 | Phase 10 | Pending |
+| A11Y-02 | Phase 10 | Complete |
+| A11Y-03 | Phase 10 | Complete |
 | A11Y-04 | Phase 10 | Complete |
 | A11Y-05 | Phase 10 | Complete |
 
