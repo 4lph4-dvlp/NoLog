@@ -66,7 +66,27 @@ handling (see D-04), sidebars / reading width (Phase 10), and anything about pos
   URL is resolved server-side from data the site already trusts. `Post.thumbnailType` (shipped v1.0) already
   distinguishes `"file"` (Notion-hosted, expiring) from `"external"` (a pasted public URL) — IMG-05 requires
   external thumbnails to render exactly as they do today and **not** pass through the new path, and the signal
-  to branch on already exists. `packages/core` and the `Post` type must not change (REQUIREMENTS.md D-05).
+  to branch on already exists. `packages/core` and the published `Post` type must not change
+  (REQUIREMENTS.md D-05).
+
+  **⚠ Added 2026-08-10 from `09-RESEARCH.md` — a compile-blocking gap.** The four template call sites import
+  `Post` from `apps/web/src/types/index.ts`, a **local duplicate** of the published type — and that local copy
+  has `thumbnail` but **not `thumbnailType`** (`apps/web/src/types/index.ts:16`; the field exists only in
+  `packages/core/src/types.ts:19-28`). The first line of D-02's shared component that reads
+  `post.thumbnailType` therefore fails `tsc`. The fix is a one-field addition to the **local** type, which is
+  `apps/web`-only and leaves the published package untouched — D-05 is about `packages/core`, and this is not
+  that. Recorded here because it is invisible from the requirement and would surface as a build failure
+  mid-execution.
+
+- **D-14:** **The uncached lookup must be a second `NologClient` constructed with `cache: "no-store"` — not an
+  un-`cache()`-wrapped export off the existing singleton.** `ARCHITECTURE.md` §1 offered both as equivalent
+  options and pointed at `getUnemailedPublicPosts()` as the precedent. `09-RESEARCH.md` found that option
+  wrong: `apps/web/src/lib/notion.ts:8-16` bakes
+  `fetchOptions: { next: { revalidate: CONFIG.revalidate, tags: [...] } }` into the **constructor**, so every
+  call through that instance carries the 180s Data Cache entry regardless of whether React's `cache()` wrapper
+  is present. Removing the wrapper strips only React's per-render memoization; the fetch still reads the very
+  cache this phase exists to bypass. **Following the documented precedent would have shipped the bug unfixed
+  while every check passed.** — **Reversibility:** reversible.
 
 ### IMG-02 — verify the premise before building against it
 
@@ -87,6 +107,25 @@ handling (see D-04), sidebars / reading width (Phase 10), and anything about pos
   The fix itself is applied to all four surfaces regardless (D-01), so IMG-02 is covered either way — what the
   measurement decides is what IMG-02's verification criterion should say, and whether the ROADMAP's stated
   mechanism for it needs correcting.
+
+  **⚠ Resolved 2026-08-10 by `09-RESEARCH.md` — IMG-02 is real, but by a different mechanism than either
+  document said.** `/post/[id]` is dynamic because it has **no `generateStaticParams`**, not because of any
+  dynamic API. That only means the *page HTML* is uncached. The `getPost(id)` call inside it — the one that
+  produces `post.thumbnail` — still lands in Next's **Data Cache** under the constructor-baked
+  `next: { revalidate: 180 }`, and the Data Cache uses the same lazy stale-while-revalidate model as ISR: on a
+  low-traffic site an entry can sit far past its `revalidate` window because nothing proactively refreshes it.
+  So a post page can serve a presigned URL older than an hour.
+
+  **Corrections this makes to inherited documents, both worth carrying forward:**
+  `ARCHITECTURE.md` §1 blamed the Full Route Cache for both pages — right for `/`, wrong for `/post/[id]`.
+  And Phase 8's measurement, which is what raised the doubt, never actually bore on this: it measured
+  `getPageRecordMap`, which uses `ofetch` and is structurally absent from the Data Cache — a different fetch
+  from `getPost` entirely.
+
+  **Confidence is MEDIUM, not HIGH.** This is inferred from documented Data Cache behaviour, not measured.
+  D-08's live check therefore still runs, now with a specific thing to look for: whether a post page's
+  thumbnail URL can be observed older than the presign lifetime. Recorded as an open question rather than
+  promoted to fact.
 
 ### Failure state (IMG-04)
 
