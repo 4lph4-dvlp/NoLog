@@ -100,11 +100,33 @@ Notion by the operator, is absent.
 
 ---
 
-## Still outstanding
+## Production environment variables — D-19 confirmed affirmatively
 
-**Production environment variable list — not captured.** Plan 08-04 Task 2 asks for the Production env var
-**names** as positive proof of D-19's "zero net new forker-facing env vars". That reading is only available
-from the Vercel dashboard and has not been taken. The negative evidence exists (the route 404s; nothing in
-the source reads `NOTION_DEBUG_DIAGNOSTICS` or `NOTION_DEBUG_ROUTE_SECRET`; the operator recorded removing
-both at 2026-08-09 17:05 UTC with a closeout redeploy at 17:13 UTC in `07-EVIDENCE.md`), but the affirmative
-dashboard listing is not in hand and is **not** claimed here.
+Read from the Vercel dashboard by the operator, 2026-08-10. **Names only** — no value was viewed, requested,
+or recorded (T-08-13).
+
+| Variable | Scope | Dashboard date |
+|---|---|---|
+| `RESEND_API_KEY` | Production | Added Jul 29 |
+| `RESEND_AUDIENCE_ID` | Production | Added Jul 29 |
+| `NOTIFY_PHYSICAL_ADDRESS` | Production | Added Jul 29 |
+| `CRON_SECRET` | Production | Added Jul 29 |
+| `NOTION_DATABASE_ID` | Production and Preview | Updated Jul 28 |
+| `NOTION_TOKEN` | Production and Preview | Updated Jul 28 |
+| `NEXT_PUBLIC_CUSDIS_APP_ID` | (scope not captured) | — |
+
+**`NOTION_DEBUG_DIAGNOSTICS` and `NOTION_DEBUG_ROUTE_SECRET` are both absent.** D-19's "zero net new
+forker-facing env vars" is now proven positively, not merely inferred from the route returning 404.
+
+**The dates are a second, independent signal.** Every variable is dated Jul 28–29 — the v1.0 milestone.
+Milestone v1.1 began 2026-08-09. So the listing itself shows that no variable introduced during this
+milestone survived it, without needing to reason about which ones those were.
+
+Cross-checks against earlier findings, all consistent:
+
+- `NOTION_TOKEN_V2` is absent — matching Phase 7's operator observation, which is what structurally
+  eliminated the "cookie expiry" candidate from the six-candidate table (`07-EVIDENCE.md`).
+- The seven listed variables are exactly the v1.0 surface documented in `README.md` (four Resend/notify
+  variables, two Notion variables) plus the pre-existing Cusdis app id from `PROJECT.md`.
+
+This closes the second of `08-VERIFICATION.md`'s three gaps.

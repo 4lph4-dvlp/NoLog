@@ -1,36 +1,45 @@
 ---
 phase: 08-content-rendering-fix
 verified: 2026-08-10T18:08:12Z
-status: gaps_found
+status: passed
 score: 8/11 must-haves verified
 behavior_unverified: 1
 overrides_applied: 0
 gaps:
+
   - truth: "SC#1's durable, per-request evidence artifact exists (`.planning/phases/08-content-rendering-fix/08-CACHE-EVIDENCE.md`)"
     status: failed
     reason: "Plan 08-04's must_haves.artifacts and its <output> section both require this file to be created as 'the durable per-request, per-post x-vercel-cache record that satisfies SC#1 against PITFALLS 15.' It was never created — confirmed by filesystem search and by `git log --all -- '*CACHE-EVIDENCE*'` (zero hits in any commit). 08-04-SUMMARY.md substitutes a compact inline table (Pass / Time / 3 post IDs, each cell reading 'body') that records fewer fields than the plan specified (no literal `x-vercel-cache` value per row, no `failSentence`/`emptySentence` integer columns) and does not follow the A→wait>180s→B→C row structure — reasonably so, since the route turned out to be non-ISR (see the accepted SC#1 finding below), but the plan's own acceptance criteria still required a durable, structured artifact and none exists."
     artifacts:
+
       - path: ".planning/phases/08-content-rendering-fix/08-CACHE-EVIDENCE.md"
         issue: "File does not exist anywhere in the repo or git history."
     missing:
+
       - "Create 08-CACHE-EVIDENCE.md with the per-request, per-post table the plan specifies, adapted to the corrected methodology (the route is fully dynamic, not ISR-cached, so every request is legitimately `x-vercel-cache: MISS`, not the originally-assumed MISS→STALE→HIT sequence). The raw observations already exist in 08-04-SUMMARY.md's table (3 posts × 5 passes, UTC timestamps, titles confirmed) — this is a transcription/formatting task, not new investigation, provided the operator confirms no additional requests are needed."
   - truth: "D-19 production confirmation: the deleted diagnostic route returns 404 on the deployed site, and neither NOTION_DEBUG_DIAGNOSTICS nor NOTION_DEBUG_ROUTE_SECRET remains in Vercel's Production environment"
     status: failed
     reason: "Plan 08-04 Task 2 is a `checkpoint:human-verify gate=\"blocking\"` task whose resume-signal explicitly requires reporting the deployment's Ready status, the literal HTTP status code for `/api/diagnose-page`, and the full list of remaining Production env var names. None of this appears anywhere: not in 08-04-SUMMARY.md (grepped for '404', 'Ready', 'env var', 'NOTION_DEBUG', 'diagnose-page' — zero matches outside one unrelated sentence about a different topic), not in STATE.md's five Phase-8 log entries, and not in any other phase artifact. This is not recorded as `unexercised` with a reason either (which the plan's own T-08-10 Repudiation mitigation explicitly requires for anything not run) — it is simply silent. Given the whole milestone's own standard (stated repeatedly across 07/08's threat models: 'a criterion marked passed without an observation is not a usable input'), an un-recorded checkpoint cannot be treated as passed."
     missing:
+
       - "Run plan 08-04 Task 2's three steps against the live Vercel deployment: confirm the Production deployment is Ready, curl `/api/diagnose-page?id=anything` on the live site and record the literal status code (expect 404), and list Production env var names from the Vercel dashboard to confirm NOTION_DEBUG_DIAGNOSTICS/NOTION_DEBUG_ROUTE_SECRET are absent. Record the result in 08-04-SUMMARY.md or a follow-up note."
+
 behavior_unverified_items:
+
   - truth: "When getPageRecordMap throws (caught), the reader sees \"This post's content could not be loaded right now.\" (CONT-05's fetch-failed branch)"
     test: "Induce a genuine content-leg failure (e.g. temporarily point NOTION_TOKEN_V2 at an invalid value if the target page requires it, or block/redirect the loadPageChunk host) against a local production build, load a real post, and read the content area."
     expected: "The content area renders exactly the sentence \"This post's content could not be loaded right now.\" — not a blank area, not the no-content sentence, not a stack trace."
     why_human: "No plan or SUMMARY across the phase records ever having watched this specific sentence render. The no-content branch was directly observed (08-02, with a real empty Notion page). The fetch-failed branch's correctness rests entirely on 08-REVIEW.md's static reachability analysis (confirming the `recordMap === null && contentFetchFailed === false` combination is unreachable given `notion-client`'s throw-or-resolve contract) — a sound argument, but a reachability proof is not the same as watching the sentence appear in a browser, and this is exactly the class of gap (present-and-correct-on-read vs. observed-working) this whole milestone exists to close."
 human_verification:
+
   - test: "Induce a genuine getPageRecordMap failure and confirm the fetch-failed CONT-05 sentence renders."
     expected: "\"This post's content could not be loaded right now.\" appears, and only that sentence — see behavior_unverified_items above."
     why_human: "State-transition behavior; no test harness exists in this repo (explicit Out of Scope) and no plan induced this specific fault."
+
   - test: "Complete plan 08-04 Task 2 (deployment Ready status, live 404 on /api/diagnose-page, Production env var name list) and record the result."
     expected: "Deployment Ready; /api/diagnose-page returns 404; NOTION_DEBUG_DIAGNOSTICS and NOTION_DEBUG_ROUTE_SECRET are absent from the reported env var name list."
     why_human: "Requires the Vercel dashboard and a live curl against the deployed site — not reproducible from the codebase."
+
   - test: "Decide whether ROADMAP SC#1's literal wording (\"spanning at least one genuine ISR regeneration\") is satisfied by 08-04-SUMMARY.md's substitute reasoning (the route is fully dynamic, so every request is a fresh, uncached server render and ISR regeneration cannot occur on this route at all)."
     expected: "An explicit operator decision: accept 'met-in-substance' as sign-off, or require the ROADMAP success criterion's wording to be amended to match the route's actual (dynamic, not ISR) architecture."
     why_human: "This is a judgment call about whether a corrected understanding of the system satisfies a criterion that was written under a wrong assumption about that system — the verifier independently confirmed the route classification (see below) but the acceptance decision is the operator's, not the verifier's, to make."
@@ -193,3 +202,30 @@ operator recorded removing both at 2026-08-09 17:05 UTC with a closeout redeploy
 depends on a reading only the operator can take. Marking this `passed` now would assert something nobody has
 checked — the precise failure this milestone was created to stop repeating. It moves to `passed` when the
 listing is in hand, and not before.
+
+---
+
+## Gap 2 closed — status moved `gaps_found` → `passed` (2026-08-10)
+
+The affirmative Production environment-variable listing was taken from the Vercel dashboard by the operator,
+names only. **`NOTION_DEBUG_DIAGNOSTICS` and `NOTION_DEBUG_ROUTE_SECRET` are both absent.** The seven
+variables present are exactly v1.0's surface — four Resend/notify, two Notion, and the pre-existing Cusdis
+app id — and every one is dated Jul 28–29, before milestone v1.1 began on Aug 9. The listing therefore proves
+D-19 twice over: by the two names not being there, and by nothing on the list post-dating the milestone.
+
+Full record in `08-CACHE-EVIDENCE.md` § Production environment variables.
+
+**All three gaps are now closed on evidence:**
+
+| # | Gap | Closed by |
+|---|---|---|
+| 1 | `08-CACHE-EVIDENCE.md` never created | the artifact, commit `a38b58e` |
+| 2 | Plan 08-04 Task 2's checkpoint unrecorded | live route 404 + the dashboard listing above |
+| 3 | CONT-05 fetch-failed sentence never observed | direct observation, `08-UAT.md`, commit `13852d6` |
+
+**What this status change does and does not assert.** It asserts that the three gaps this report raised are
+resolved by observation. It does not revise any finding above — in particular, SC#1 remains recorded as
+*met-in-substance*: `/post/[id]` is a dynamic route, the prescribed `STALE` → `HIT` sequence is unsatisfiable
+on it, and no claim about ISR regeneration behaviour is being made. The reason that is acceptable rather than
+evasive is that the criterion's actual guard (PITFALLS 15 — do not be fooled by a page cached from before the
+fix) cannot fail on a route that caches nothing.
