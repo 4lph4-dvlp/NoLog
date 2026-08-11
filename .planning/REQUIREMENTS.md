@@ -41,14 +41,14 @@ Decisions made at requirement-scoping time. Downstream planning must not re-liti
 ### Sidebar Collapse (SIDE)
 
 - [x] **SIDE-01**: Reader can collapse and expand the left sidebar (search + categories) using a hamburger (three-line) button
-- [ ] **SIDE-02**: Reader can collapse and expand the right sidebar (profile + subscribe) using a circular button showing the site owner's profile image
-- [ ] **SIDE-03**: Reader can collapse one sidebar while leaving the other expanded — the two sides are independent
+- [x] **SIDE-02**: Reader can collapse and expand the right sidebar (profile + subscribe) using a circular button showing the site owner's profile image
+- [x] **SIDE-03**: Reader can collapse one sidebar while leaving the other expanded — the two sides are independent
 - [x] **SIDE-04**: The article column visibly widens to reclaim the freed space when a sidebar collapses
 - [x] **SIDE-05**: Before the reader has ever used a toggle, both sidebars collapse automatically below the threshold width and expand automatically above it, updating live as the window is resized
 - [x] **SIDE-06**: Once the reader clicks a toggle, that side's state persists across page navigation and return visits, and subsequent window resizes no longer override it (D-02)
 - [x] **SIDE-07**: Reader never sees the wrong sidebar state flash on first paint before the persisted state is applied
 - [x] **SIDE-08**: A persisted desktop sidebar preference has no effect on the mobile layout (< 768px), which has no sidebars to collapse
-- [ ] **SIDE-09**: The avatar toggle carries a visual cue (badge or ring) marking it as a show/hide control rather than an account menu
+- [x] **SIDE-09**: The avatar toggle carries a visual cue (badge or ring) marking it as a show/hide control rather than an account menu
 - [x] **SIDE-10**: A forker with the Resend env vars set still sees and can use the subscribe form after the sidebar change (regression guard for D-06)
 
 ### Sidebar Accessibility (A11Y)
@@ -57,7 +57,7 @@ Decisions made at requirement-scoping time. Downstream planning must not re-liti
 - [ ] **A11Y-02**: A collapsed sidebar is removed from the accessibility tree, so screen-reader and keyboard users cannot tab into content that is not visible
 - [ ] **A11Y-03**: Keyboard focus is never stranded — if a panel collapses while focus is inside it, focus moves to that panel's toggle button
 - [x] **A11Y-04**: The collapse transition is disabled for readers who have set `prefers-reduced-motion: reduce`
-- [ ] **A11Y-05**: The avatar toggle has an action-phrased accessible name (e.g. "Show profile sidebar") distinct from the Profile card's own avatar `alt` text, plus a matching hover tooltip following `ThemeToggle.tsx`'s existing `title` convention
+- [x] **A11Y-05**: The avatar toggle has an action-phrased accessible name (e.g. "Show profile sidebar") distinct from the Profile card's own avatar `alt` text, plus a matching hover tooltip following `ThemeToggle.tsx`'s existing `title` convention
 
 ## v2 Requirements
 
@@ -112,20 +112,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMG-04 | Phase 9 | Complete |
 | IMG-05 | Phase 9 | Complete |
 | SIDE-01 | Phase 10 | Complete |
-| SIDE-02 | Phase 10 | Pending |
-| SIDE-03 | Phase 10 | Pending |
+| SIDE-02 | Phase 10 | Complete |
+| SIDE-03 | Phase 10 | Complete |
 | SIDE-04 | Phase 10 | Complete |
 | SIDE-05 | Phase 10 | Complete |
 | SIDE-06 | Phase 10 | Complete |
 | SIDE-07 | Phase 10 | Complete |
 | SIDE-08 | Phase 10 | Complete |
-| SIDE-09 | Phase 10 | Pending |
+| SIDE-09 | Phase 10 | Complete |
 | SIDE-10 | Phase 10 | Complete |
 | A11Y-01 | Phase 10 | Complete |
 | A11Y-02 | Phase 10 | Pending |
 | A11Y-03 | Phase 10 | Pending |
 | A11Y-04 | Phase 10 | Complete |
-| A11Y-05 | Phase 10 | Pending |
+| A11Y-05 | Phase 10 | Complete |
 
 **Coverage:**
 

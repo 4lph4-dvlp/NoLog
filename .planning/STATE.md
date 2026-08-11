@@ -5,15 +5,15 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 10
 current_phase_name: Collapsible Sidebars & Reading Width
 status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-08-11T21:42:30.836Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-08-11T22:01:06.814Z"
 last_activity: 2026-08-12
 last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
   percent: 75
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 10 (Collapsible Sidebars & Reading Width) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
-Progress: [████████░░] 80% (2/4 v1.1 phases complete)
+Progress: [█████████░] 87% (2/4 v1.1 phases complete)
 Last activity: 2026-08-12 — Phase 10 execution started
 
 > **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
@@ -91,6 +91,7 @@ Last activity: 2026-08-12 — Phase 10 execution started
 | Phase 09 P02 | ~40min | 3 tasks | 1 files |
 | Phase 09 P03 | ~25min | 2 tasks | 2 files |
 | Phase 10 P01 | 35min | 2 tasks | 6 files |
+| Phase 10 P02 | ~30min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -173,6 +174,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 9 Plan 03] research/ARCHITECTURE.md §1 corrected in writing in 09-EVIDENCE.md: it attributes staleness for both / and /post/[id] to the Full Route Cache — right for /, wrong for /post/[id], which has no Full Route Cache entry at all; the actual mechanism there is the Next.js Data Cache inside getPost()'s own fetch
 - [Phase ?]: [Phase 10 Plan 01] @property's syntax descriptor must be single-quoted (syntax: '<length>';) — Turbopack's Lightning CSS silently drops the whole @property block (and every rule after it in that source region) on the double-quoted form, with no build error; found live via gstack /browse measurement, fixed to match 10-RESEARCH.md's own example
 - [Phase ?]: [Phase 10 Plan 01] Per-side sidebar collapse state built as Record<SidebarSide, T> from Task 1 onward so Task 2's viewport listener could iterate both sides without a rewrite; only left is wired to a button/CSS in this plan, right has state machinery only — closed by plan 10-02
+- [Phase ?]: [Phase 10 Plan 02] Right sidebar avatar toggle shipped: @property --profile-width (single-quoted syntax, matching 10-01's fix) plus html[data-sidebar-right="collapsed"] override; SidebarShell.tsx's mount-read effect refactored into one SIDES.forEach helper instead of a second hardcoded 'right' block, keeping per-side machinery at one implementation; Profile.tsx root demoted from <aside> to <div> so the right panel is a single complementary landmark (A11Y-05 prerequisite)
+- [Phase ?]: [Phase 10 Plan 02] D-14 icon fallback verified live against a real 404 avatar path (config temporarily repointed, reverted after); all four left/right collapse combinations measured at 1400x900: 864/1064/1104/1304px, matching plan expectations exactly
 
 ### Pending Todos
 
@@ -201,8 +204,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T21:42:30.805Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-08-11T22:01:06.782Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
