@@ -115,11 +115,26 @@ Notes for planning:
   4. A post whose thumbnail genuinely fails to resolve shows a visible placeholder, not an empty box.
   5. A post whose thumbnail is an external (non-Notion-hosted) URL renders exactly as it does today, and its image request does not travel through the new resolution path.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 09-01-PLAN.md — The whole fix: local `Post` type field, the streaming proxy route with its four guards (tracer), then the rollout to all four `default` surfaces through one shared component, closed by the Tier 1 gate sweep (IMG-01…IMG-05)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 09-02-PLAN.md — Everything that costs no waiting: controlled-origin probes for the redirect and content-type guards, the deploy, the deployed guard battery, the placeholder observation, then the idle clock starts (IMG-03, IMG-04, IMG-05)
+
+**Wave 3** *(blocked on Wave 2 completion — separated by the >1h idle window itself)*
+
+- [ ] 09-03-PLAN.md — The one idle window: the cold first request after the gap, the direct proxy-path check that the optimizer cannot mask, and the honest IMG-02 finding (IMG-01, IMG-02)
 
 Notes for planning:
 
 - Verification constraint (PITFALLS 12/13/14): `next dev` cannot reproduce this bug and testing minutes after a deploy cannot either — a fresh deploy has an empty ISR cache and a brand-new presign. Verification must follow PITFALLS 13's idle-gap procedure, and must check the **raw origin S3 URL** from page source, not the `/_next/image?...` wrapper, because the optimizer's own cache floor is 4h in Next 16 and can independently mask the result.
+- **Planning correction to the line above (09-03-PLAN.md carries the full reasoning):** after the fix there *is* no raw S3 URL in page source — removing it is the fix. The pitfall's intent translates to requesting the **proxy path directly**, outside the optimizer; the optimizer's 4h floor spans the ~70-minute window and would otherwise replay pre-window bytes. The browser view is corroboration, not proof.
+- **The tier ordering is structural, not advisory.** All the cheap evidence (source assertions, the deployed guard battery, the placeholder, the "no expiring URL is embedded any more" check) is collected in waves 1-2 *before* the clock starts, because any request during the window destroys it. That is why 09-02 and 09-03 are separate waves.
 - Ruled out as fixes, per REQUIREMENTS.md Out of Scope: `unoptimized` on `next/image`, and shortening `CONFIG.revalidate`.
 - D-05: `packages/core` and the `Post` type must not change. `Post.thumbnailType` (shipped v1.0) already carries the file-vs-external signal, so this is entirely additive `apps/web` work.
 - Real implementation choice to settle in planning: 307-redirect vs. stream the bytes. Research recommends streaming unless redirect is explicitly verified against this deployment.
@@ -176,7 +191,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
 | 8. Content Rendering Fix | v1.1 | 4/4 | Complete   | 2026-08-11 |
-| 9. Thumbnail Freshness | v1.1 | 0/TBD | Not started | - |
+| 9. Thumbnail Freshness | v1.1 | 0/3 | Planned | - |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 
 ## Requirement Coverage (v1.1)
