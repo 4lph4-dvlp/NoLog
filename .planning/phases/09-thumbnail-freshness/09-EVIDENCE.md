@@ -653,3 +653,109 @@ reader's actual browser view matches what those direct requests found.
   route; what could have gone stale is `getPost`'s Data Cache entry per D-08), resolves to live image bytes
   on direct request. Step 5 corroborates: the hero renders with `naturalWidth: 1280 × 630` and `complete:
   true` in the same fresh browser session, zero broken-image count, no console errors.
+
+---
+
+## The IMG-02 finding
+
+### Result, judged against ROADMAP Phase 9 success criterion 2
+
+> "The same idle-gap-then-cold-load check passes for a post detail page's hero thumbnail."
+
+**The hero thumbnail resolved after the gap, and IMG-02 is met.** Task 1 step 4's direct request to the
+hero's extracted proxy path returned `200`, `image/png`, `1561628` bytes — the same behaviour the home
+feed showed for IMG-01 — and step 5's corroborating browser observation shows the hero rendering
+(`1280 × 630`, `complete: true`) in a fresh session. This is stated as observed, not defaulted to a pass:
+the post page's own render happened inside the idle window (dynamic route, `x-vercel-cache: MISS`), so
+whatever staleness the Data Cache mechanism (below) could have introduced had the same 224 minutes to
+manifest that IMG-01's home-feed check had, and it did not prevent the hero from resolving.
+
+### What this phase made unobservable, and why that is a recorded trade-off, not an oversight
+
+D-11 chose to spend this phase's single idle window on **verifying the fix**, not on first reproducing the
+bug on an unfixed deployment. Combined with the fix itself — which works by removing the presigned URL
+from the served HTML entirely, on all four surfaces including the post hero (D-01) — the one signal that
+would have *discriminated* IMG-02's mechanism no longer exists to be looked at: an embedded presigned URL,
+sitting in a post page's markup, older than Notion's presign lifetime. Before the fix, that URL would have
+been directly readable from the page source and its age directly comparable to the presign window. After
+the fix, no such URL is ever embedded (D-01/D-05), so there is nothing left in the served HTML whose
+staleness could be measured. This is the direct consequence of D-11's own trade-off, made explicitly and
+recorded at the time it was made — not something this task discovered belatedly.
+
+**Confidence in the mechanism stays MEDIUM, not HIGH.** `09-RESEARCH.md`'s "Resolving the IMG-02
+Contradiction" infers the mechanism from documented Next.js caching behaviour rather than from a direct
+measurement: `/post/[id]` is dynamic because it declares no `generateStaticParams` (confirmed by grep,
+HIGH confidence), so the **page HTML** is never cached by the Full Route Cache — but `getPost`'s call
+inside that render lands in Next's separate **Data Cache**, under the constructor-baked
+`next: { revalidate: 180 }` (`apps/web/src/lib/notion.ts:8-16`). The Data Cache uses the same lazy
+stale-while-revalidate model ISR does: on a low-traffic site, an entry can sit well past its 180-second
+`revalidate` window because nothing proactively refreshes it, so a post page can in principle serve a
+`post.thumbnail` value resolved from a `getPost` call made over an hour earlier — older than the presign
+lifetime — even though the page's own HTML is freshly rendered on every request. This is a correct
+application of documented Data Cache semantics to this specific fetch call, not a measurement of it in
+production; `09-RESEARCH.md`'s own Assumption A3 and Open Question 2 name exactly this gap and rate it
+MEDIUM, and nothing performed in this phase (verify-after-fix by design, D-11) closed it.
+
+**The discriminating test remains available for future re-diagnosis, not owed by this phase:** a
+temporary latency-timing log placed around `getPost()`'s internal fetch call, read during a genuinely idle
+window, would separate a near-instant Data Cache hit (confirming the stale-entry mechanism) from a live
+Notion round-trip (refuting it). Recorded here as the named, ready-to-run test for whoever needs to
+re-open this question — not run in this phase, because the fix bypasses the mechanism regardless of
+whether this specific diagnosis is exactly right (`09-RESEARCH.md` Open Question 2).
+
+### Correcting `research/ARCHITECTURE.md` §1 — D-08's actual deliverable
+
+`research/ARCHITECTURE.md` §1 ("Full lifetime trace of a thumbnail URL") states the mechanism as:
+
+> "Next Full Route Cache (ISR) entry for `/` or `/post/[id]` — this HTML, containing the (possibly
+> already-old) presigned URL, is what gets served to the NEXT visitor..."
+
+**This is right for `/` and wrong for `/post/[id]`.** `08-CACHE-EVIDENCE.md` (inherited from Phase 8,
+not re-derived here) measured `/post/[id]` as `ƒ (Dynamic)`, `cache-control: private, no-cache, no-store,
+max-age=0, must-revalidate`, `x-vercel-cache: MISS` on every one of 12 requests across a 232-second gap —
+there is no Full Route Cache entry for this route at all, so it cannot be the mechanism behind any
+staleness observed on a post page. The correct attribution, per `09-RESEARCH.md`'s finding above, is the
+**Next.js Data Cache** entry inside `getPost()`'s own fetch — a different cache layer, with the same
+lazy-refresh *behaviour* (which is why the ROADMAP's user-facing symptom description still held) but a
+different *mechanism* and a different code location (`apps/web/src/lib/notion.ts`'s constructor-baked
+`revalidate: 180`, not the page-level Full Route Cache).
+
+This document is the amendment `ARCHITECTURE.md` §1 needs: the wrong attribution is "Full Route Cache for
+both `/` and `/post/[id]`"; the right attribution is "Full Route Cache for `/`, Next.js Data Cache
+(`getPost`'s fetch) for `/post/[id]`". Not applied as a code change — `ARCHITECTURE.md` is a research
+document, not a locked spec, and this phase's file scope for task 2 is `09-EVIDENCE.md` alone — but
+recorded here in writing so the next reader of `ARCHITECTURE.md` finds the correction from this side.
+
+---
+
+## Closing — per-requirement summary, IMG-01 through IMG-05
+
+A reader should be able to tell, without opening another file, exactly which claims rest on observation
+and which rest on source assertion alone.
+
+| Requirement | What was established | By which tier | Exercised? |
+|---|---|---|---|
+| **IMG-01** — home feed thumbnails survive an idle gap | Three distinct home-feed thumbnail references, extracted from HTML that sat cached 224 minutes past the window's 70-minute margin, each resolve to live image bytes (`200`, `image/png`, non-zero size) on a direct, outside-the-optimizer request; corroborated by a fresh headless-browser pass (`naturalWidth > 0 && complete`, 0 broken images) | Tier 3 (this plan), steps 1-3 and 5 | **Observed** |
+| **IMG-02** — post hero thumbnail survives an idle gap | The hero thumbnail, extracted from a dynamic-route render that occurred inside the idle window, resolves to live image bytes on direct request; corroborated by the same browser pass | Tier 3 (this plan), step 4 and 5 | **Observed.** Mechanism (why it could have gone stale) is MEDIUM-confidence and **unexercised** — see "What this phase made unobservable" above; this phase's own fix removed the discriminating signal. |
+| **IMG-03** — the route refuses non-Notion input, off-allowlist hosts, redirects, and non-image content | id-parse guard, redirect refusal, and content-type assertion all **observed** (Tier 1 local smoke + Tier 2 controlled-origin probes T2-1/T2-2 + Tier 2 deployed battery T2-4..T2-9). **Host-allowlist guard is source-asserted only** — Tier 1 row 8b confirms by grep that exactly the two `next.config.ts`-allowlisted hostnames appear in the route file; the guard's *firing* was never observed | Tier 1 + Tier 2 | Three of four guards observed; **host-allowlist guard unexercised** — Notion chooses the presign host at signing time, so an off-allowlist resolution cannot be constructed from real data, and this project's honesty rule (D-13's spirit) rules out fabricating one |
+| **IMG-04** — a genuinely failing thumbnail shows the placeholder | 32×32 (card) / 48×48 (hero) `ImageOff` icon, exact token colour matches in both light and dark themes, no caption, zero `<img>` left to render a broken-image glyph, confirmed to survive a real theme toggle | Tier 2 (`09-02`) | **Observed**, by direct browser measurement against a genuine failed request (the route's own `400` refusal path, substituted for devtools request-blocking which `/browse` does not expose) |
+| **IMG-05** — external (non-Notion) thumbnails bypass the proxy entirely | Structural half observed: 3 distinct post ids all route through the proxy, `0` absolute-URL `<img src>` values on either page, meaning no post currently renders an unproxied external thumbnail. **Live half unexercised**: the operator's database contains no post whose thumbnail is an external URL, so the `thumbnailType === "external"` branch and the route's non-`"file"` 404 refusal rest on source assertion (`09-01`) rather than a live external-thumbnail post resolving correctly | Tier 2 (`09-02`) | **Unexercised (live half)** — no external-thumbnail post exists in the operator's Notion database; production content was deliberately not mutated to manufacture the case (would corrupt the data this phase's idle-window test measures) |
+
+**Everything not exercised, gathered in one place:**
+
+1. **The host-allowlist guard (IMG-03).** Source-asserted only. The host is chosen by Notion when it
+   presigns a file, not by the operator, so an off-allowlist resolution cannot be constructed from real
+   Notion data.
+2. **IMG-05's live half.** Unexercised. No post in the operator's database has an external thumbnail;
+   fabricating one by editing production content was explicitly ruled out (`09-VALIDATION.md`, this
+   phase's honesty rule) because it would have disturbed the data the idle window measures.
+3. **The IMG-02 mechanism.** Unexercised, and unexercisable by this phase's own design: D-11 spent the
+   window on verifying the fix rather than reproducing the pre-fix bug, and the fix removes the one signal
+   (an embedded, ageable presigned URL) that would have let a live check discriminate the Data Cache
+   hypothesis from any alternative. MEDIUM confidence, named discriminating test (a temporary latency-timing
+   log around `getPost()`) recorded as available for whoever needs it.
+
+**This document reads end to end as three tiers, in the order they were run:** Tier 1 (source assertions,
+`09-01`), Tier 2 (deployed and controlled-origin checks, `09-02`), Tier 3 (the idle window, `09-03`, this
+plan). No claim above is unsupported by pasted output, and every unexercised item is named with its reason
+rather than silently omitted.
