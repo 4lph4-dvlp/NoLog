@@ -3,7 +3,7 @@ phase: 09-thumbnail-freshness
 verified: 2026-08-12T00:00:00Z
 status: human_needed
 score: 4/5 roadmap success criteria fully verified (1 partially — 3 of 4 guards verified, 1 source-asserted)
-behavior_unverified: 3
+behavior_unverified: 2
 overrides_applied: 0
 gaps: []
 behavior_unverified_items:
@@ -15,10 +15,6 @@ behavior_unverified_items:
     test: "Load a post whose Notion thumbnail property holds a pasted external URL and confirm the served HTML carries that URL unchanged, with no /api/thumbnail/ path for it."
     expected: "External URL unchanged in HTML; no proxy path constructed for that post."
     why_human: "The operator's live Notion database currently contains no post with an external thumbnail, so the live half of this claim cannot be exercised. The component branch (thumbnailType === \"external\" returns post.thumbnail unchanged) and the route's own non-\"file\" 404 are both source-verified and independently re-confirmed by 09-REVIEW.md's code review, but neither was exercised against a live external-thumbnail post. The phase deliberately did not mutate production content to manufacture the case."
-  - truth: "No HTML the site serves embeds a Notion presigned S3 URL for a Notion-hosted thumbnail — the expiring value is no longer embedded anywhere in cached markup (09-01 must_haves truth, additive to the 5 ROADMAP criteria)."
-    test: "Inspect the full served HTML (not just <img> src attributes) of the home feed and a post page for any amazonaws.com occurrence, including inside RSC flight-payload scripts."
-    expected: "Zero amazonaws.com occurrences anywhere in the served HTML."
-    why_human: "This is FALSE AS WRITTEN, and the phase's own evidence says so plainly: 3 presigned URLs remain on the home page and 1 on the post page, all inside self.__next_f.push([...]) RSC flight-payload scripts (none in an <img> src). Cause: PostThumbnail is a Client Component receiving the whole Post object, so React serializes post.thumbnail for hydration even though the file-type render branch never reads it. This does not affect the phase GOAL (no <img> ever requests an expiring URL, so the idle-window proof for IMG-01/IMG-02 stands), and exposure is strictly reduced versus before the fix (the URL used to be in the <img> src too). But a live, unexpired read grant does sit in public, CDN-cached markup for its full lifetime, and fixing it is an architectural change (narrowing PostThumbnail's props) explicitly out of this phase's file scope. This needs an operator decision: accept the residual exposure (recorded, tracked) or open a follow-up plan to narrow the component's props."
 human_verification:
   - test: "Decide whether the residual RSC flight-payload exposure (presigned URLs inside self.__next_f.push([...]) scripts, never in an <img> src) is an acceptable residual risk for this milestone, or whether a follow-up plan should narrow PostThumbnail's props before shipping this phase as fully closed."
     expected: "An explicit operator decision, recorded (e.g. as an accepted override on the 09-01 must_haves truth, or as a new backlog item / follow-up phase)."
@@ -57,7 +53,7 @@ sat idle beforehand
 
 | Truth | Status | Evidence |
 |-------|--------|----------|
-| "No HTML the site serves embeds a Notion presigned S3 URL for a Notion-hosted thumbnail — the expiring value is no longer embedded anywhere in cached markup" | ✗ **FALSE AS WRITTEN** (per the phase's own disclosure) | `09-EVIDENCE.md` Tier 2, "Finding: a presigned URL is still embedded in the RSC flight payload": 3 presigned URLs on the home page, 1 on the post page, all inside `self.__next_f.push([...])` RSC hydration scripts, none in an `<img src>`. Confirmed source-level: `PostThumbnail.tsx` is a Client Component receiving the whole `post` object, so React serializes `post.thumbnail` for hydration regardless of which render branch actually uses it. See `behavior_unverified_items` — routed to human decision, not treated as a phase-blocking gap, because it does not affect the phase's actual GOAL (no `<img>` ever requests the expiring URL) and its fix is an out-of-scope architectural change (narrowing the component's props). |
+| "No HTML the site serves embeds a Notion presigned S3 URL for a Notion-hosted thumbnail — the expiring value is no longer embedded anywhere in cached markup" | ✓ **VERIFIED — see `## CORRECTION` below** (was FALSE AS WRITTEN; corrected by plan 09-04) | `09-EVIDENCE.md` Tier 4, "Task 3 — push, deploy-liveness confirmation, and the deployed closure measurement": deployed home page and post page both now show `0` `amazonaws.com` and `0` `X-Amz-Signature`/`X-Amz-Credential` occurrences, against `3`-and-`1` on the pre-fix deploy, with the vacuity guard held (non-zero proxy-path counts on both bodies) and byte-identical non-regression on all three thumbnail ids. Fixed by narrowing `PostThumbnail`'s client boundary: `PostThumbnailImage.tsx` (new, Client Component) receives three primitives (`src`, `alt`, `variant`) and never the whole `Post` object; `PostThumbnail.tsx` (Server Component) holds the guard and the file-vs-external resolution and never crosses the RSC serialization boundary. Commits `d93e190` (fix), `b221191`/this Tier 4 addendum (evidence), deployed at `34fceee`. |
 
 This truth is stricter than anything the ROADMAP's 5 success criteria actually promise (they are about *readers seeing thumbnails*, not about markup-level secret hygiene), so its failure does not by itself mean the phase goal was missed — but it is a real, disclosed, unresolved finding and is carried into the verdict as an escalation item rather than silently dropped.
 
@@ -193,5 +189,49 @@ operator as the framework's Escalation Gate is designed to do.
 
 ---
 
+## ⚠ CORRECTION (2026-08-11, resolves human_verification item 1 above)
+
+**The "No HTML the site serves embeds a Notion presigned S3 URL…" truth, marked FALSE AS WRITTEN
+above, now holds as literally written.** At UAT test 1 the operator was offered "accept as residual
+risk" and chose to fix it instead (see this file's original `human_verification` item 1, and
+`STATE.md`'s recorded UAT outcome). Plan `09-04` implemented that fix.
+
+**The fix.** `PostThumbnail` was a Client Component receiving the entire `post` object, so React
+serialized `post.thumbnail` — a live, unexpired presigned S3 read grant — into the RSC hydration
+payload for every render, regardless of which branch the component actually took. `09-04` split it
+across the server/client boundary: `apps/web/src/components/PostThumbnailImage.tsx` (new) is now
+the only Client Component in the thumbnail path, and its prop interface is exactly three primitives
+(`src: string`, `alt: string`, `variant: "card" | "hero"`) — never the `Post` type, never
+`thumbnailType`. `apps/web/src/components/PostThumbnail.tsx` became a Server Component holding the
+`!post.thumbnail` guard and the file-vs-external resolution; its Server Component props are never
+serialized into the flight payload, so the presigned URL never crosses the boundary. All four
+`templates/default/*` call sites are unchanged (Server Component → Server Component is not a
+serialization boundary) — commit `d93e190`.
+
+**The evidence.** `09-EVIDENCE.md` Tier 4, "Task 3 — push, deploy-liveness confirmation, and the
+deployed closure measurement": deployed on `4lph4-bl0g.vercel.app` at commit `34fceee`
+(`git push origin main` performed by the orchestrator after the worktree wave merged, per this
+plan's `<precondition>` handoff), the deploy was confirmed live by three signals independent of the
+measurement itself (a new client chunk appearing, `x-vercel-cache: PRERENDER`/`MISS` fresh-origin
+headers, and byte-identical non-regression on all three thumbnail ids), and both the home page and
+the post detail page for `3702c61e-4a24-8001-a9a6-c4ff3aadadb5` now return **0** `amazonaws.com`
+occurrences and **0** `X-Amz-Signature`/`X-Amz-Credential` occurrences, against the **3** and **1**
+Tier 2 originally recorded — with the vacuity guard held (non-zero distinct proxy-path counts on
+both bodies, so the zeros are real absences, not an empty page).
+
+**What did not change.** The two other `behavior_unverified_items` from this file's original pass —
+the host-allowlist guard's unexercised firing, and IMG-05's unexercised live half — are untouched by
+this plan and remain open, per `09-04`'s explicit scope boundary. `frontmatter.behavior_unverified`
+is updated from `3` to `2` to reflect only this one item's closure. The D-06 wording correction
+(`09-02-SUMMARY.md` Finding B, `s-maxage` unobservable on the deployed response) also remains open
+and was deliberately not touched.
+
+This history is preserved for the record; the truth-table row above has been updated in place to
+point here, rather than silently rewritten, so a reader of this document sees both what was
+originally found and how it was resolved.
+
+---
+
 _Verified: 2026-08-12_
 _Verifier: Claude (gsd-verifier)_
+_Corrected: 2026-08-11 (plan 09-04, commits d93e190 / 34fceee)_

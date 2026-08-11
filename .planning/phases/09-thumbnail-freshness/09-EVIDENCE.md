@@ -817,3 +817,77 @@ itself.
 Redaction: counts, hostnames and path shapes only, matching Tier 2's discipline. No signature,
 credential, query string or filename from any presigned URL enters this repository —
 `grep -cE 'X-Amz-(Signature|Credential)'` over this document returns `0`.
+
+### Task 3 — push, deploy-liveness confirmation, and the deployed closure measurement
+
+**Continuation note.** This section was produced by a second executor run, resumed after the
+orchestrator merged the worktree wave and performed the push itself (Task 3's `<precondition>`
+correctly refused a direct push from a worktree-isolated context, per the halt recorded in this
+plan's Deviation 1). `git push origin main` landed the wave at commit `34fceee` (`6d61daa..34fceee`),
+which — verified directly against `git show --stat 6d61daa..34fceee -- . ':(exclude).planning'` —
+carries **only** `apps/web/src/components/PostThumbnail.tsx` and
+`apps/web/src/components/PostThumbnailImage.tsx` as source changes. This corrects the plan's own
+`<design>` section, which anticipated five additional unrelated source files
+(`components/Profile.tsx`, `components/notion/MermaidBlock.tsx`, three `templates/terminal/` files)
+riding along in this deploy — those five had already shipped in an earlier, separate push before
+this wave, so this deploy is a clean, single-change deploy. Recorded here rather than silently
+dropped, per the plan's own instruction that a future reader must not misattribute this deploy's
+effects to files it did not actually carry.
+
+**Deploy-liveness confirmation, independent of the closure measurement itself.** Task 2's before-
+capture recorded `5` distinct `/_next/static/chunks/*.js` filenames but (as a count only, not a
+saved list — the actual filenames lived in a `/tmp` scratch file from that prior executor process,
+which did not persist across the handoff to this continuation agent). Liveness was therefore
+confirmed by three independent signals, none of which is the presigned-URL count being measured:
+
+1. **Chunk-file count changed:** the home page now serves `6` distinct chunk filenames, not `5` —
+   consistent with the plan's own prediction that this change "adds a new client chunk"
+   (`PostThumbnailImage.tsx` is new and is the only Client Component in the split).
+2. **Vercel cache-state headers show a fresh origin render, not a stale cached hit:** the first home-page
+   request returned `x-vercel-cache: PRERENDER`, `age: 0` (a fresh regeneration at request time); the
+   post-page request returned `x-vercel-cache: MISS`, `age: 0` (served fresh from origin, not the edge
+   cache). A stale, pre-fix deploy still cached at the edge would instead show `HIT` with a growing `age`
+   and would still carry the *old* code's `3`/`1` `amazonaws.com` counts.
+3. **Byte-for-byte non-regression match:** all three direct proxy-path fetches below return the exact
+   same content-length Tier 2 recorded (`53788`, `1561628`, `183062` bytes) — the deploy did not simply
+   go dark, it is serving the same real images through the same live route.
+
+**Closure measurement — deployed, after this plan's fix:**
+
+| Body | Distinct `/api/thumbnail/{uuid}` refs (vacuity guard, must be >0) | `amazonaws.com` occurrences (GATE — must be 0) | `X-Amz-(Signature\|Credential)` occurrences (GATE — must be 0) | `amazonaws.com` inside an `<img src>` |
+|------|---|---|---|---|
+| Home (`/`), deployed after | `3` | `0` | `0` | `0` |
+| Post (`/post/3702c61e-…adb5`), deployed after | `1` | `0` | `0` | `0` |
+
+The vacuity guard passes on both bodies (non-zero proxy-path counts), so the `0` `amazonaws.com` and
+`0` `X-Amz-*` counts above are real absences on the live, deployed site — not an empty page. **G-09-1 is
+closed**: against Tier 2's recorded `3` (home) and `1` (post), both are now `0`, and the guard that
+distinguishes a real zero from a vacuous one held.
+
+**Non-regression — same three ids, same live image bytes, on a direct (non-optimizer) request:**
+
+| Id | Surface | HTTP status | Content-Type | Bytes | Tier 2's recorded bytes | Match |
+|----|---------|-------------|---------------|-------|--------------------------|-------|
+| `36e2c61e-4a24-8048-b7be-c6765c807e23` | home feed | `200` | `image/png` | `53788` | `53788` | ✓ identical |
+| `3702c61e-4a24-8001-a9a6-c4ff3aadadb5` | home feed + post hero | `200` | `image/png` | `1561628` | `1561628` | ✓ identical |
+| `6b42c61e-4a24-82b0-ae11-01fdb5e7110f` | home feed | `200` | `image/png` | `183062` | `183062` | ✓ identical |
+
+All three distinct home-feed ids match the ids Tier 2 recorded, and the post page's hero id is the
+same `3702c61e-…adb5` id used throughout this phase. Every path returns `200` with an `image/*`
+content type and a non-zero body — IMG-01/IMG-02 non-regression confirmed on the deployed, post-fix
+site.
+
+**A non-zero result would have meant, and did not:** per this plan's `<action>` text, a non-zero
+`amazonaws.com` count on a body that still carries proxy paths would have meant a *second* client
+boundary somewhere else in the render tree was still receiving the whole `post` object, and G-09-1
+would have been narrowed rather than closed. That did not occur — both gate counts are `0`.
+
+**`terminal` template (09-REVIEW.md INFO-02), carried forward.** `templates/terminal/PostPage.tsx`
+still renders `post.thumbnail` directly into an `<img src>` and is untouched by this plan, per D-03.
+It is inactive (`site.config.ts` sets `template: "default"`), so it contributes nothing to either
+body measured above and cannot make this measurement fail — but the underlying bug survives there
+for a future terminal-parity phase to inherit rather than rediscover.
+
+Redaction: counts, hostnames and path shapes only, matching Tier 2's and this Tier's own discipline
+above. No signature, credential, query string or filename from any presigned URL enters this
+repository — `grep -cE 'X-Amz-(Signature|Credential)'` over this document returns `0`.
