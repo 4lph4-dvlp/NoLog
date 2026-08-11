@@ -5,7 +5,7 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 7
 status: completed
 stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-08-10T18:15:05.301Z"
+last_updated: "2026-08-11T05:09:11.428Z"
 last_activity: 2026-08-11
 last_activity_desc: Phase 7 marked complete
 progress:
@@ -152,6 +152,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 8 Plan 03] Phase 7's two outstanding UAT items closed by direct observation (D-15). SC#3: an env-gated forced throw in the chrome leg left the body rendering at HTTP 200 with exactly one [PostPage:chrome] line and zero [PostPage:recordMap] lines. SC#4: both directions exercised — an absent UUID returns 404, a wrong NOTION_TOKEN returns 200 with the PostUnavailable card inside normal page chrome and one [PostPage:post] verdict:unavailable line; the two are visibly different. Baseline before injection also confirmed the User-Agent fix works locally — the post body rendered where Phase 7 saw 'Content could not be loaded.'. One item left unticked and labelled unexercised: PostUnavailable's light/dark rendering was verified by token inspection, not by viewing it in a browser under both themes.
 - [Phase ?]: [Phase 8 Plan 04] CORRECTION to 08-RESEARCH Finding 2's SC#1 procedure: /post/[id] is NOT an ISR-cached route, so the prescribed A(MISS)->wait->B(STALE)->C(HIT) sequence cannot occur. Measured on the deployed site: /post/[id] returns 'cache-control: private, no-cache, no-store, max-age=0' with x-vercel-cache: MISS on every request and is classified 'f (Dynamic)' in the build, while / returns x-vercel-cache: PRERENDER at 3m. The research assumed the post route was ISR-cached like the home page. Consequence for SC#1: the criterion's guard (do not be fooled by a page cached from before the fix) is satisfied more strongly than the procedure would have shown -- every request is a fresh server render AND getPageRecordMap uses ofetch so it is absent from the Data Cache too, meaning every observation is a live loadPageChunk call. What the substitute does NOT cover is any claim about ISR behaviour on this route; there is none to claim.
 - [Phase ?]: [Phase 8 Plan 04] CONT-03 closed on the deployed site: the single D-14 deploy (a6becd8..5013b52) shipped the User-Agent fix, the D-19 teardown and the CONT-05 split together; all three public posts render their Notion body across four passes spanning ~9 minutes, where Phase 7 saw 'Content could not be loaded.' on every one. Source diff for Phases 7+8 combined: 4 files, +77/-216 — the teardown removed more than the fix added. Net new forker-facing env vars after v1.1: zero.
+- [Phase ?]: [Phase 8 UAT] CONT-05's fetch-failed sentence observed directly (08-VERIFICATION gap 3 closed): with the content leg forced to throw, the post returns HTTP 200 showing 'This post's content could not be loaded right now.' with zero occurrences of the no-content sentence and zero of the pre-Phase-8 combined string, renderer not entered, one [PostPage:recordMap] line. Both CONT-05 states are now directly observed rather than inferred — no-content in plan 08-02 against a real empty Notion page, fetch-failed here. Fault injection reverted; apps/web/src clean.
 
 ### Pending Todos
 
