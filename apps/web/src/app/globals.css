@@ -59,6 +59,33 @@
   --transition-base: 200ms ease;
 }
 
+/* ─── Sidebar collapse (Phase 10) ───────────────────────────────────────── */
+/* @property registration makes --sidebar-width animatable by grid-template-
+   columns. --profile-width's own @property registration and the
+   data-sidebar-right override are added by plan 10-02, once the right
+   toggle exists. */
+@property --sidebar-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 200px;
+}
+
+html[data-sidebar-left="collapsed"] {
+  --sidebar-width: 0px;
+}
+
+/* Transition is opt-in — only present while SidebarShell adds the
+   click-origin data-sidebar-transition attribute (D-11, A11Y-04). A resize-
+   driven collapse never adds this attribute, so it stays instant. This
+   media wrapper is the second, independent reduced-motion guard: even if
+   the JS layer were ever bypassed, this rule cannot animate under
+   prefers-reduced-motion: reduce. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-sidebar-transition="active"] .sidebar-grid {
+    transition: grid-template-columns var(--transition-base);
+  }
+}
+
 /* ─── Dark Mode ────────────────────────────────────────────────────────── */
 .dark {
   --background: #191919;

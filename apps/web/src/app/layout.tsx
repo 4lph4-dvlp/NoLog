@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { getCategories } from "@/lib/notion";
+import {
+  SIDEBAR_ATTR_PREFIX,
+  SIDEBAR_BREAKPOINT_PX,
+  SIDEBAR_STORAGE_KEY_PREFIX,
+  initSidebarState,
+} from "@/lib/sidebar";
 import { CONFIG } from "@/site.config";
 import { Analytics } from "@vercel/analytics/react";
 import DefaultLayout from "@/templates/default/Layout";
@@ -67,6 +73,24 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-foreground relative">
+        {/* Blocking pre-hydration correction of <html>'s data-sidebar-*
+            attributes, modeled on the installed next-themes bundle's own
+            script-injection technique — a plain inline <script>, never
+            next/script strategy="beforeInteractive" (10-RESEARCH.md rejected
+            the latter explicitly: it does not reliably block hydration/
+            paint in App Router). Only a numeric constant and two build-time
+            string constants are interpolated (threat T-10-03) — nothing
+            that could originate from a visitor. Rendered before
+            <ThemeProvider> so it runs at least as early as next-themes'
+            own script. */}
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `(${initSidebarState.toString()})(${SIDEBAR_BREAKPOINT_PX}, ${JSON.stringify(
+              SIDEBAR_STORAGE_KEY_PREFIX
+            )}, ${JSON.stringify(SIDEBAR_ATTR_PREFIX)})`,
+          }}
+        />
         <Analytics />
         <ThemeProvider>
           <TemplateLayout categories={categories}>
