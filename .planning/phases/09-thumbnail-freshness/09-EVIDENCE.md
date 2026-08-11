@@ -180,9 +180,16 @@ counted as a pass.
 
 ### Deployed route battery
 
-> **INCOMPLETE — the deploy has not happened.** The `git push origin main` that task 2 step 1 calls for
-> was refused by the execution environment's permission layer, not by any gate in this plan. Everything
-> below the pre-deploy baseline is therefore unrun. See `09-02-SUMMARY.md` for the blocker.
+- **Deploy identifier (deploy SHA): `9c3cc9c`** — `docs(09-02): record pre-deploy liveness baseline
+  before blocked push`. Pushed `8ee2ccb..9c3cc9c` to `origin/main`; the combined source diff across all
+  18 commits is exactly the seven phase-9 paths, every other commit being `.planning/` documentation.
+- **Battery run at:** 2026-08-11T12:04:43Z (UTC). Deployment confirmed live at 2026-08-11T12:04:25Z.
+- **Production URL:** `https://4lph4-bl0g.vercel.app`
+
+> The push was initially refused by the execution environment's permission layer — not by any gate in
+> this plan — and was then performed by the orchestrator after independently re-verifying all four
+> pre-push gates. The pre-deploy baseline below was captured during that pause and is retained, because
+> it is the control half of the liveness proof and cannot be recaptured now that the route has shipped.
 
 **Pre-deploy baseline — captured 2026-08-11T11:58:53Z, before any push.** This is the half of the
 liveness proof that cannot be recaptured later, which is why it is recorded even though the deploy is
@@ -196,21 +203,79 @@ That row is the control for the liveness check. The shipped route answers a garb
 **empty** body; the pre-deploy site answers `404` with a 40,884-byte HTML document. The two are trivially
 distinguishable, so a post-deploy `400` cannot be confused with a stale deployment or a cached response.
 
-**Still to run once the push is authorised** (all target `/api/thumbnail/...` only — none requests `/` or
-a post page, so none warms the Data Cache or disturbs the idle window):
+**Liveness.** The first probe below is the proof that the push actually shipped. Compare against the
+pre-deploy baseline row: the same URL answered `404` with 40,884 bytes of framework HTML before the
+deploy and answers `400` with an empty body after it. A pre-deploy site structurally cannot produce a
+`400` at this path, because no route existed there to produce one.
 
-| # | Probe | Expectation |
-|---|-------|-------------|
-| T2-4 | garbage id segment | 400, empty body — **the liveness proof** |
-| T2-5 | well-formed UUID naming no page (`00000000-…`) | 404, empty body |
-| T2-6 | URL-encoded absolute URL in the id position | 400 — nothing in it parses as a page identifier (IMG-03, D-07) |
-| T2-7 | a real public post's id | 200, `image/`, non-zero length, `public, s-maxage=14400, immutable`, `x-content-type-options: nosniff` |
-| T2-8 | the same real id with `?url=…` appended | byte-for-byte identical to T2-7 in status, content type and length |
-| T2-9 | the same real id wrapped in non-word characters | 200 — correct, not a defect; see the note below |
+**The deployed battery.** Every request targets `/api/thumbnail/...` and nothing else. The real post id
+used is `3702c61e-4a24-8001-a9a6-c4ff3aadadb5`, resolved from the **local** production server's
+home-page HTML during task 1 rather than from the deployed site's — a deliberate departure from this
+plan's own `<verify>` block, which curls `$S/`. The deployed `/` is not requested at all during task 2,
+so nothing here warms the Data Cache or the prerendered HTML the idle window depends on. Both servers
+read the same Notion database, and task 3 performs the deployed home-page HTML check anyway.
 
-The real post id these will use is `3702c61e-4a24-8001-a9a6-c4ff3aadadb5`, resolved from the **local**
-production server's home-page HTML during task 1 rather than from the deployed site's, deliberately: the
-deployed `/` is not requested at all during task 2, and both servers read the same Notion database.
+| # | Probe | Request | Expected | Observed status | Observed content type | Observed body length | Pass/Fail |
+|---|-------|---------|----------|-----------------|-----------------------|----------------------|-----------|
+| T2-4 | garbage id — **liveness** | `/api/thumbnail/not-a-real-id` | 400, empty | `400` | `[]` (none) | `0` | PASS |
+| T2-5 | well-formed UUID naming no page | `/api/thumbnail/00000000-0000-0000-0000-000000000000` | 404, empty | `404` | `[]` (none) | `0` | PASS |
+| T2-6 | URL-encoded absolute URL in the id position | `/api/thumbnail/https%3A%2F%2Fexample.com%2Fx.png` | 400 | `400` | `[]` (none) | `0` | PASS |
+| T2-7 | a real public post's id | `/api/thumbnail/{id}` | 200, `image/`, non-zero | `200` | `image/png` | `1561628` | PASS |
+| T2-8 | the same real id, `?url=…` appended | `/api/thumbnail/{id}?url=https://example.com/x.png` | identical to T2-7 | `200` | `image/png` | `1561628` | PASS |
+| T2-9 | the same real id wrapped in non-word characters | `/api/thumbnail/foo.{id}.bar` | 200 — see note | `200` | `image/png` | `1561628` | PASS |
+
+T2-8 matches T2-7 in all three fields exactly. That is the **positive** form of the no-caller-supplied-URL
+claim (IMG-03, D-07): the route does not merely happen to ignore the parameter as an accident of parsing,
+it produces an identical response with the parameter present. Combined with Tier 1 row 8a
+(`grep -c 'searchParams'` = `0`), the query string provably has no path to the outbound fetch.
+
+**Why T2-9's 200 is correct rather than a defect.** `parsePageId`'s regexes are word-boundary matched,
+not anchored, so the identifier still parses out of the longer `foo.{id}.bar` segment. The 200 is itself
+positive evidence that **only the parsed value** reaches the outbound URL — had the raw segment been used
+to build the Notion request, Notion would have answered 404 and the route would have too. The identical
+1,561,628-byte body across T2-7 and T2-9 confirms both resolved to the same underlying image.
+
+Header dump observed on T2-7 and, identically, on T2-8:
+
+```
+HTTP/2 200
+cache-control: public, immutable
+content-type: image/png
+x-content-type-options: nosniff
+x-vercel-cache: HIT
+```
+
+#### Correction: the `s-maxage` directive is not observable on the deployed response (D-06)
+
+This plan's acceptance criterion and the `must_haves` truth for D-06 both expect the literal header
+`cache-control: public, s-maxage=14400, immutable` on the deployed site. **That is not what is served.**
+The deployed response carries `cache-control: public, immutable` — `s-maxage=14400` is absent. Recording
+that plainly rather than checking the box, per this phase's evidence-honesty rule.
+
+The route is nevertheless behaving correctly, and the discrepancy is a documented platform behaviour
+rather than a defect. Vercel's Edge Network consumes `s-maxage` as a directive addressed to itself and
+does not forward it downstream. The full chain, each link independently observed rather than assumed:
+
+| Link | How established | Observation |
+|------|-----------------|-------------|
+| The route's source sets the full header | Tier 1 row 8f, `grep -c 's-maxage=14400'` | `1`, on a line reading `public, s-maxage=14400, immutable` |
+| The **origin** actually emits the full header | Task 1, local `next start` header dump (T2-3 and the no-override baseline) | literally `cache-control: public, s-maxage=14400, immutable` |
+| The deployed client sees it stripped on a cache **HIT** | `curl -sD -` against production | `cache-control: public, immutable`, `x-vercel-cache: HIT` |
+| …and stripped on a cache **MISS** too, so this is transit rewriting, not a cache artifact | two cache-busted requests, `?cb={nanoseconds}` | `cache-control: public, immutable`, `x-vercel-cache: MISS`, `age: 0` |
+| The CDN demonstrably **stores** the response | re-requested one cache-busted URL after its MISS | `x-vercel-cache: HIT`, `age: 2` |
+
+That last row is the load-bearing one. The CDN storing and re-serving the bytes requires a positive
+shared-cache lifetime, and `s-maxage=14400` is the only directive in the response that supplies one —
+`immutable` alone does not authorise a shared-cache duration, and no `max-age` is set. So the directive
+was received and honoured by the CDN; it simply is not echoed to the client.
+
+**What this means for D-06.** D-06's stated purpose is that "Vercel's CDN holds the bytes and the
+function runs approximately once per image rather than once per request," which is what makes D-05's
+byte-proxying affordable. That purpose is **satisfied and directly demonstrated** by the MISS→HIT
+transition above. What is *not* satisfied is the literal header-text assertion in the `must_haves` truth,
+which was written against the origin's output and is unobservable through Vercel's edge. The truth's
+wording should be corrected to name the origin, not the deployed response — carried forward as a
+documentation correction, not a code change.
 
 **Why T2-9's expected 200 is correct rather than a defect,** recorded now so a future reader meeting a
 200 for a deliberately mangled input has the reasoning in front of them: `parsePageId`'s regexes are
