@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
-current_phase: 9
+current_phase: 09
 current_phase_name: thumbnail-freshness
 status: executing
-stopped_at: "09-02 complete. Deploy 9c3cc9c live. Idle window opened 2026-08-11T12:13:13Z; the 13:23:13Z threshold has PASSED (>180 min elapsed, no request made by GSD in that span). Next: 09-03 cold load — its FIRST request must record its own cache status, which is the coldness proof, not the elapsed clock. Do NOT push before 09-03 runs: HEAD is docs-only commits ahead of origin/main and pushing redeploys and resets the window. Operator decision: D10 (presigned URL surviving in the RSC flight payload) is fixed AFTER 09-03, not before, for the same reason."
-last_updated: "2026-08-11T12:18:53.158Z"
-last_activity: 2026-08-11
-last_activity_desc: Phase 9 Plan 02 complete — fix deployed, Tier 2 evidence banked, idle window opened
+stopped_at: "09-03 complete. Phase 9 (thumbnail-freshness) all 3 plans executed. IMG-01/IMG-02 observed via the idle-window cold request; 09-EVIDENCE.md closed end to end. Two carried-forward operator items remain open (not this plan's scope): the RSC flight-payload presigned-URL exposure from 09-02, and the D-06 must_haves wording correction. Next: phase-level verification/ship for Phase 9, or Phase 10 (Collapsible Sidebars)."
+last_updated: "2026-08-11T16:09:56.550Z"
+last_activity: 2026-08-12
+last_activity_desc: Phase 09 execution started
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
-  percent: 50
+  completed_plans: 10
+  percent: 75
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 ## Current Position
 
-Phase: 9 — thumbnail-freshness (executing)
-Plan: 3 of 3 (09-01 and 09-02 complete; 09-03 is the idle-window proof)
-Status: **WAITING ON THE IDLE WINDOW** — 09-03's cold load may not run before 2026-08-11T13:23:13Z
-Progress: [█████████░] 90% (2/4 v1.1 phases complete)
-Last activity: 2026-08-11 — Phase 9 Plan 02 complete, fix deployed as `9c3cc9c`, idle window opened
+Phase: 09 (thumbnail-freshness) — EXECUTING
+Plan: 3 of 3
+Status: Ready to execute
+Progress: [██████████] 100% (2/4 v1.1 phases complete)
+Last activity: 2026-08-12 — Phase 09 execution started
 
 > **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
 > already executing, so `state advance-plan` incremented phase 8's plan counter (3 → 4) instead of
@@ -88,6 +88,7 @@ Last activity: 2026-08-11 — Phase 9 Plan 02 complete, fix deployed as `9c3cc9c
 | Phase 08 P01 | ~35min | 3 tasks | 4 files |
 | Phase 09 P01 | 20min | 3 tasks | 8 files |
 | Phase 09 P02 | ~40min | 3 tasks | 1 files |
+| Phase 09 P03 | ~25min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 9 Plan 02] IMG-04 closed by direct browser observation, retiring 09-01's D5 human_judgment gap: card 32x32 and hero 48x48, text-tertiary on surface, exact token matches in both themes, no caption, zero img left to render a broken-image glyph. Failure induced by repointing each thumbnail at the route's own 400 path — /browse exposes no request blocking and Network.setBlockedURLs is not in its CDP allowlist.
 - [Phase ?]: [Phase 9 Plan 02] IMG-05's live half is UNEXERCISED and recorded as such: all three public posts are Notion-hosted file thumbnails, so no external-thumbnail post exists to load. Production Notion content was deliberately NOT mutated to manufacture the case.
 - [Phase ?]: [Phase 9 Plan 02] D-06 correction: the deployed response carries 'public, immutable', NOT 'public, s-maxage=14400, immutable'. Vercel's edge consumes s-maxage and does not forward it. D-06's purpose is satisfied and was demonstrated (a cache-busted URL went MISS then HIT with age:2, and only s-maxage supplies the shared-cache lifetime storage requires); the must_haves truth's wording needs to name the origin, not the deployed response.
+- [Phase ?]: [Phase 9 Plan 03] The task 1 human-check's browser-corroboration half was performed by the orchestrator via gstack /browse in a freshly started, cookie-less headless Chromium session — not by a human incognito window — and recorded in 09-EVIDENCE.md in those exact terms rather than presented as a human observation
+- [Phase ?]: [Phase 9 Plan 03] IMG-02 reported as observed (hero thumbnail resolved after the gap), with the underlying Data Cache staleness mechanism held at MEDIUM confidence per 09-RESEARCH.md — unexercisable by this phase's own design since D-11's verify-after-fix trade-off plus the fix itself removed the one discriminating signal
+- [Phase ?]: [Phase 9 Plan 03] research/ARCHITECTURE.md §1 corrected in writing in 09-EVIDENCE.md: it attributes staleness for both / and /post/[id] to the Full Route Cache — right for /, wrong for /post/[id], which has no Full Route Cache entry at all; the actual mechanism there is the Next.js Data Cache inside getPost()'s own fetch
 
 ### Pending Todos
 
@@ -193,9 +197,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-11T12:17:57.224Z
-Stopped at: 09-02 complete. Deploy 9c3cc9c live. IDLE WINDOW OPEN 2026-08-11T12:13:13Z — earliest cold load 13:23:13Z. Do NOT request the site or push until 09-03 runs.
-Resume file: .planning/phases/09-thumbnail-freshness/09-03-PLAN.md
+Last session: 2026-08-11T16:09:56.521Z
+Stopped at: 09-03 complete. Phase 9 (thumbnail-freshness) all 3 plans executed. IMG-01/IMG-02 observed via the idle-window cold request; 09-EVIDENCE.md closed end to end. Two carried-forward operator items remain open (not this plan's scope): the RSC flight-payload presigned-URL exposure from 09-02, and the D-06 must_haves wording correction. Next: phase-level verification/ship for Phase 9, or Phase 10 (Collapsible Sidebars).
+Resume file: None
 
 ## Operator Next Steps
 

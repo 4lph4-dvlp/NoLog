@@ -115,7 +115,7 @@ Notes for planning:
   4. A post whose thumbnail genuinely fails to resolve shows a visible placeholder, not an empty box.
   5. A post whose thumbnail is an external (non-Notion-hosted) URL renders exactly as it does today, and its image request does not travel through the new resolution path.
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -128,7 +128,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion — separated by the >1h idle window itself)*
 
-- [ ] 09-03-PLAN.md — The one idle window: the cold first request after the gap, the direct proxy-path check that the optimizer cannot mask, and the honest IMG-02 finding (IMG-01, IMG-02)
+- [x] 09-03-PLAN.md — The one idle window: the cold first request after the gap, the direct proxy-path check that the optimizer cannot mask, and the honest IMG-02 finding (IMG-01, IMG-02)
 
 Notes for planning:
 
@@ -191,7 +191,7 @@ The three defects are **file-disjoint** — `research/ARCHITECTURE.md` verified 
 | 6. Documentation | v1.0 | 2/2 | Complete | 2026-07-29 |
 | 7. Content Failure Isolation & Live Diagnosis | v1.1 | 3/3 | Complete   | 2026-08-11 |
 | 8. Content Rendering Fix | v1.1 | 4/4 | Complete   | 2026-08-11 |
-| 9. Thumbnail Freshness | v1.1 | 2/3 | In Progress|  |
+| 9. Thumbnail Freshness | v1.1 | 3/3 | In Progress|  |
 | 10. Collapsible Sidebars & Reading Width | v1.1 | 0/TBD | Not started | - |
 
 ## Requirement Coverage (v1.1)
