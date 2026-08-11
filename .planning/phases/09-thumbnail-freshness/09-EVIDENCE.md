@@ -277,6 +277,178 @@ which was written against the origin's output and is unobservable through Vercel
 wording should be corrected to name the origin, not the deployed response — carried forward as a
 documentation correction, not a code change.
 
+### IMG-04 — the failure placeholder, observed in a real browser
+
+- **Date:** 2026-08-11, against the deployed site at deploy SHA `9c3cc9c`.
+- **Tool:** gstack `/browse` (headless Chromium), per this project's `CLAUDE.md`, which mandates it for
+  all web browsing. Viewport 1280x900.
+- **Status of these rows: agent-observed.** Screenshots were read back and looked at, and every size and
+  colour below was additionally measured from the live DOM rather than eyeballed. These are not operator-
+  pending rows.
+
+**Method, and how it differs from the plan's.** The plan calls for a devtools request-blocking rule on
+the image-optimizer path. `/browse` exposes no request-blocking command, and `Network.setBlockedURLs` is
+not in its CDP allowlist (checked: the allowlist carries only `Network.getCookies`,
+`getResponseBody`, `loadNetworkResource`, `replayXHR`). Substituted method: after load, every thumbnail
+`<img>` had its `srcset` removed and its `src` repointed at `/api/thumbnail/not-a-real-id`, which the
+deployed route answers `400` with an empty body. That produces a **genuine failed image request** against
+the real route, so the browser fires a real `error` event and React's real `onError` handler runs. This
+is arguably a closer match to IMG-04's wording ("a thumbnail whose image request fails") than blocking
+would be, since the failure travels through the shipped route's own refusal path. Recorded as a
+deviation because it is one, not because it weakens the result.
+
+| # | Surface | Theme | What was measured | Expected (09-UI-SPEC.md) | Observed | Pass/Fail |
+|---|---------|-------|-------------------|--------------------------|----------|-----------|
+| T3-1 | Feed card | light | icon element + rendered box | `ImageOff`, `w-8 h-8` = 32px | `lucide lucide-image-off w-8 h-8 text-text-tertiary`, box `32x32` | PASS |
+| T3-2 | Feed card | light | icon colour / wrapper background | `--text-tertiary` `#9b9a97` on `--surface` `#f7f6f3` | `rgb(155, 154, 151)` on `rgb(247, 246, 243)` | PASS |
+| T3-3 | Feed card | dark | icon size, colour, wrapper | 32px, `--text-tertiary` `#6b6b6b` on `--surface` `#252525` | `32x32`, `rgb(107, 107, 107)` on `rgb(37, 37, 37)` | PASS |
+| T3-4 | Post hero | dark | icon element + rendered box | `w-12 h-12` = 48px | `lucide lucide-image-off w-12 h-12 text-text-tertiary`, box `48x48` | PASS |
+| T3-5 | Post hero | light | icon size + colours | 48px, `#9b9a97` on `#f7f6f3` | `48x48`, `rgb(155, 154, 151)` on `rgb(247, 246, 243)` | PASS |
+| T3-6 | Both | both | the swap actually happened | `<img>` replaced, not overlaid | card wrappers: `svg=3, img=0`; hero: `svg=1, img=0`; combined remaining `<img>` in thumbnail wrappers = `0` | PASS |
+| T3-7 | Both | both | no caption (D-09) | wrapper text content empty | card wrappers `["","",""]`, hero `""` | PASS |
+| T3-8 | Both | both | no browser broken-image glyph | no `<img>` left to render one | `0` `<img>` inside any thumbnail wrapper — the glyph is structurally impossible | PASS |
+
+The wrapper classes were confirmed unchanged from the contract, read off the live DOM:
+
+```
+card: relative shrink-0 w-24 h-24 rounded-md overflow-hidden bg-surface
+hero: relative w-full aspect-video rounded-xl overflow-hidden bg-surface mb-10
+```
+
+Both are byte-identical to the strings `09-UI-SPEC.md` locks, so the box is unchanged in size and
+styling and only its contents were swapped — the "de-duplication, not a redesign" requirement holds at
+the failure state too.
+
+Theme toggling used the site's own existing control (the header button, accessible name
+`Switch to dark mode` / `Switch to light mode`), not a synthetic class change, so the observation is of
+the real theme mechanism. The placeholder survived the toggle in both directions (`svg` count unchanged,
+`img` count still 0), confirming the failure state is React state and not a render-time artifact.
+
+Screenshots retained in the run's scratchpad and read back during execution:
+`img04-home-baseline.png`, `img04-home-light-placeholder.png`, `img04-home-dark-placeholder.png`,
+`img04-hero-dark-placeholder.png`, `img04-hero-light-placeholder.png`.
+
+**Two things this subsection deliberately does not conclude,** per the plan: a post with no thumbnail
+configured at all still renders no box — a different, pre-existing condition that is not a placeholder
+state and was not tested here. And the placeholder is identical whatever the underlying cause was; no
+per-cause copy exists and none was looked for.
+
+### IMG-05 — external-thumbnail bypass: UNEXERCISED
+
+**The operator's live database contains no post whose thumbnail is an external URL.** The live half of
+IMG-05 therefore could not be exercised, and this is recorded as a coverage gap rather than a pass.
+
+Established from the served HTML of both pages:
+
+| Check | Observed | Reading |
+|-------|----------|---------|
+| Distinct post ids referenced by a proxy path on the home feed | 3 | every public post routes through the proxy |
+| `<img>` elements on either page whose `src` is an absolute off-site URL | `0` | no post renders an unproxied external thumbnail |
+| Notion-hosted host seen in the page payload | `prod-files-secure.s3.us-west-2.amazonaws.com` only | all three thumbnails are `thumbnailType: "file"` |
+
+All three public posts are Notion-hosted file thumbnails, so there is no external-thumbnail post to
+load. IMG-05 consequently rests on two source assertions made in 09-01 and **not** on live observation:
+the component's `post.thumbnailType === "external"` branch, which returns `post.thumbnail` unchanged and
+never constructs a proxy path, and the route's own non-`"file"` refusal (`route.ts:74-76`, a 404 for any
+thumbnail that is not a Notion file). Per the plan and this phase's honesty rule, the database was **not**
+modified to manufacture the case — mutating production content to make a check pass is not evidence, and
+it would have disturbed the data the idle window is about to measure.
+
+### Served-HTML baseline capture (IMG-01 / IMG-02, structural half)
+
+Captured 2026-08-11 from the deployed site at deploy SHA `9c3cc9c`, before the idle window opened.
+
+| Counter | Home (`/`) | Post (`/post/{id}`) |
+|---------|-----------|---------------------|
+| proxy-path occurrences | `48` | `17` |
+| `amazonaws.com` occurrences | `3` | `1` |
+| `amazonaws.com` occurrences **inside an `<img>` src** | **`0`** | **`0`** |
+
+Every thumbnail is served through the stable, post-id-keyed path. The complete set of distinct `<img>`
+`src` values on the home feed, with the optimizer's sizing parameters trimmed:
+
+```
+/_next/image?url=%2Fapi%2Fthumbnail%2F36e2c61e-4a24-8048-b7be-c6765c807e23&w=…&q=…
+/_next/image?url=%2Fapi%2Fthumbnail%2F3702c61e-4a24-8001-a9a6-c4ff3aadadb5&w=…&q=…
+/_next/image?url=%2Fapi%2Fthumbnail%2F6b42c61e-4a24-82b0-ae11-01fdb5e7110f&w=…&q=…
+/_next/image?url=%2Favatar.png&w=…&q=…
+```
+
+and on the post page, the hero plus the profile avatar:
+
+```
+/_next/image?url=%2Fapi%2Fthumbnail%2F3702c61e-4a24-8001-a9a6-c4ff3aadadb5&w=…&q=…
+/_next/image?url=%2Favatar.png&w=…&q=…
+```
+
+**This is the substitution that IS IMG-01 and IMG-02's structural half.** Before the fix, each of those
+`src` values was a presigned S3 URL carrying an expiry; after it, each is a stable path keyed on the post
+id. What remains for 09-03 to answer is only whether the bytes still arrive after the idle gap — not
+whether an expiring value is still what the browser is asked to fetch. It is not.
+
+#### Finding: a presigned URL is still embedded in the RSC flight payload (must_haves truth needs correcting)
+
+The `must_haves` truth for this plan reads: the served HTML "contains no Notion presigned S3 URL for any
+Notion-hosted thumbnail — the expiring value is no longer embedded anywhere in cached markup." **As
+literally worded, that is false, and it is recorded as false rather than quietly narrowed to the `<img>`
+elements where it does hold.**
+
+Three presigned URLs remain in the home page's markup and one in the post page's. Every one of them sits
+inside a `self.__next_f.push([...])` script — the React Server Components flight payload — and **none**
+sits in an `<img>` `src`. The cause is structural: `PostThumbnail` is a Client Component that receives
+the whole `post` object as a prop, so React serialises every field of it, `post.thumbnail` included, so
+the client can hydrate. The value is inert for rendering — the component computes
+`/api/thumbnail/${post.id}` for file-type thumbnails and never reads `post.thumbnail` on that branch —
+but it is present.
+
+Redaction applied, and deliberately stricter than the plan requires: the plan permits recording scheme,
+host and path. Recorded here are the scheme (`https`) and the host
+(`prod-files-secure.s3.us-west-2.amazonaws.com`); the paths are described by shape only — a workspace
+UUID, a file UUID, and a filename — rather than pasted, since the UUIDs identify the operator's
+workspace and objects and carry no analytic value here. The query string is described **by role only**:
+it carries a credential, a signature, an expiry and the usual accompanying signing parameters. Neither
+the parameter names nor any value appears anywhere in this document; the gate
+`grep -cE 'X-Amz-(Signature|Credential)'` returns `0`.
+
+**Assessed impact, stated precisely:**
+
+- **On the phase's goal — none.** The reader's browser never requests an expiring URL, because no `<img>`
+  carries one. The idle-window test in 09-03 remains a valid and meaningful test of the fix.
+- **On the phase's security posture — an improvement, not a regression, but not a fix.** Before this
+  phase the presigned URL was in the `<img>` `src` *and* in the flight payload; now it is only in the
+  flight payload. Exposure is strictly reduced. It is not eliminated: a live read grant sits in public,
+  CDN-cached markup for the remainder of its lifetime, and `/` is prerendered with a long expiry.
+- **Not fixed here, and deliberately not.** Removing it means narrowing the client component's props from
+  the whole `Post` to just the values the client actually needs, which changes a component interface —
+  an architectural change, and outside this plan's file scope (task 3 may modify only `09-EVIDENCE.md`).
+  Raised for the operator as a follow-up rather than patched mid-verification.
+
+### Idle window
+
+- **Deploy SHA under test:** `9c3cc9c`
+- **Last request of any kind made against the deployed site:** **2026-08-11T12:13:13Z** (UTC)
+- **Window starts:** 2026-08-11T12:13:13Z
+- **Earliest permissible cold load (09-03):** **2026-08-11T13:23:13Z** (UTC) — a 70-minute gap
+
+Seventy minutes rather than sixty, to leave margin against clock skew and against Notion's presign
+lifetime being approximate rather than exact.
+
+**No request of any kind may be made against `https://4lph4-bl0g.vercel.app` until 13:23:13Z.** An
+automated check counts as a request. A link preview, an uptime monitor, a browser tab left open on the
+site, or a "just to double-check" curl all count as requests. **If one is made, the window restarts from
+zero** and 09-03 must wait a further seventy minutes from that moment.
+
+The last request was the `/browse` session's post-page load during the IMG-04 observation above. The
+headless browser was then navigated off the site and its daemon shut down before the clock was taken;
+confirmed afterwards that zero browse-daemon processes remain and no process on this machine holds the
+site host in its command line. Committing this document does not touch the site.
+
+**Why this window was safe to open only now.** Every check in Tier 2 either targeted `/api/thumbnail/...`
+only — a path that resolves through a `cache: "no-store"` fetch and so writes no Data Cache entry — or
+happened here in task 3, before the clock was started. Task 2 made no request to `/` or to a post page
+at all. The ordering is the mitigation for T-09-14, and it is the reason the one unrepeatable resource
+in this phase is still intact.
+
 **Why T2-9's expected 200 is correct rather than a defect,** recorded now so a future reader meeting a
 200 for a deliberately mangled input has the reasoning in front of them: `parsePageId`'s regexes are
 word-boundary matched, not anchored, so the identifier still parses out of a longer segment. A 200 there
