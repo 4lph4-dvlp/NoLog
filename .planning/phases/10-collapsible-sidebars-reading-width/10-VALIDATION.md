@@ -46,9 +46,19 @@ created: 2026-08-12
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| _pending_ | — | — | — | — | — | — | — | — | ⬜ pending |
+| T10-01-1 | 10-01 | 1 | SIDE-01, SIDE-04, SIDE-06, SIDE-07, SIDE-08, SIDE-10, A11Y-01 | T-10-01, T-10-02, T-10-03 | Strict allowlist parse of `localStorage`; `Layout.tsx` stays a Server Component; only build-time constants interpolated into the inline script | source assertion + lint + build + manual (browser) | `npm run lint --prefix apps/web` · `grep -c 'use client' apps/web/src/templates/default/Layout.tsx` == 0 · `grep -rn 'NEXT_PUBLIC_RESEND' apps/web/src` empty · `npm run build --prefix apps/web` | N/A — no test file by project constraint | ⬜ pending |
+| T10-01-2 | 10-01 | 1 | SIDE-05, A11Y-04 | — | n/a (no untrusted input on this path) | source assertion + lint + build + manual (browser) | `npm run lint --prefix apps/web` · `grep -c '1279' .../SidebarShell.tsx` == 0 · `npm run build --prefix apps/web` | N/A | ⬜ pending |
+| T10-02-1 | 10-02 | 2 | SIDE-02, SIDE-09, A11Y-01, A11Y-05 | T-10-04 | Fork-controlled avatar asset degrades to an icon fallback with no retry loop | source assertion + lint | `npm run lint --prefix apps/web` · `grep -c 'aria-haspopup' .../SidebarToggleRight.tsx` == 0 · `grep -c 'alt=""' .../SidebarToggleRight.tsx` >= 1 | N/A | ⬜ pending |
+| T10-02-2 | 10-02 | 2 | SIDE-02, SIDE-03, SIDE-04, A11Y-01 | T-10-01, T-10-02 | Stop-ship greps re-run because this task edits `SidebarShell.tsx` | source assertion + lint + build + manual (browser) | `grep -c '<aside' apps/web/src/components/Profile.tsx` == 0 · `grep -c 'SubscribeSection' .../SidebarShell.tsx` == 0 · `npm run build --prefix apps/web` | N/A | ⬜ pending |
+| T10-03-1 | 10-03 | 3 | A11Y-02, A11Y-03 | T-10-02, T-10-05 | Focus rescue strictly before the `inert` write, same tick; both toggles outside both panels | source assertion + lint + build + manual (browser) | `grep -c 'display: *none' .../SidebarShell.tsx` == 0 · `grep -c 'activeElement' .../SidebarShell.tsx` >= 1 · `npm run build --prefix apps/web` | N/A | ⬜ pending |
+| T10-03-2 | 10-03 | 3 | SIDE-04 | — | n/a (static CSS ceiling, no input) | source assertion + lint + build + manual (browser) | `grep -c 'max-w-\[1100px\] mx-auto py-8 md:px-4' .../PostPage.tsx` == 1 · `grep -c 'max-w-none' .../PostPage.tsx` == 0 | N/A | ⬜ pending |
+| T10-04-1 | 10-04 | 4 | SIDE-04, SIDE-05, SIDE-06, SIDE-10 | T-10-02 | No secret VALUE is transcribed into the committed evidence file — names and grep output only | manual (browser measurement) + source assertion + build | evidence-section presence greps · `grep -rn 'NEXT_PUBLIC_RESEND' apps/web/src` empty · `npm run build --prefix apps/web` | N/A | ⬜ pending |
+| T10-04-2 | 10-04 | 4 | SIDE-07, SIDE-08, SIDE-09, A11Y-02, A11Y-03, A11Y-04 | T-10-01, T-10-06 | Every temporary fault injection / config edit reverted before commit; tampered-storage behaviour observed, not only asserted | manual (browser) + source assertion + lint + build | evidence-section presence greps · `grep -c '_pending_' 10-VALIDATION.md` == 0 · `grep -rn 'transition-colors' apps/web/src --include='*.tsx' --include='*.ts'` empty | N/A | ⬜ pending |
+| SC#5 | 10-04 | 4 | ROADMAP SC#5 (PITFALLS 9, RESEARCH Assumption A1) | — | n/a | manual (browser) — delayed-onset CSS regression, invisible to lint/tsc | none — scroll a real long post and the home page far enough to engage sticky, in all three collapse states | N/A | ⬜ pending |
 
-*Filled after PLAN.md task IDs exist (plan-phase seeds this file before the planner runs). Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Seeded by plan-phase from the four PLAN.md files' stable task IDs. Plan 10-04 task 2 fills the Status
+column from real observations and cites the `10-EVIDENCE.md` section establishing each. Status: ⬜ pending ·
+✅ green · ❌ red · ⚠️ flaky · `UNEXERCISED` (with a reason) where a check could not be performed.*
 
 ---
 
