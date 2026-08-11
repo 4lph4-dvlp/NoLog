@@ -5,7 +5,7 @@ milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 9
 current_phase_name: thumbnail-freshness
 status: executing
-stopped_at: "09-02 complete. Deploy 9c3cc9c live. IDLE WINDOW OPEN 2026-08-11T12:13:13Z — earliest cold load 13:23:13Z. Do NOT request the site or push until 09-03 runs."
+stopped_at: "09-02 complete. Deploy 9c3cc9c live. Idle window opened 2026-08-11T12:13:13Z; the 13:23:13Z threshold has PASSED (>180 min elapsed, no request made by GSD in that span). Next: 09-03 cold load — its FIRST request must record its own cache status, which is the coldness proof, not the elapsed clock. Do NOT push before 09-03 runs: HEAD is docs-only commits ahead of origin/main and pushing redeploys and resets the window. Operator decision: D10 (presigned URL surviving in the RSC flight payload) is fixed AFTER 09-03, not before, for the same reason."
 last_updated: "2026-08-11T12:18:53.158Z"
 last_activity: 2026-08-11
 last_activity_desc: Phase 9 Plan 02 complete — fix deployed, Tier 2 evidence banked, idle window opened
