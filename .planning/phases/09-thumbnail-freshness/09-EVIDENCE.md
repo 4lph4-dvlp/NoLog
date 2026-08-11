@@ -177,3 +177,43 @@ present on `main` by stashing; the passing bar in this repo is "no new errors fr
 (STATE.md, Phase 7 Plan 01 precedent, adopted because `TerminalConsole.tsx` already fails lint on
 `main`). Recorded as a deviation from this plan's literal "lint exits 0" wording rather than silently
 counted as a pass.
+
+### Deployed route battery
+
+> **INCOMPLETE — the deploy has not happened.** The `git push origin main` that task 2 step 1 calls for
+> was refused by the execution environment's permission layer, not by any gate in this plan. Everything
+> below the pre-deploy baseline is therefore unrun. See `09-02-SUMMARY.md` for the blocker.
+
+**Pre-deploy baseline — captured 2026-08-11T11:58:53Z, before any push.** This is the half of the
+liveness proof that cannot be recaptured later, which is why it is recorded even though the deploy is
+blocked. Once the new route ships, the site can never again be observed in this state.
+
+| Probe | Command | Observed status | Observed content type | Observed body length | Reading |
+|-------|---------|-----------------|-----------------------|----------------------|---------|
+| garbage id, **pre-deploy** | `curl -sD - -o /dev/null https://4lph4-bl0g.vercel.app/api/thumbnail/not-a-real-id` | `HTTP/2 404` | `text/html; charset=utf-8` | `40884` | The framework's 404 **page**, served from the CDN (`x-vercel-cache: HIT`). No route exists at this path on the deployed site yet. |
+
+That row is the control for the liveness check. The shipped route answers a garbage id with `400` and an
+**empty** body; the pre-deploy site answers `404` with a 40,884-byte HTML document. The two are trivially
+distinguishable, so a post-deploy `400` cannot be confused with a stale deployment or a cached response.
+
+**Still to run once the push is authorised** (all target `/api/thumbnail/...` only — none requests `/` or
+a post page, so none warms the Data Cache or disturbs the idle window):
+
+| # | Probe | Expectation |
+|---|-------|-------------|
+| T2-4 | garbage id segment | 400, empty body — **the liveness proof** |
+| T2-5 | well-formed UUID naming no page (`00000000-…`) | 404, empty body |
+| T2-6 | URL-encoded absolute URL in the id position | 400 — nothing in it parses as a page identifier (IMG-03, D-07) |
+| T2-7 | a real public post's id | 200, `image/`, non-zero length, `public, s-maxage=14400, immutable`, `x-content-type-options: nosniff` |
+| T2-8 | the same real id with `?url=…` appended | byte-for-byte identical to T2-7 in status, content type and length |
+| T2-9 | the same real id wrapped in non-word characters | 200 — correct, not a defect; see the note below |
+
+The real post id these will use is `3702c61e-4a24-8001-a9a6-c4ff3aadadb5`, resolved from the **local**
+production server's home-page HTML during task 1 rather than from the deployed site's, deliberately: the
+deployed `/` is not requested at all during task 2, and both servers read the same Notion database.
+
+**Why T2-9's expected 200 is correct rather than a defect,** recorded now so a future reader meeting a
+200 for a deliberately mangled input has the reasoning in front of them: `parsePageId`'s regexes are
+word-boundary matched, not anchored, so the identifier still parses out of a longer segment. A 200 there
+is itself positive evidence that **only the parsed value** reaches the outbound URL — had the raw segment
+been used to build the Notion request, Notion would have answered 404 and so would the route.
