@@ -16,7 +16,14 @@ interface DefaultPostPageProps {
 
 export default function DefaultPostPage({ post, recordMap, contentFetchFailed }: DefaultPostPageProps) {
   return (
-    <article className="max-w-none mx-auto py-8 md:px-4">
+    // Reading-width cap (SIDE-04, D-01/D-02/D-03): a static ceiling, not
+    // part of the sidebar collapse animation. At a 1400px viewport <main>
+    // measures 864px with both sidebars expanded (the cap has no effect)
+    // and 1304px with both collapsed (the article hits 1100px, a visible
+    // +236px). A 900px cap was rejected — it would have widened the prose
+    // by only 36px, satisfying SIDE-04's wording on paper while failing it
+    // in substance. mx-auto (already present) satisfies D-03's centring.
+    <article className="max-w-[1100px] mx-auto py-8 md:px-4">
       {/* ─── Header ────────────────────────────────────────────── */}
       <header className="mb-10">
         <Link
