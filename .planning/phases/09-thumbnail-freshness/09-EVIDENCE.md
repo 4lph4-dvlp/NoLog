@@ -454,3 +454,155 @@ in this phase is still intact.
 word-boundary matched, not anchored, so the identifier still parses out of a longer segment. A 200 there
 is itself positive evidence that **only the parsed value** reaches the outbound URL — had the raw segment
 been used to build the Notion request, Notion would have answered 404 and so would the route.
+
+---
+
+## Tier 3 — the idle window
+
+> Appended by plan 09-03. Tiers 1 and 2 above are unmodified.
+
+### Window accounting
+
+| | Timestamp (UTC) |
+|---|---|
+| Window start (recorded by 09-02 task 3 — last request of any kind before the gap) | `2026-08-11T12:13:13Z` |
+| Earliest permissible cold load | `2026-08-11T13:23:13Z` |
+| First request made after the gap (this plan's cold home-page request) | `2026-08-11T15:57:19Z` |
+| **Elapsed gap** | **224 minutes 6 seconds** (3h 44m 06s) |
+
+224 minutes is well past both the 70-minute margin `09-02` set and the ~1h Notion presign lifetime the
+window exists to outlast. No request of any kind was made against `https://4lph4-bl0g.vercel.app` between
+the window start and the cold request above — attested by the operator, in this session, as instructed;
+this is the repudiation risk T-09-16 names, and it is why the corroborating signal below matters
+independently of the attestation.
+
+### Step 1 — the first request after the gap, captured whole (home)
+
+Request: `GET /` on `https://4lph4-bl0g.vercel.app`, executed at `2026-08-11T15:57:19Z`, headers dumped
+and body saved before any second request was made.
+
+| Header | Observed |
+|---|---|
+| `HTTP` status | `200` |
+| `x-vercel-cache` | `STALE` |
+| `age` | `13514` (seconds) |
+| `cache-control` | `public, max-age=0, must-revalidate` |
+| `date` (the cached response's own generation time, forwarded by Vercel unchanged) | `Tue, 11 Aug 2026 12:12:04 GMT` |
+| `x-nextjs-prerender` | `1` |
+| `x-nextjs-stale-time` | `300` |
+
+**This is the honesty check on the window, and it passes two ways at once.** `/` is `PRERENDER`-classed
+with a 3-minute revalidate (08-CACHE-EVIDENCE.md, inherited), so a genuine post-gap first request should
+report HTML from a cache populated before the gap rather than a fresh render — `x-vercel-cache: STALE`
+is exactly that signature: the cached entry is past its revalidate window and was served as-is while a
+background regeneration was (or will be) triggered by this very request, per the Full Route Cache's lazy
+model (`research/ARCHITECTURE.md` §1). It is not a `MISS`, which would have meant this request itself
+forced a fresh render and answered nothing about staleness.
+
+Second, and independently: the forwarded `date` header — `12:12:04Z` — is the timestamp of the cached
+HTML's own generation, not of this request. `age` (`13514`s) subtracted from the request time
+(`15:57:19Z`) lands at `12:12:05Z`, matching the `date` header to within a second. **That generation time
+sits *before* the recorded window start (`12:13:13Z`)** — the cached HTML this request served was already
+sitting there when the window opened, most plausibly the served-HTML baseline capture 09-02 performed
+immediately before starting the clock. This is the second, machine-observed half of T-09-16's mitigation:
+the window-start timestamp and this response's own cache-generation timestamp agree with each other and
+with the operator's attestation, rather than merely restating it. No disagreement occurred, so the run is
+not invalidated.
+
+`home amazonaws hits` (raw count anywhere in the captured body): `3`. `amazonaws.com` occurrences inside
+an `<img>` `src`: `0`. Every occurrence is inside a `self.__next_f.push([...])` RSC flight-payload script,
+consistent with Tier 2's earlier finding — recorded again here because the acceptance criterion asks for
+it against *this* capture, not a re-citation of Tier 2's.
+
+### Step 2 — the src read out of that captured HTML
+
+Extracted from the saved body of the step-1 response (not a fresh request). Three distinct thumbnail
+paths, all the stable post-id-keyed proxy path, all present on the stale, hour-old HTML:
+
+```
+/api/thumbnail/36e2c61e-4a24-8048-b7be-c6765c807e23
+/api/thumbnail/3702c61e-4a24-8001-a9a6-c4ff3aadadb5
+/api/thumbnail/6b42c61e-4a24-82b0-ae11-01fdb5e7110f
+```
+
+No `amazonaws.com` host appears in any `<img>` `src` (confirmed above). Before this phase's fix, this is
+exactly where a presigned URL minted more than an hour before this request would have been sitting.
+
+### Step 3 — the load-bearing request: direct proxy-path fetches
+
+Each path above, requested directly, outside the optimizer, immediately after step 2's extraction:
+
+| # | Path (id only) | Status | Content type | Size (bytes) | Pass/Fail |
+|---|---|---|---|---|---|
+| 1 | `36e2c61e-4a24-8048-b7be-c6765c807e23` | `200` | `image/png` | `53788` | PASS |
+| 2 | `3702c61e-4a24-8001-a9a6-c4ff3aadadb5` | `200` | `image/png` | `1561628` | PASS |
+| 3 | `6b42c61e-4a24-82b0-ae11-01fdb5e7110f` | `200` | `image/png` | `183062` | PASS |
+
+**This is IMG-01's evidence.** Three distinct home-feed thumbnail references, read out of HTML that had
+sat cached for 224 minutes — longer than Notion's ~1h presign lifetime — all resolve to live, non-zero
+image bytes on a direct request. The reference embedded in hour-old HTML still works, because the URL
+behind it is minted when the image is asked for, not when the page was last rendered. Not the browser
+view; this direct request is the establishing evidence.
+
+### Step 4 — the post detail page, same window, same discipline
+
+Request: `GET /post/3702c61e-4a24-8001-a9a6-c4ff3aadadb5`, executed at `2026-08-11T15:58:04Z` (within the
+same 224-minute-plus gap; the post route is dynamic and answers on every request, so no separate "first
+request" honesty check applies to it the way it does to `/`).
+
+| Header | Observed |
+|---|---|
+| `HTTP` status | `200` |
+| `x-vercel-cache` | `MISS` |
+| `cache-control` | `private, no-cache, no-store, max-age=0, must-revalidate` |
+| `age` | `0` |
+
+A `MISS` here is expected, not a failed window: `08-CACHE-EVIDENCE.md` (inherited, not re-derived)
+measured `/post/[id]` as `ƒ (Dynamic)` answering `x-vercel-cache: MISS` on every request, because the
+route has no `generateStaticParams` and so no Full Route Cache entry exists for it to be stale in. What
+can go stale on this route is `getPost`'s Next.js **Data Cache** entry (D-08's finding), which this
+response's HTML is the product of — that staleness, if present, would show up in what the hero `src`
+resolves to, not in the page's own cache header.
+
+`post amazonaws hits` (raw count anywhere in the captured body): `1`. Occurrences inside an `<img>` `src`:
+`0`. The one occurrence sits in the RSC flight payload, same pattern as the home page and Tier 2's prior
+finding.
+
+**Hero thumbnail path, extracted from this captured body:** `/api/thumbnail/3702c61e-4a24-8001-a9a6-c4ff3aadadb5`
+— the stable post-id-keyed path, not a presigned URL.
+
+**Direct request to that path, immediately after extraction:**
+
+| Path (id only) | Status | Content type | Size (bytes) | Pass/Fail |
+|---|---|---|---|---|
+| `3702c61e-4a24-8001-a9a6-c4ff3aadadb5` | `200` | `image/png` | `1561628` | PASS |
+
+**This is IMG-02's evidence.** The post detail page's hero thumbnail, resolved from a page render that
+happened inside the idle window's Data Cache uncertainty, still returns live image bytes on direct
+request. Size matches the home-feed occurrence of the same post's thumbnail (`1561628` bytes both places),
+which is expected — same underlying Notion file, same resolved URL.
+
+### Step 5 — the reader's view, corroboration only
+
+**Status: PENDING — not yet performed.** Per this plan's own discipline (D-13, and the explicit
+instruction accompanying this execution run), this step is a genuine fresh-incognito-browser observation
+and is not something the executing agent may perform on the operator's behalf or infer from the direct
+requests above. It requires an actual human (or an explicitly operator-directed browser session) to open
+`https://4lph4-bl0g.vercel.app/` and
+`https://4lph4-bl0g.vercel.app/post/3702c61e-4a24-8001-a9a6-c4ff3aadadb5` in a fresh incognito window and
+confirm every thumbnail renders.
+
+When performed, record here: pass/fail for each page, and the one-line reason this is corroboration and
+not proof — Next 16's image optimizer holds a derived variant for at least four hours, and 09-02's
+`/browse` pass populated that cache within this window's span, so a thumbnail rendering in a browser now
+could be the optimizer replaying bytes it fetched before the gap rather than a fresh resolution. Steps 1-4
+above, not this step, are what establish IMG-01 and IMG-02.
+
+### Result — pending step 5
+
+- **IMG-01:** established by steps 1-3 above — three distinct home-feed thumbnail references, read out of
+  a 224-minute-idle first request, each resolve to live image bytes on direct request. Awaiting step 5's
+  corroborating browser observation to close this task's full acceptance criteria.
+- **IMG-02:** established by step 4 above — the post hero thumbnail, extracted from a dynamic-route render
+  inside the same idle window, resolves to live image bytes on direct request. Awaiting step 5's
+  corroborating browser observation, same as IMG-01.
