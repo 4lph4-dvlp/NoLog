@@ -2,11 +2,11 @@ import type { Post } from "@/types";
 import type { ExtendedRecordMap } from "notion-types";
 import { NotionPageRenderer } from "@/components/notion/NotionPageRenderer";
 import { CommentSection } from "@/components/comments/CommentSection";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { CONFIG } from "@/site.config";
 import { isRecordMapEmpty } from "@/lib/notion-x";
+import { PostThumbnail } from "@/components/PostThumbnail";
 
 interface DefaultPostPageProps {
   post: Post;
@@ -83,17 +83,7 @@ export default function DefaultPostPage({ post, recordMap, contentFetchFailed }:
       </header>
 
       {/* ─── Thumbnail ─────────────────────────────────────────── */}
-      {post.thumbnail && (
-        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-surface mb-10">
-          <Image
-            src={post.thumbnail}
-            alt={post.title}
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
-      )}
+      <PostThumbnail post={post} variant="hero" />
 
       {/* ─── Content ───────────────────────────────────────────── */}
       <div className="notion-content-wrapper">

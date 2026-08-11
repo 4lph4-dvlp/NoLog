@@ -1,8 +1,8 @@
 import type { Post } from "@/types";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { CONFIG } from "@/site.config";
+import { PostThumbnail } from "@/components/PostThumbnail";
 
 interface DefaultSearchPageProps {
   posts: Post[];
@@ -53,17 +53,7 @@ export default function DefaultSearchPage({ posts, query }: DefaultSearchPagePro
             className="group p-4 rounded-lg border border-border hover:border-border-strong hover:shadow-sm transition-all"
           >
             <Link href={`/post/${post.id}`} className="flex gap-4">
-              {post.thumbnail && (
-                <div className="relative shrink-0 w-24 h-24 rounded-md overflow-hidden bg-surface">
-                  <Image
-                    src={post.thumbnail}
-                    alt={post.title}
-                    fill
-                    className="object-cover"
-                    sizes="96px"
-                  />
-                </div>
-              )}
+              <PostThumbnail post={post} variant="card" />
 
               <div className="flex-1 min-w-0">
                 <h2 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
