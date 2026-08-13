@@ -193,9 +193,23 @@ rejected the latter: a collapsed `<aside>` is 0px wide and would take its toggle
   shares the same outer `max-w-[var(--max-content-width)]` keeps the hamburger visually over
   the left column and the ThemeToggle+avatar group visually over the right column, without
   coupling either toggle's own box size to the animating tracks below it.
-- **Sticky offset:** `top-6` (24px) — `[AUTO-CHOSEN]`: matches `ThemeToggle`'s existing
+- **Sticky offset (toggle row):** `top-6` (24px) — `[AUTO-CHOSEN]`: matches `ThemeToggle`'s existing
   `md:top-6` desktop offset exactly (`Layout.tsx:22`), so the row's vertical position doesn't
   shift from where the reader already expects it.
+- **Sticky offset (both `<aside>`s): `top-16` (64px), raised from the pre-phase `top-8` (32px).**
+  Derivation, recorded here because review finding WR-01 correctly noted the shipped value carried no
+  written justification — a future change to the row's height needs this number's basis, not just its
+  value. The panels must clear the *pinned toggle row*, which is now in normal flow above them and
+  sticks first. Measured on the deployed layout at a 900px viewport after a 2000px scroll
+  (`10-EVIDENCE.md` §"Delayed-onset pitfall battery" item 1): the row settles at `top ≈ 25px` with its
+  **bottom edge at 59px**. At `top-16` the panels settle at exactly **64px** in all four collapse
+  combinations — a 5px clearance to the panel box and a **17px** gap to each panel's first interactive
+  element (measured `leftFirstInputTop`/`rightFirstElTop: 76px`). The old `top-8` (32px) would have put
+  the panels *inside* the row's 59px footprint, overlapping it by 27px. The value is therefore
+  empirically derived from the row's real rendered box, not from `24px + nominal row height` arithmetic
+  — which is why a paper calculation of `top-6` plus the 36px avatar toggle does not land cleanly on 64:
+  the row's own `items-center` alignment and `mb-4` are not additive into a later sibling's `top:`.
+  **If the toggle row's height ever changes, re-measure `toggleRowBottom` and keep the panels above it.**
 - **`Layout.tsx`'s `pt-16` is removed, not preserved.** It exists today solely to reserve room
   for the currently-`absolute` `ThemeToggle` (CONTEXT.md landmine #3). Once the toggle row is
   `sticky` and participates in normal flow, it occupies its own real vertical space (`mb-4`
@@ -415,7 +429,7 @@ shape-rooted STATE coverage and reference that section rather than restating it.
 | E5 | empty | explicit | An unfilled `SearchBar` shows its existing placeholder; zero categories is pre-existing behaviour preserved by `app/layout.tsx:48-53`, which catches a Notion failure and passes `categories: []` to `CategoryList`. This phase changes only whether the outer track has width, never the panel's internal rendering. |
 | E5 | loading | explicit | Server-rendered with the page, so there is no data-loading state. The one genuine in-flight state is the collapse transition, during which the panel is already `inert` while still visually present — specified in the Transition Contract's sequencing step 2. |
 | E5 | error | explicit | A categories fetch failure degrades to `categories: []` via the existing `app/layout.tsx` catch; unchanged by this phase. |
-| E5 | populated | explicit | `SearchBar` above `CategoryList` inside a fixed `w-[200px]` inner wrapper, `sticky top-8 self-start`, exactly as today. |
+| E5 | populated | explicit | `SearchBar` above `CategoryList` inside a fixed `w-[200px]` inner wrapper, `sticky top-16 self-start` (raised from the pre-phase `top-8` to clear the pinned toggle row — see the Positioning & Sticky Contract's derivation). |
 | E5 | partial | explicit | Partial category data renders through the existing `CategoryList` path unchanged; this phase adds no new data dependency to the panel. |
 | E5 | overflow | explicit | The Pitfall 6 fix governs this: `min-w-0 overflow-hidden` on the `<aside>` plus a fixed `w-[200px]` immediate child wrapper means the search input and category chips are progressively **clipped** by the shrinking boundary and never rewrap or repack as the track animates to `0px`. |
 | E5 | zero-one-many | explicit | Item-count rendering is pre-existing `CategoryList.tsx` behaviour, entirely unmodified — this phase only changes the outer track's width. |
@@ -423,7 +437,7 @@ shape-rooted STATE coverage and reference that section rather than restating it.
 | E6 | empty | explicit | When `RESEND_API_KEY`/`RESEND_AUDIENCE_ID` are unset, `SubscribeSection` returns `null` server-side and the panel holds only the Profile card — the shipped, deliberate unconfigured-fork state. The panel must render correctly with that child absent. |
 | E6 | loading | explicit | Server-rendered with the page; no data-loading state. The collapse transition is the only in-flight state and the panel is `inert` throughout it (Transition Contract step 2). |
 | E6 | error | explicit | A failed subscribe submission is handled by `SubscribeForm`'s existing error rendering, unchanged by this phase. The panel's own structure has no failure mode. |
-| E6 | populated | explicit | Profile card above `SubscribeSection` inside a fixed `w-[240px]` inner wrapper, `sticky top-8 self-start`. `Profile.tsx`'s root becomes a `<div>` with identical `className` — zero visual change. |
+| E6 | populated | explicit | Profile card above `SubscribeSection` inside a fixed `w-[240px]` inner wrapper, `sticky top-16 self-start` (raised from the pre-phase `top-8`, same derivation as E5). `Profile.tsx`'s root becomes a `<div>` with identical `className` — zero visual change. |
 | E6 | partial | explicit | The configured-vs-unconfigured split is the panel's only partial-data axis and is covered by the `empty` row above; no other field of this panel is optional at render time. |
 | E6 | overflow | explicit | Same Pitfall 6 mechanism as E5: `min-w-0 overflow-hidden` on the `<aside>` plus a fixed `w-[240px]` inner wrapper clips the avatar, bio text and subscribe form rather than reflowing them during collapse. |
 | E6 | zero-one-many | explicit | The social-links row's 0/1/many handling is `Profile.tsx`'s existing `activeLinks.length > 0` guard, unchanged by this phase. |
