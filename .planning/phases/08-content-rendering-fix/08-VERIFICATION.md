@@ -229,3 +229,35 @@ resolved by observation. It does not revise any finding above — in particular,
 on it, and no claim about ISR regeneration behaviour is being made. The reason that is acceptable rather than
 evasive is that the criterion's actual guard (PITFALLS 15 — do not be fooled by a page cached from before the
 fix) cannot fail on a route that caches nothing.
+
+---
+
+## CORRECTION (2026-08-14, v1.1 milestone audit)
+
+**Nothing in the findings above changed.** This note exists so a future reader does not mistake two
+preserved frontmatter blocks for open work, and to record one genuine cross-check gap the milestone
+audit surfaced.
+
+**1. `behavior_unverified_items` / `human_verification` are historical, not open.** Truth #6 — CONT-05's
+fetch-failed sentence — was recorded here as `PRESENT_BEHAVIOR_UNVERIFIED` because no plan had induced a
+real content-leg failure at the time of writing. It was closed afterwards by this phase's own UAT: with
+the content leg forced to throw, the post returned HTTP 200 showing exactly *"This post's content could
+not be loaded right now."*, with zero occurrences of the no-content sentence and the renderer not
+entered. The fault injection was reverted and `apps/web/src` confirmed clean. `08-UAT.md` reads
+`status: complete`; the closure is also recorded in `STATE.md`. The blocks are kept rather than deleted
+because they are the honest record of what was unverified when the score was assigned.
+
+**2. This report's complaint about REQUIREMENTS.md is itself stale.** The CONT-03 row above notes that
+`REQUIREMENTS.md` "still reads `[~] implemented, deploy-unverified`". It no longer does — it now reads
+`[x]` with a closure note dated 2026-08-10 citing the deployed-site verification. That was fixed after
+this report was written.
+
+**3. A real gap the audit found: none of the four `08-*-SUMMARY.md` files carry a
+`requirements_completed` frontmatter key.** Consequently CONT-03 and CONT-05 appear in zero SUMMARY
+files, and the milestone audit's 3-source cross-reference scored both `partial (verify manually)` rather
+than `satisfied`. Manual verification confirmed both are genuinely satisfied — CONT-03 by four
+observation passes across all three public posts on the deployed site (`08-CACHE-EVIDENCE.md`), CONT-05
+by the no-content branch calibrated against a real empty Notion page in plan 08-02 plus the
+fetch-failed branch observed in UAT. The requirements were never at risk; the machine-readable
+cross-check source was simply missing. Worth adding the key to future SUMMARYs so the automated
+cross-reference has three real sources instead of two.
