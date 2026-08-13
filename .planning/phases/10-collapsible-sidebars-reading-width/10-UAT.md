@@ -66,8 +66,8 @@ sidebars collapsed so the prose column sits at its 1100px cap, in both light and
 
 expected: The table and code block render cleanly inside the 1100px column with no horizontal overflow, matching the synthetic proxy's result. The longest real post title does not break layout.
 why_human: The operator's 3 published posts contain zero tables and zero code blocks and all titles are short, so there is no real content to test against without mutating production Notion content — which this phase and Phase 9 (IMG-05) both deliberately declined to do. A synthetic proxy built from `react-notion-x`'s own real CSS classes was exercised and did not overflow, which narrows the gap rather than closing it. Widening the column from 864px to 1100px only *relaxes* the existing constraint, so nothing that fits today can newly overflow — but that is an argument, not an observation.
-result: skipped
-reason: "Operator chose skip — no qualifying content exists to test against. The operator's 3 published posts contain zero tables and zero code blocks, and production Notion content was deliberately not mutated to manufacture a case (same line Phase 9 declined to cross for IMG-05). Residual risk is low: the cap WIDENS the column from 864px to 1100px, so content that fits today cannot newly overflow, and a synthetic proxy using react-notion-x's own CSS classes did not overflow. This resolves itself the first time a post with a wide table or code block is published — re-check then."
+result: accepted
+reason: "Operator explicitly ACCEPTED the unobserved state on 2026-08-14 rather than leaving it open. Originally skipped — no qualifying content exists to test against. The operator's 3 published posts contain zero tables and zero code blocks, and production Notion content was deliberately not mutated to manufacture a case (same line Phase 9 declined to cross for IMG-05). Residual risk is low: the cap WIDENS the column from 864px to 1100px, so content that fits today cannot newly overflow, and a synthetic proxy using react-notion-x's own CSS classes did not overflow. This resolves itself the first time a post with a wide table or code block is published — re-check then."
 skipped_at: 2026-08-14
 carry_forward: "Re-verify when a post containing a wide table or code block is first published."
 result_note: "Recorded as skipped-with-reason, not passed — the observation was never made.
@@ -81,8 +81,8 @@ expected: Both `<aside>`s remain `position: sticky` at their `top-16` (64px) res
 why_human: The home page currently measures `scrollHeight: 900px` at a 900px viewport — there is genuinely not enough real content to scroll far enough to stress sticky the way the 4187px-tall post page was stressed. A light check at the ~50-64px of scroll room that does exist showed sticky intact in all four collapse combinations. This resolves itself once more posts are published; alternatively, explicitly accept the lighter-rigor result now.
 
 **Note:** the post page's own SC#5 test DID pass at full rigor — `position: sticky` held at `top: 64px` in all four collapse combinations after a 2000px scroll, with no ancestor `overflow`/`transform` breaking it. This item is about the home page only.
-result: skipped
-reason: "Operator chose skip — the home page has only 3 posts and measures scrollHeight 900px at a 900px viewport, so there is genuinely no scroll room to run the post page's 2000px test. Residual risk is low: SC#5's actual hazard (PITFALLS 9 — an ancestor transform/overflow silently killing position:sticky) is a property of the shared CSS and the shared SidebarShell component, and it was disproven at full rigor on the 4187px-tall post page across all four collapse combinations. The home page uses the same CSS and the same component, with no structural reason to differ. A light check at the ~50-64px of scroll room that does exist showed sticky intact."
+result: accepted
+reason: "Operator explicitly ACCEPTED the lighter-rigor result on 2026-08-14 rather than leaving it open. Originally skipped — the home page has only 3 posts and measures scrollHeight 900px at a 900px viewport, so there is genuinely no scroll room to run the post page's 2000px test. Residual risk is low: SC#5's actual hazard (PITFALLS 9 — an ancestor transform/overflow silently killing position:sticky) is a property of the shared CSS and the shared SidebarShell component, and it was disproven at full rigor on the 4187px-tall post page across all four collapse combinations. The home page uses the same CSS and the same component, with no structural reason to differ. A light check at the ~50-64px of scroll room that does exist showed sticky intact."
 skipped_at: 2026-08-14
 carry_forward: "Re-verify once the home page has enough posts to scroll ~2000px."
 result_note: "Recorded as skipped-with-reason, not passed — the full-rigor home-page observation was never made.
@@ -93,7 +93,23 @@ total: 4
 passed: 2
 issues: 0
 pending: 0
-skipped: 2
+skipped: 0
+accepted: 2
 blocked: 0
+
+## Accepted Unobserved Items
+
+Two verification items were never observed and were explicitly accepted by the operator on
+2026-08-14 rather than left open. Recorded here so a later audit reads them as accepted risk,
+not as passes:
+
+- test 3 — E7 wide table / wide code block / longest title at the 1100px cap. No qualifying
+  content exists; production Notion was deliberately not mutated to manufacture a case.
+- test 4 — SC#5 home-page sticky at full scroll depth. Only 3 posts exist, so the home page
+  cannot be scrolled far enough to match the post page's 2000px test.
+
+Both resolve themselves as the blog gains content. `10-VALIDATION.md` keeps
+`nyquist_compliant: false` for the same reason and should stay that way until they are
+genuinely observed.
 
 ## Gaps
