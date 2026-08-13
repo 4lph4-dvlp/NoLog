@@ -1,5 +1,5 @@
 ---
-status: testing
+status: complete
 phase: 10-collapsible-sidebars-reading-width
 source: [10-VERIFICATION.md]
 started: 2026-08-13T00:00:00Z
@@ -8,12 +8,7 @@ updated: 2026-08-14T00:00:00Z
 
 ## Current Test
 
-number: 4
-name: SC#5 — home-page sticky survival at real scroll depth
-expected: |
-  With more content on the home page than the current 3 posts, scrolling it ~2000px keeps
-  both <aside>s at position: sticky / top 64px, matching the post page's result exactly.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
@@ -86,15 +81,19 @@ expected: Both `<aside>`s remain `position: sticky` at their `top-16` (64px) res
 why_human: The home page currently measures `scrollHeight: 900px` at a 900px viewport — there is genuinely not enough real content to scroll far enough to stress sticky the way the 4187px-tall post page was stressed. A light check at the ~50-64px of scroll room that does exist showed sticky intact in all four collapse combinations. This resolves itself once more posts are published; alternatively, explicitly accept the lighter-rigor result now.
 
 **Note:** the post page's own SC#5 test DID pass at full rigor — `position: sticky` held at `top: 64px` in all four collapse combinations after a 2000px scroll, with no ancestor `overflow`/`transform` breaking it. This item is about the home page only.
-result: [pending]
+result: skipped
+reason: "Operator chose skip — the home page has only 3 posts and measures scrollHeight 900px at a 900px viewport, so there is genuinely no scroll room to run the post page's 2000px test. Residual risk is low: SC#5's actual hazard (PITFALLS 9 — an ancestor transform/overflow silently killing position:sticky) is a property of the shared CSS and the shared SidebarShell component, and it was disproven at full rigor on the 4187px-tall post page across all four collapse combinations. The home page uses the same CSS and the same component, with no structural reason to differ. A light check at the ~50-64px of scroll room that does exist showed sticky intact."
+skipped_at: 2026-08-14
+carry_forward: "Re-verify once the home page has enough posts to scroll ~2000px."
+result_note: "Recorded as skipped-with-reason, not passed — the full-rigor home-page observation was never made.
 
 ## Summary
 
 total: 4
 passed: 2
 issues: 0
-pending: 1
-skipped: 1
+pending: 0
+skipped: 2
 blocked: 0
 
 ## Gaps
