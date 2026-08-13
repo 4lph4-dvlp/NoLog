@@ -2,10 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
-current_phase: 10
-status: completed
+status: Awaiting next milestone
 stopped_at: "Phase 10 executed (4/4 plans), code-reviewed (CR-01 Critical fixed 94904cb, WR-01 documented e099307, IN-01 accepted), verified human_needed. 4 UNEXERCISED runtime items persisted to 10-UAT.md. Phase NOT complete — awaiting /gsd-verify-work 10. Security: 10-SECURITY.md absent, security hook active."
-last_updated: "2026-08-13T16:50:38.481Z"
+last_updated: "2026-08-13T17:12:07.264Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 10 complete
 progress:
@@ -14,6 +13,7 @@ progress:
   total_plans: 15
   completed_plans: 15
   percent: 100
+current_phase: 10
 current_phase_name: Collapsible Sidebars & Reading Width
 ---
 
@@ -28,15 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
-Status: All phases complete
-Progress: [██████████] 100% (2/4 v1.1 phases complete)
-Last activity: 2026-08-14 — Phase 10 complete
-
-> **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
-> already executing, so `state advance-plan` incremented phase 8's plan counter (3 → 4) instead of
-> phase 9's. Pointer corrected to phase 9 here; phase 8 remains complete at 4/4 plans.
+Phase: Milestone v1.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-14 — Milestone v1.1 completed and archived
 
 ## Performance Metrics
 
@@ -220,6 +215,4 @@ Resume file: .planning/phases/10-collapsible-sidebars-reading-width/10-UAT.md
 
 ## Operator Next Steps
 
-- Plan the first v1.1 phase with `/gsd-plan-phase 7`
-- Phase 7 is a diagnostic phase: its real deliverable is captured live production evidence (CONT-02). Phase 8 must not be planned before that evidence exists (D-08).
-- Two v1.1 phases cannot be verified locally: `next dev` has no ISR, so Phases 8 and 9 sign off only against the deployed site (PITFALLS 12/13).
+- Start the next milestone with /gsd-new-milestone

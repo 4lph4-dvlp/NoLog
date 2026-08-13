@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.1 Live Blog Bug Fixes & Reading Width (Shipped: 2026-08-14)
+
+**Phases completed:** 4 phases, 15 plans, 23 tasks
+
+**Key accomplishments:**
+
+- Gated deep-diagnostic helper + secret-gated `/api/diagnose-page` route in `notion-x.ts`, and a two-`try` content/chrome decomposition of `post/[id]/page.tsx` so a categories/related-posts failure can no longer blank an already-fetched post body.
+- App-level `classifyMissingPost()` discriminator plus a reachable `PostUnavailable` state, so a post that exists and is public no longer 404s when its metadata fetch merely fails transiently.
+- D-19 (new, in `07-CONTEXT.md`).
+- Task 1 — User-Agent fix (D-01/D-02/D-03/D-04/D-05/D-06).
+- Spent the phase's single 224-minute idle window on the one claim nothing else could reach: a cold first request against the deployed site, 224 minutes after the last touch, resolved three home-feed thumbnails and one post hero to live image bytes — closing IMG-01 and IMG-02 as observed, and writing IMG-02's still-MEDIUM-confidence mechanism into the record rather than forcing it to HIGH.
+- Split `PostThumbnail` into a Server Component (holds `Post`, resolves the src) and a new `PostThumbnailImage` Client Component (three primitives only), closing the RSC flight-payload leak at the source. Deployed and measured live: G-09-1 is closed.
+- End-to-end collapsible left sidebar on the default template — hamburger toggle, `@property`-animated CSS grid track, pre-hydration flash guard, and viewport-driven auto-collapse — with `templates/default/Layout.tsx` proven to stay a Server Component throughout.
+- Circular profile-image disclosure button collapsing the right sidebar independently of the left, with an always-on accent ring, a `lucide-react` icon fallback on image failure, and `Profile.tsx`'s root demoted to a `<div>` so the panel is a single accessibility landmark.
+- `inert`-based accessibility-tree removal with a synchronous focus-rescue-before-inert sequence shared by the click and resize collapse paths on both sidebars, plus a one-token `max-w-[1100px]` cap on the post-detail prose column that turns the sidebar collapse into a visible +236px of reading width.
+- Closes the phase's evidence gap with live `gstack /browse` measurement — both-collapsed width confirmed exactly 1304px against D-04's derived value, sticky survival confirmed in all four sidebar combinations on a real post, all four A11Y-03 focus-rescue cases independently reproduced (closing 10-03's one source-verified-only gap), and `10-VALIDATION.md`'s 15-requirement-plus-SC#5 map filled from real observation with `nyquist_compliant` left honestly `false` against four documented UNEXERCISED items.
+
+---
+
 ## v1.0 Email Subscription for New Posts (Shipped: 2026-07-29)
 
 **Phases completed:** 6 phases, 17 plans, 33 tasks
