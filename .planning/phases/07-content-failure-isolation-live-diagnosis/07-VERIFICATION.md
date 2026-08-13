@@ -26,7 +26,7 @@ human_verification:
 
 **Phase Goal:** The operator can tell, from production logs, exactly which call in the post-detail render failed — and a failure in the page's chrome no longer blanks the post body
 **Verified:** 2026-08-10
-**Status:** human_needed
+**Status:** passed *(was `human_needed` at first writing — see the CORRECTION at the end of this file; the frontmatter has read `passed` since `/gsd-verify-work 7` canonicalized it)*
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
@@ -159,3 +159,29 @@ gate). Neither existed when the 3/4 score was assigned.
 
 *Status changed during `/gsd-verify-work 7`, per that workflow's canonicalization step, after both UAT items
 resolved with zero issues.*
+
+---
+
+## CORRECTION (2026-08-14, v1.1 milestone audit)
+
+**What changed:** the body header at the top of this report read `**Status:** human_needed` while the
+frontmatter read `status: passed`. The header is now corrected. Nothing about the findings below
+changed.
+
+**Why the two disagreed.** This report was written at 3/4 must-haves with SC#3 and SC#4 recorded
+`PRESENT_BEHAVIOR_UNVERIFIED` — structurally verified by source read, live half unexercised because
+`07-EVIDENCE.md`'s capture window never produced a chrome-leg failure or a `!post` branch entry. Both
+were closed afterwards, by plan 08-03 under D-15, and `/gsd-verify-work 7` then canonicalized the
+frontmatter to `passed`. The sections above already record those closures in detail; only the header
+line was left behind.
+
+**Do not read the `behavior_unverified_items` frontmatter block as open.** It is the record of what was
+unverified *at the time this report was written*, preserved deliberately rather than deleted. The
+closures are documented in the "Goal Achievement" detail above, in `07-UAT.md` (`status: complete`),
+and in `STATE.md`'s Phase 8 Plan 03 entry.
+
+**Found by:** the v1.1 milestone audit's 3-source requirements cross-reference, which flagged CONT-02
+as `partial` because it appears in no SUMMARY's `requirements_completed` frontmatter — `07-03-SUMMARY.md`
+omits that key entirely. Manual verification confirmed CONT-02 genuinely satisfied
+(`07-EVIDENCE.md` holds the captured 403 + `text/html` Cloudflare page, the six-candidate table, and a
+named verdict). The requirement was never at risk; the cross-check source was simply absent.
