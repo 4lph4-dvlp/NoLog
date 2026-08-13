@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: complete
 phase: 09-thumbnail-freshness
 source: [09-VERIFICATION.md]
 started: 2026-08-11T16:48:00Z
@@ -34,6 +34,7 @@ total: 3
 passed: 2
 issues: 1
 pending: 0
+issues_resolved: 1
 skipped: 0
 blocked: 0
 
@@ -41,7 +42,19 @@ blocked: 0
 
 - gap_id: G-09-1
   truth: "The expiring presigned value is no longer embedded anywhere in cached markup — not in an `<img src>` and not in the RSC hydration payload."
-  status: failed
+  status: resolved
+  resolved_by: 09-04-PLAN.md
+  resolved_at: 2026-08-12
+  resolution_note: |
+    Reconciled at v1.1 milestone close (2026-08-14) per the verify-work `reconcile_gaps`
+    rule (#1921): the gap stayed `failed` in this file only because verify-work was never
+    re-run after `/gsd-execute-phase 9 --gaps-only`. Evidence it is genuinely closed —
+    `09-04-PLAN.md` declares `gap_closure: true` with `gap_ids: [G-09-1]`, its
+    `09-04-SUMMARY.md` exists (the plan executed), and `09-VERIFICATION.md` reads
+    `status: passed` at 6/6 must-haves. Measured on the deployed site after the fix:
+    0 `amazonaws.com` and 0 `X-Amz-*` occurrences on both `/` and the post page, where
+    09-02 had measured 3 and 1, with non-zero proxy-path counts on the same bodies so the
+    zeros are real absences rather than a vacuous match.
   reason: "User reported: 지금 고치기 — fix the exposure before closing the phase rather than accepting it as residual risk"
   severity: major
   test: 1
