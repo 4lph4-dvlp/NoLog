@@ -61,7 +61,14 @@ export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProp
   const prefRef = useRef<Record<SidebarSide, SidebarPref>>({ left: null, right: null });
   const collapsedRef = useRef<Record<SidebarSide, boolean>>({ left: false, right: false });
   const gridRef = useRef<HTMLDivElement>(null);
-  const pendingTransitionCleanupRef = useRef<(() => void) | null>(null);
+  // Keyed per side (CR-01 fix): left and right collapse independently and
+  // can each be mid-transition at the same time, so a single shared slot
+  // let one side's cleanup unconditionally cancel the other's still-in-
+  // flight animation.
+  const pendingTransitionCleanupRef = useRef<Record<SidebarSide, (() => void) | null>>({
+    left: null,
+    right: null,
+  });
   // Per-side handles used by applyCollapse's focus-rescue-then-inert
   // sequence: the panel ref for the document.activeElement containment
   // check and the inert read/write target, the toggle ref for the .focus()
@@ -118,11 +125,15 @@ export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProp
    * grid-template-columns, and a 250ms timeout fallback (the 200ms
    * --transition-base duration plus a ~50ms buffer, per 10-RESEARCH.md
    * Assumption A2). Cancels any cleanup already pending from a rapid prior
-   * click before scheduling a new one.
+   * click on the SAME side before scheduling a new one — keyed per side
+   * (CR-01) because left and right transition independently; the caller
+   * (applyCollapse) also relies on this running BEFORE it (re)sets the
+   * attribute, so a same-side rapid re-click never leaves the attribute
+   * removed underneath the new width flip.
    */
-  function scheduleTransitionCleanup() {
-    if (pendingTransitionCleanupRef.current) {
-      pendingTransitionCleanupRef.current();
+  function scheduleTransitionCleanup(side: SidebarSide) {
+    if (pendingTransitionCleanupRef.current[side]) {
+      pendingTransitionCleanupRef.current[side]!();
     }
 
     const grid = gridRef.current;
@@ -136,16 +147,24 @@ export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProp
     function finish() {
       if (done) return;
       done = true;
-      document.documentElement.removeAttribute(SIDEBAR_TRANSITION_ATTR);
+      pendingTransitionCleanupRef.current[side] = null;
       if (grid) grid.removeEventListener("transitionend", onTransitionEnd);
       window.clearTimeout(timeoutId);
-      pendingTransitionCleanupRef.current = null;
+
+      // Only clear the shared <html> attribute once the OTHER side has no
+      // transition of its own still pending — removing it out from under
+      // an in-flight animation on the other side would snap that side's
+      // box to its final width mid-transition.
+      const otherSide: SidebarSide = side === "left" ? "right" : "left";
+      if (!pendingTransitionCleanupRef.current[otherSide]) {
+        document.documentElement.removeAttribute(SIDEBAR_TRANSITION_ATTR);
+      }
     }
 
     if (grid) grid.addEventListener("transitionend", onTransitionEnd);
     const timeoutId = window.setTimeout(finish, 250);
 
-    pendingTransitionCleanupRef.current = finish;
+    pendingTransitionCleanupRef.current[side] = finish;
   }
 
   /**
@@ -197,9 +216,17 @@ export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProp
     // Click-only transition gate (D-11, A11Y-04). The independent CSS-layer
     // guard is globals.css's @media (prefers-reduced-motion: no-preference)
     // wrapper around the transition rule — neither layer alone is trusted.
+    //
+    // CR-01: cleanup is scheduled BEFORE the attribute is (re)set, not
+    // after. A rapid second click on THIS side invokes the previous
+    // click's still-pending finish() inside scheduleTransitionCleanup,
+    // which may remove the attribute (if the other side is idle) — running
+    // that first and only then (re)adding the attribute guarantees it is
+    // present at the moment setSidebarAttr below flips the width, whether
+    // the previous pending transition was on this same side or the other.
     if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      scheduleTransitionCleanup(side);
       document.documentElement.setAttribute(SIDEBAR_TRANSITION_ATTR, "active");
-      scheduleTransitionCleanup();
     }
 
     setSidebarAttr(side, collapsed);
@@ -242,11 +269,14 @@ export function SidebarShell({ leftSlot, rightSlot, children }: SidebarShellProp
   // Unmount-only cleanup so a lingering transition attribute can never
   // outlive this component (defensive — SidebarShell normally persists
   // across route navigation, matching SIDE-06's persistence requirement).
+  // Both sides are flushed — each side's pending cleanup is independent
+  // (CR-01), so either or both may still be in flight at unmount.
   useEffect(() => {
+    const pending = pendingTransitionCleanupRef.current;
     return () => {
-      if (pendingTransitionCleanupRef.current) {
-        pendingTransitionCleanupRef.current();
-      }
+      SIDES.forEach((side) => {
+        pending[side]?.();
+      });
     };
   }, []);
 
