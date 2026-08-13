@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
 status: Awaiting next milestone
-stopped_at: "Phase 10 executed (4/4 plans), code-reviewed (CR-01 Critical fixed 94904cb, WR-01 documented e099307, IN-01 accepted), verified human_needed. 4 UNEXERCISED runtime items persisted to 10-UAT.md. Phase NOT complete — awaiting /gsd-verify-work 10. Security: 10-SECURITY.md absent, security hook active."
+stopped_at: "Milestone v1.1 shipped and archived 2026-08-14. 4 phases, 15 plans, 25/25 requirements. Audit tech_debt (0 functional blockers). Next: /gsd-new-milestone."
 last_updated: "2026-08-13T17:12:07.264Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 10 complete
@@ -21,10 +21,10 @@ current_phase_name: Collapsible Sidebars & Reading Width
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-29)
+See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** A forker can go from "empty Notion database" to "live, working blog" using only Notion + Vercel + GitHub — no infrastructure to provision, no service to babysit, and every optional feature stays inert until its env vars are explicitly set.
-**Current focus:** Phase 10 — Collapsible Sidebars & Reading Width
+**Current focus:** Planning next milestone — run `/gsd-new-milestone`
 
 ## Current Position
 
