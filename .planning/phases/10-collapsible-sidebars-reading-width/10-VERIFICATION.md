@@ -29,7 +29,7 @@ human_verification:
 **Phase Goal:** Readers control how wide the article column is on every `default`-template page, with the
 subscribe form intact and the whole thing usable by keyboard and screen reader
 **Verified:** 2026-08-13
-**Status:** human_needed
+**Status:** passed *(was `human_needed` at first writing — canonicalized by `/gsd-verify-work 10` on 2026-08-14 after the UAT resolved with zero issues; see the CORRECTION at the end of this file)*
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
@@ -192,3 +192,34 @@ zero code-level blockers exist.
 
 _Verified: 2026-08-13_
 _Verifier: Claude (gsd-verifier)_
+
+
+---
+
+## CORRECTION (2026-08-14, after UAT)
+
+**Status canonicalized `human_needed` → `passed`.** This report routed to `human_needed` because four
+verification items could not be observed by an agent. All four were then resolved by the operator in
+`/gsd-verify-work 10`:
+
+| Item | Outcome |
+|---|---|
+| SIDE-10 — live subscribe submit-and-response round trip | **pass** — operator submitted the form against the real Resend account on the first deploy carrying Phase 10 (`origin/main` 25daa8b) and it worked. This closed the phase's single stop-ship criterion (ROADMAP SC#3). |
+| A11Y-04 — CSS reduced-motion guard with the JS guard bypassed | **pass** — operator confirmed no animation played under a real OS-level reduce-motion setting with `data-sidebar-transition` forced on by hand, proving the two guards are genuinely redundant rather than co-dependent. |
+| E7 — wide table / code block / longest title at the 1100px cap | **accepted** (not passed) — no qualifying content exists in the operator's 3 published posts, and production Notion content was deliberately not mutated to manufacture a case. |
+| SC#5 — home-page sticky at full scroll depth | **accepted** (not passed) — the home page measures `scrollHeight: 900px` at a 900px viewport. The post page passed the same test at full rigor (2000px scroll, all four collapse combinations). |
+
+**The two `accepted` items are not passes and are not silently rounded up.** `10-VALIDATION.md` keeps
+`nyquist_compliant: false` for exactly this reason and should stay that way until they are genuinely
+observed. The automated completion predicate (`phase uat-passed --require-verification`) correctly
+refused to pass on them; the phase was marked complete by an explicit operator override, recorded in
+`STATE.md` Deferred Items as `uat_override`. Both resolve themselves as the blog gains content.
+
+**Also completed after this report was written:** `10-SECURITY.md` (7/7 threats closed, `threats_open: 0`,
+ASVS L1 grep-depth) and `COVERAGE.md` (a reasoned no-external-API-integration declaration resolving a
+false-positive `api-coverage.verify-pre` gate). Neither existed when the 15/15 score was assigned.
+
+**One code defect was found and fixed after this report:** code review's CR-01 — both sidebars shared a
+single transition-cleanup ref, so a second toggle within ~250ms cancelled the animation. Fixed in
+`94904cb` (per-side ref, ordering change) and re-verified live on both the cross-side and same-side
+rapid-toggle paths.
