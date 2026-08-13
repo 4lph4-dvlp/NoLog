@@ -8,12 +8,11 @@ updated: 2026-08-14T00:00:00Z
 
 ## Current Test
 
-number: 3
-name: E7 — wide table / wide code block / longest title at the 1100px prose cap
+number: 4
+name: SC#5 — home-page sticky survival at real scroll depth
 expected: |
-  A post containing an actual wide Notion table and an actual wide Notion code block renders
-  cleanly inside the 1100px prose column with no horizontal overflow, in both light and dark
-  theme, with both sidebars collapsed. The longest real post title does not break layout.
+  With more content on the home page than the current 3 posts, scrolling it ~2000px keeps
+  both <aside>s at position: sticky / top 64px, matching the post page's result exactly.
 awaiting: user response
 
 ## Tests
@@ -72,7 +71,11 @@ sidebars collapsed so the prose column sits at its 1100px cap, in both light and
 
 expected: The table and code block render cleanly inside the 1100px column with no horizontal overflow, matching the synthetic proxy's result. The longest real post title does not break layout.
 why_human: The operator's 3 published posts contain zero tables and zero code blocks and all titles are short, so there is no real content to test against without mutating production Notion content — which this phase and Phase 9 (IMG-05) both deliberately declined to do. A synthetic proxy built from `react-notion-x`'s own real CSS classes was exercised and did not overflow, which narrows the gap rather than closing it. Widening the column from 864px to 1100px only *relaxes* the existing constraint, so nothing that fits today can newly overflow — but that is an argument, not an observation.
-result: [pending]
+result: skipped
+reason: "Operator chose skip — no qualifying content exists to test against. The operator's 3 published posts contain zero tables and zero code blocks, and production Notion content was deliberately not mutated to manufacture a case (same line Phase 9 declined to cross for IMG-05). Residual risk is low: the cap WIDENS the column from 864px to 1100px, so content that fits today cannot newly overflow, and a synthetic proxy using react-notion-x's own CSS classes did not overflow. This resolves itself the first time a post with a wide table or code block is published — re-check then."
+skipped_at: 2026-08-14
+carry_forward: "Re-verify when a post containing a wide table or code block is first published."
+result_note: "Recorded as skipped-with-reason, not passed — the observation was never made.
 
 ### 4. SC#5 — home-page sticky survival at real scroll depth
 
@@ -90,8 +93,8 @@ result: [pending]
 total: 4
 passed: 2
 issues: 0
-pending: 2
-skipped: 0
+pending: 1
+skipped: 1
 blocked: 0
 
 ## Gaps
