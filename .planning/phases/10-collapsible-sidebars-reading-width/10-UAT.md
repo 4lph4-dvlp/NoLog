@@ -8,13 +8,12 @@ updated: 2026-08-14T00:00:00Z
 
 ## Current Test
 
-number: 2
-name: A11Y-04 — CSS reduced-motion guard holds with the JS guard bypassed
+number: 3
+name: E7 — wide table / wide code block / longest title at the 1100px prose cap
 expected: |
-  With the browser engine's own prefers-reduced-motion: reduce active (a real OS-level
-  "reduce motion" toggle), manually setting data-sidebar-transition="active" on <html> and
-  then collapsing a sidebar still produces NO animation — the CSS @media guard suppresses
-  it independently of the JS guard.
+  A post containing an actual wide Notion table and an actual wide Notion code block renders
+  cleanly inside the 1100px prose column with no horizontal overflow, in both light and dark
+  theme, with both sidebars collapsed. The longest real post title does not break layout.
 awaiting: user response
 
 ## Tests
@@ -54,7 +53,17 @@ sidebar.
 
 expected: The CSS layer — the `@media (prefers-reduced-motion: no-preference)` wrapper around the transition rule — suppresses the animation even with the JS guard bypassed by hand, proving the CSS guard holds independently rather than only in combination with the JS one.
 why_human: The headless `/browse` session's CDP allowlist does not include `Emulation.setEmulatedMedia`, so a real engine-level reduced-motion preference cannot be forced from that environment. Both layers are independently confirmed already (JS guard observed live; CSS guard source-asserted); only the both-bypassed-simultaneously combination needs a human with a real OS toggle.
-result: [pending]
+result: pass
+reported: "통과" (operator confirmed no animation played with the JS guard bypassed under a real OS-level reduce-motion setting)
+verified_by: operator
+verified_at: 2026-08-14
+verified_against: "https://4lph4-bl0g.vercel.app @ origin/main 25daa8b"
+note: |
+  Closes A11Y-04's last open sub-claim. The CSS layer's
+  `@media (prefers-reduced-motion: no-preference)` wrapper was previously only
+  source-asserted; it is now observed holding INDEPENDENTLY, with the JS layer
+  deliberately bypassed by hand. The two guards are therefore confirmed as genuinely
+  redundant rather than co-dependent.
 
 ### 3. E7 — wide table / wide code block / longest title at the 1100px prose cap
 
@@ -79,9 +88,9 @@ result: [pending]
 ## Summary
 
 total: 4
-passed: 1
+passed: 2
 issues: 0
-pending: 3
+pending: 2
 skipped: 0
 blocked: 0
 
