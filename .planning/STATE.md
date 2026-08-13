@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Blog Bug Fixes & Reading Width
 current_phase: 10
-current_phase_name: Collapsible Sidebars & Reading Width
-status: verifying
+status: completed
 stopped_at: "Phase 10 executed (4/4 plans), code-reviewed (CR-01 Critical fixed 94904cb, WR-01 documented e099307, IN-01 accepted), verified human_needed. 4 UNEXERCISED runtime items persisted to 10-UAT.md. Phase NOT complete — awaiting /gsd-verify-work 10. Security: 10-SECURITY.md absent, security hook active."
-last_updated: "2026-08-13T11:07:13.325Z"
-last_activity: 2026-08-12
-last_activity_desc: Phase 09 UAT complete, gap 09-04 planned, pushed to origin/main
+last_updated: "2026-08-13T16:50:38.481Z"
+last_activity: 2026-08-14
+last_activity_desc: Phase 10 complete
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 15
   completed_plans: 15
   percent: 100
+current_phase_name: Collapsible Sidebars & Reading Width
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 ## Current Position
 
-Phase: 10 (Collapsible Sidebars & Reading Width) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
+Phase: 10
+Plan: Not started
+Status: All phases complete
 Progress: [██████████] 100% (2/4 v1.1 phases complete)
-Last activity: 2026-08-12 — Phase 10 execution started
+Last activity: 2026-08-14 — Phase 10 complete
 
 > **Correction applied 2026-08-11 by 09-02:** the phase pointer read `8 — COMPLETE` while phase 9 was
 > already executing, so `state advance-plan` incremented phase 8's plan counter (3 → 4) instead of
@@ -42,7 +42,7 @@ Last activity: 2026-08-12 — Phase 10 execution started
 
 **Velocity:**
 
-- Total plans completed: 21
+- Total plans completed: 25
 - Average duration: - min
 - Total execution time: 0 hours
 
@@ -57,6 +57,7 @@ Last activity: 2026-08-12 — Phase 10 execution started
 | 05 | 2 | - | - |
 | 6 | 2 | - | - |
 | 09 | 4 | - | - |
+| 10 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -209,6 +210,7 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | verification_override | Phase 5 (Production Cutover): `init.manager`/`readVerificationStatus` reports `verification_status: missing` because `05-01-VERIFICATION.md` (a per-plan coverage doc with no top-level `status:` frontmatter key) sorts alphabetically before `05-VERIFICATION.md` (the real phase-level goal-verification report, `status: passed`, 3/3 ROADMAP success criteria verified 2026-07-29) and shadows it in the tool's file-picker. Confirmed a tooling false-negative, not an actual verification gap — ROADMAP.md, STATE.md, and 05-VERIFICATION.md's own content all independently agree Phase 5 is complete and verified. User explicitly chose to proceed with override rather than rename the file or investigate further. | acknowledged — override accepted, phase content unaffected | v1.0 close (2026-07-29) |
+| uat_override | **Phase 10 (Collapsible Sidebars & Reading Width): the `phase uat-passed --require-verification` predicate returned `passed: false` and the phase was marked complete anyway, on the operator's explicit instruction.** Unlike the Phase 5 row above, this is **not** a tooling false-negative — the predicate is correct. Two of four UAT items were genuinely never observed and are recorded as `result: accepted` (not `pass`) in `10-UAT.md`: **test 3** (E7 — a wide Notion table / wide code block / longest title rendering at the 1100px prose cap; the operator's 3 published posts contain zero tables and zero code blocks, and production Notion content was deliberately not mutated to manufacture a case, matching Phase 9's IMG-05 precedent) and **test 4** (ROADMAP SC#5 — home-page sticky survival at full scroll depth; the home page measures `scrollHeight: 900px` at a 900px viewport, so the post page's 2000px test cannot be reproduced there). Neither is a code defect. Acceptance basis: the 1100px cap *widens* the column 864px → 1100px so nothing that fits today can newly overflow (and a same-CSS-class synthetic proxy did not overflow), and SC#5's real hazard — PITFALLS 9, an ancestor `transform`/`overflow` silently killing `position: sticky` — was disproven at **full rigor** on the 4187px post page across all four collapse combinations, with the home page using the same CSS and the same component. `10-VALIDATION.md` deliberately keeps `nyquist_compliant: false` for the same two items and **must stay false until they are genuinely observed**. Both resolve themselves as the blog gains content — re-run `/gsd-verify-work 10` once a post with a wide table or code block exists and the home page has enough posts to scroll ~2000px. | acknowledged — operator accepted 2 unobserved items as residual risk; phase marked complete | Phase 10 close (2026-08-14) |
 
 ## Session Continuity
 
