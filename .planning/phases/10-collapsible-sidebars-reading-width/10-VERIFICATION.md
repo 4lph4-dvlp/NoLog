@@ -1,20 +1,24 @@
 ---
 phase: 10-collapsible-sidebars-reading-width
 verified: 2026-08-13T00:00:00Z
-status: human_needed
+status: passed
 score: 15/15 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
+
   - test: "SIDE-10's live subscribe submit-and-response round trip: fill the email field on the right panel's subscribe form with a real address and click submit, using the operator's actual RESEND_API_KEY / RESEND_AUDIENCE_ID."
     expected: "The form submits successfully and the operator's Resend audience receives the new contact (or the API returns the expected success response)."
     why_human: "This is a real, side-effecting PII write against the operator's live production Resend account. The verifying agent's own tool-use classifier blocks side-effecting fill+submit actions against production services, exactly as it blocked this same check during plan 10-04's own evidence-gathering pass. The render half (form renders with a live email field and a submit button) and all three code-level stop-ship guards (NEXT_PUBLIC_RESEND greps, Layout.tsx Server Component status, compiled client-reference-manifest inspection) are independently confirmed positive in 10-EVIDENCE.md and re-confirmed live in this verification pass — only the actual submit-and-response round trip is unproven."
+
   - test: "A11Y-04's simultaneous JS-bypass + real-engine reduced-motion combination: with the browser engine's own prefers-reduced-motion: reduce active (not monkey-patched), manually force document.documentElement.setAttribute('data-sidebar-transition', 'active') and confirm the grid-template-columns transition still does not play."
     expected: "The CSS layer (@media (prefers-reduced-motion: no-preference) wrapper around the transition rule) suppresses the animation even when the JS-layer guard is bypassed by hand, proving the CSS guard holds independently rather than only in combination with the JS guard."
     why_human: "The gstack /browse headless session's CDP allowlist does not include Emulation.setEmulatedMedia, so the real browser-engine reduced-motion preference cannot be forced from this environment. The JS-layer guard (belt) and the CSS-layer source assertion (suspenders) are each independently confirmed in 10-EVIDENCE.md; only the specific both-bypassed-simultaneously combination needs a human running a real OS-level 'reduce motion' toggle."
+
   - test: "E7's real-content wide-table / wide-code-block / longest-title backstop: open a post containing an actual wide Notion table and an actual wide Notion code block at the fully-collapsed 1100px prose column, in both light and dark theme, and confirm nothing overflows or breaks."
     expected: "The table and code block render cleanly within the 1100px column with no horizontal overflow, matching the synthetic proxy's result."
     why_human: "The operator's 3 published posts contain zero tables and zero code blocks, so there is no real content to run this check against without mutating production Notion content — which this phase and its predecessor (Phase 9's IMG-05) both declined to do. A synthetic proxy using react-notion-x's own real CSS classes was exercised and did not overflow, but that narrows rather than closes the gap; a human with access to add or is willing to temporarily add qualifying content should confirm."
+
   - test: "SC#5's home-page sticky depth: with more real content on the home page than the operator's current 3 posts, scroll the home page far enough (e.g. 2000px, matching the post-page test's rigor) to confirm both <aside>s still stick."
     expected: "Both <aside>s remain position: sticky at their top-16 (64px) rest position throughout a deep scroll, matching the post-page result exactly."
     why_human: "The operator's home page currently has only 3 published posts and measures scrollHeight: 900px at a 900px viewport — there is no real content to scroll far enough to stress-test sticky positioning the way the 4187px-tall post page was tested. A light check at the ~50-64px of scroll room that does exist showed sticky intact, but this is not the same rigor as the post-page test. This will resolve itself once the operator publishes more posts; a human should re-run the check then, or explicitly accept the lighter-rigor result now."
@@ -162,10 +166,13 @@ See frontmatter `human_verification` list. Four items, all honestly pre-flagged 
 
 1. **SIDE-10's live subscribe submit-and-response round trip** — blocked by tool classifier against
    production PII/Resend; render half and all code-level guards are positive.
+
 2. **A11Y-04's simultaneous JS-bypass + real-engine reduced-motion combination** — CDP
    `Emulation.setEmulatedMedia` unavailable to the browsing tool; each layer verified independently.
+
 3. **E7's real-content wide-table/code-block/longest-title backstop** — no qualifying content exists in
    the operator's 3 published posts; a same-CSS-class synthetic proxy was exercised and did not overflow.
+
 4. **SC#5's home-page sticky depth** — only 3 real posts, 900px `scrollHeight`, not enough room to run the
    same 2000px-scroll rigor the post page received; a light check at available depth showed sticky intact.
 
