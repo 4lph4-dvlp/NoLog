@@ -3,7 +3,7 @@ status: testing
 phase: 10-collapsible-sidebars-reading-width
 source: [10-VERIFICATION.md]
 started: 2026-08-13T00:00:00Z
-updated: 2026-08-13T00:00:00Z
+updated: 2026-08-13T01:00:00Z
 ---
 
 ## Current Test
@@ -14,6 +14,8 @@ expected: |
   The subscribe form in the right sidebar accepts a real email address and submits
   successfully against the operator's own Resend account — the audience receives the new
   contact, or the API returns its expected success response.
+  MUST be tested against a build that actually contains Phase 10 (the deployed site was
+  serving a pre-Phase-10 ref when this was first attempted).
 awaiting: user response
 
 ## Tests
@@ -26,6 +28,16 @@ using the operator's actual `RESEND_API_KEY` / `RESEND_AUDIENCE_ID`.
 expected: The form submits successfully and the operator's Resend audience receives the new contact (or the API returns the expected success response).
 why_human: A real, side-effecting PII write against a live production Resend account. The verifying agent's own tool-use classifier blocks side-effecting fill+submit actions against production services — it blocked this same check during plan 10-04's evidence pass too. Already independently confirmed: the form renders with a live email field and submit button, and all three code-level stop-ship guards pass (`NEXT_PUBLIC_RESEND` absent repo-wide, `templates/default/Layout.tsx` still a Server Component, no `SubscribeSection` import in `SidebarShell.tsx`, plus a direct read of the compiled `.next` client-reference-manifest). Only the submit-and-response round trip is unproven.
 result: [pending]
+note: |
+  2026-08-13 — an earlier `pass` for this test was RETRACTED, not overwritten silently.
+  The operator confirmed the subscribe form worked, but tested it against the DEPLOYED
+  Vercel site, which was still serving `origin/main` at `34fceee` (2026-08-12) — a build
+  with no Phase 10 code at all: `SidebarShell.tsx` and `lib/sidebar.ts` did not exist on
+  that ref. What was exercised was therefore the PRE-refactor subscribe form in the old
+  `Layout.tsx` markup, not the form as re-parented into `SidebarShell`'s `rightSlot`.
+  Since SIDE-10 exists precisely to prove that re-parenting did not silently disable the
+  form, the observation does not bear on the criterion. Re-test after the deploy carrying
+  Phase 10 is live.
 
 ### 2. A11Y-04 — CSS reduced-motion guard holds with the JS guard bypassed
 
