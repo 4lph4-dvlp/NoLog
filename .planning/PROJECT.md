@@ -14,7 +14,13 @@ A forker can go from "empty Notion database" to "live, working blog" using only 
 
 Known override at close: Phase 5 (Production Cutover)'s automated verification-status check reported `missing` due to a stray `05-01-VERIFICATION.md` file shadowing the real, passing `05-VERIFICATION.md` in the tool's alphabetical file-picker — confirmed a tooling false-negative, not an actual gap. Full detail in `STATE.md` Deferred Items.
 
-**v1.1 in progress — Phase 9 (Thumbnail Freshness) complete 2026-08-12.** Validated in Phase 9: IMG-01, IMG-02, IMG-03, IMG-04, IMG-05. Thumbnails now render through a server-side proxy route (`/api/thumbnail/[id]`) that resolves Notion's short-lived presigned S3 URL per request, so a cold load after an arbitrarily long idle gap no longer shows blank images. Gap G-09-1, raised in UAT, was closed by plan 09-04: the presigned URL had still been leaking into the RSC flight payload because `PostThumbnail` was a Client Component receiving the whole `Post` object; the boundary was moved so the only Client Component in the path receives three primitives. Confirmed on the deployed site — 0 presigned-URL occurrences where 3 and 1 were previously measured. Two coverage gaps remain accepted-by-operator rather than observed: the host-allowlist guard's firing (Notion picks the presign host, so an off-allowlist case cannot be constructed from real data) and IMG-05's live half (no external-thumbnail post exists in the operator's database). Both are source-verified and corroborated by code review. Phases 7 and 8 complete; Phase 10 (Collapsible Sidebars & Reading Width) remains.
+**v1.1 in progress — Phase 9 (Thumbnail Freshness) complete 2026-08-12.** Validated in Phase 9: IMG-01, IMG-02, IMG-03, IMG-04, IMG-05. Thumbnails now render through a server-side proxy route (`/api/thumbnail/[id]`) that resolves Notion's short-lived presigned S3 URL per request, so a cold load after an arbitrarily long idle gap no longer shows blank images. Gap G-09-1, raised in UAT, was closed by plan 09-04: the presigned URL had still been leaking into the RSC flight payload because `PostThumbnail` was a Client Component receiving the whole `Post` object; the boundary was moved so the only Client Component in the path receives three primitives. Confirmed on the deployed site — 0 presigned-URL occurrences where 3 and 1 were previously measured. Two coverage gaps remain accepted-by-operator rather than observed: the host-allowlist guard's firing (Notion picks the presign host, so an off-allowlist case cannot be constructed from real data) and IMG-05's live half (no external-thumbnail post exists in the operator's database). Both are source-verified and corroborated by code review.
+
+**Phase 10 (Collapsible Sidebars & Reading Width) complete 2026-08-14 — v1.1's last phase.** Validated: SIDE-01…SIDE-10 and A11Y-01…A11Y-05 (15 requirements, 4 plans, 4 waves). Readers collapse either sidebar independently — a hamburger on the left, a circular profile-image button on the right — and the article column reclaims the width. Measured live: `<main>` at 864px both-expanded, 1064/1104px one-collapsed, 1304px both-collapsed; the post-detail prose column is capped at 1100px and centred. State is a per-side tri-state (`null | true | false`) where only an explicit preference persists to `localStorage`; a blocking pre-hydration inline script (modelled on the installed `next-themes` technique) prevents any wrong-state flash. Collapsed panels are removed from the accessibility tree and tab order via `inert`, with focus rescued to the controlling toggle on **both** the click and the resize path. `templates/default/Layout.tsx` stayed a Server Component throughout — the phase's single stop-ship criterion — and the subscribe form was confirmed working end-to-end against the live Resend account after deploy.
+
+Three findings from this phase are worth carrying forward. **(1)** Turbopack's Lightning CSS silently drops an entire `@property` block when the `syntax` descriptor is double-quoted — no error, no warning, and the grid then refuses to animate; both registrations use single quotes. **(2)** The UI-SPEC as written would have deleted the mobile theme toggle (it placed `ThemeToggle` in a `hidden md:flex` row, but the existing wrapper carried no `hidden` and therefore rendered at every viewport); resolved as two single-viewport renders. **(3)** Code review caught a real concurrency defect — both sides shared one transition-cleanup ref, so a second toggle within ~250ms cancelled the animation — fixed in `94904cb` and re-verified live.
+
+Two verification items were accepted-by-operator rather than observed, so `10-VALIDATION.md` keeps `nyquist_compliant: false`: E7's wide-table/code-block backstop (no qualifying content exists in the operator's 3 posts; production Notion was deliberately not mutated) and SC#5's home-page sticky depth (the home page cannot scroll far enough). Both resolve as the blog gains content. Full detail in `STATE.md` Deferred Items (`uat_override`).
 
 ## Current Milestone: v1.1 Live Blog Bug Fixes & Reading Width
 
@@ -53,14 +59,20 @@ Known override at close: Phase 5 (Production Cutover)'s automated verification-s
 - ✓ `/api/notify-subscribers` route: fail-closed on missing `CRON_SECRET` (checked before anything else), same-day digest (one email per cron run listing every newly-public post, per-post-section isolation so one bad post doesn't block the rest), no-op if Resend env vars unset — Phase 4 (live-verified against Resend + Notion 2026-07-27)
 - ✓ Production cutover (OPS-01): `vercel.json` cron entry (`0 11 * * *`, once/day, Hobby-tier compatible) added and deployed as its own commit, strictly after the backfill was confirmed complete in production — Phase 5 (2026-07-29; live dashboard maxDuration confirmed 300s, batch size 50 validated against it, manual cron trigger returned 200 with no email sent)
 - ✓ Forker-facing documentation (DOCS-01/02/03): `README.md`/`README_KR.md` "Email Notifications (Optional)" section — 4 env vars (corrected from 3 named in DOCS-01's summary text), `emailed` Notion property, "Update content" capability as its own step, mandatory Resend domain verification, correct quota (1,000 contacts/month, not the 100/day transactional figure), Production-only/UTC cron behavior, diagram/table/feature-list updates — Phase 6 (2026-07-29; goal verification included a live headless-browser Mermaid render and live fetches of the cited Resend/Notion/Vercel doc pages)
+- ✓ Post content renders on first visit (CONT-01…CONT-05) — Phases 7-8. Root cause was Cloudflare answering `notion-client`'s default `user-agent: node` with a 403; fixed with an honest self-identifying User-Agent via `ofetchOptions`. Established from captured live production evidence before any fix was written (D-08), per the repo's own CR-01 process lesson.
+- ✓ Thumbnail freshness (IMG-01…IMG-05) — Phase 9. Server-side proxy route resolves Notion's ~1h presigned S3 URL per request instead of baking it into cached HTML.
+- ✓ Collapsible sidebars + reading width (SIDE-01…SIDE-10, A11Y-01…A11Y-05) — Phase 10 (2026-08-14). Live-verified on the deployed site; two backstop items accepted-by-operator rather than observed (see Current State).
 
 ### Active
 
-Milestone v1.1 — scoped in `REQUIREMENTS.md`, phased in `ROADMAP.md`:
+None — v1.1's three target features are all delivered and their phases closed. The next milestone has
+not been scoped yet; run `/gsd-complete-milestone` to archive v1.1, then `/gsd-new-milestone`.
 
-- [ ] Home-feed thumbnails render on a visitor's first load, without a manual refresh
-- [ ] Post bodies render their Notion content instead of the "Content could not be loaded." fallback
-- [ ] Reader can collapse/expand the left (search + categories) and right (profile + subscribe) sidebars independently, with auto-collapse below a width threshold and `localStorage` persistence
+Moved to Validated below on 2026-08-14 (all three v1.1 items):
+
+- ✓ Home-feed thumbnails render on a visitor's first load, without a manual refresh — Phase 9
+- ✓ Post bodies render their Notion content instead of the "Content could not be loaded." fallback — Phases 7-8
+- ✓ Reader can collapse/expand the left (search + categories) and right (profile + subscribe) sidebars independently, with auto-collapse below a width threshold and `localStorage` persistence — Phase 10
 
 ### Out of Scope
 
@@ -132,4 +144,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-12 after Phase 9 (Thumbnail Freshness) completed*
+*Last updated: 2026-08-14 after Phase 10 (Collapsible Sidebars & Reading Width) completed — v1.1's final phase*
