@@ -49,7 +49,7 @@ human_verification:
 
 **Phase Goal:** Every post the operator has published to the web renders its Notion body on a reader's first visit to the deployed site
 **Verified:** 2026-08-10T18:08:12Z
-**Status:** gaps_found
+**Status:** passed *(was `gaps_found` at first writing — see the CORRECTION at the end of this file; the frontmatter has read `passed` since the gaps closed)*
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
